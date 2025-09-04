@@ -1,0 +1,11 @@
+# Core dependencies (required for basic functionality)
+requests
+yara-python
+colorama
+fpdf2
+
+# Optional: PE file static analysis
+pefile
+
+# Optional: For concurrency and threading (standard in Python, but listed for clarity)
+concurrent-log-handler
