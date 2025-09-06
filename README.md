@@ -2,8 +2,9 @@
 
 **Author:** EclipseManic  
 
-A Python-based malware triage tool that performs both **offline analysis** (hashing, string extraction, YARA rules, PE static checks) and **online analysis** (VirusTotal, Hybrid-Analysis, and MalwareBazaar enrichment).  
-It generates structured **reports (TXT, HTML, PDF)** and provides a final **risk score (0–100)**.  
+Malware Analyzer CLI is a comprehensive, Python-based triage tool for rapid malware analysis. It combines a powerful suite of offline and online analysis techniques to provide a detailed and actionable assessment of potentially malicious files.
+
+This tool is designed for security analysts, researchers, and developers who need a quick and efficient way to dissect suspicious files. By integrating with leading threat intelligence platforms like VirusTotal and Hybrid-Analysis, it delivers a holistic view of a file's risk profile, complete with a final score and detailed reports in multiple formats (TXT, HTML, and PDF).
 
 ---
 
