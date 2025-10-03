@@ -1,132 +1,168 @@
 # Malware Analyzer CLI
-
-**Author:** EclipseManic  
+**Author:** EclipseManic
 
 Malware Analyzer CLI is a comprehensive, Python-based triage tool for rapid malware analysis. It combines a powerful suite of offline and online analysis techniques to provide a detailed and actionable assessment of potentially malicious files.
 
-This tool is designed for security analysts, researchers, and developers who need a quick and efficient way to dissect suspicious files. By integrating with leading threat intelligence platforms like VirusTotal and Hybrid-Analysis, it delivers a holistic view of a file's risk profile, complete with a final score and detailed reports in multiple formats (TXT, HTML, and PDF).
+This tool is designed for security analysts, researchers, and developers who need a quick and efficient way to dissect suspicious files. By integrating with leading threat intelligence platforms, it delivers a holistic view of a file's risk profile, complete with a final score and detailed reports.
 
 ---
 
 ## 🚀 Features
 
 ### Offline Analysis
-- **Hashes** → MD5, SHA256  
-- **String Extraction** → Detects suspicious commands, registry keys, URLs, paths  
-- **YARA Rules** → Scans against custom signatures (`rules.yar`)  
-- **PE Analysis** (if `pefile` installed) → Extracts imports, section entropy, suspicious imports  
+- **File Hashes**: Calculates MD5 and SHA256 hashes for identification and lookups.
+- **String Extraction**: Scans the binary for suspicious strings, including commands, URLs, registry keys, and file paths.
+- **YARA Scanning**: Matches the file against a custom set of YARA rules (`rules.yar`) to detect known malware families and patterns.
+- **PE Analysis** *(optional — requires `pefile`)*: Extracts critical information from Windows executables, such as imported functions, section details (e.g., entropy), and suspicious imports.
 
 ### Online Analysis
-- **VirusTotal v3** → File scanning and detection counts  
-- **Hybrid-Analysis (CrowdStrike Falcon Sandbox)** → Quick ML-based scan and verdict  
-- **MalwareBazaar Lookup** → Checks if sample already exists in threat databases  
+- **VirusTotal Integration**: Queries the VirusTotal v3 API to get the number of antivirus engines that flagged the file.
+- **Hybrid-Analysis Integration**: Submits the file for a quick ML-based scan (CrowdStrike Falcon Sandbox or similar) and retrieves threat score/verdict.
+- **MalwareBazaar Lookup**: Checks if the file hash is already present in the MalwareBazaar threat intelligence database.
 
-### Risk Scoring
-- Weighted scoring from multiple sources  
-- Final score: **0–100**  
-- Categorized as **LOW**, **MEDIUM**, or **HIGH** risk  
-- Overrides to 100% malicious if authoritative detection found  
-
-### Reports
-- Generates **TXT, HTML, and PDF** reports (configurable)  
-- Detailed breakdown of detections and indicators  
-- Color-coded console output for quick triage  
+### Risk Scoring & Reporting
+- **Weighted Scoring Engine**: Calculates a final risk score from 0 to 100 based on findings from all analysis modules.
+- **Risk Categorization**: Classifies the file as `LOW`, `MEDIUM`, or `HIGH` risk.
+- **Multi-Format Reports**: Generates detailed reports in `TXT`, `HTML`, and `JSON` formats.
+- **Rich Console Output**: Color-coded, easy-to-read summary directly in the terminal for immediate triage.
 
 ---
 
 ## 📦 Requirements
+- **Python:** 3.8+
 
-- Python **3.8+**  
-- Required libraries:  
-  - `requests`, `yara-python`, `colorama`, `fpdf`, `concurrent.futures`  
-- Optional libraries:  
-  - `pefile` → PE file analysis  
-- Online scanning requires valid API keys  
+**Required libraries**
+- `requests`
+- `yara-python`
+- `colorama`
 
-### Install Dependencies
+**Optional**
+- `pefile` (Enables PE file analysis)
+
+**Note:** Valid API keys are required for the online scanning features.
+
+---
+
+## Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
+
+---
+
 ## 🔑 API Key Setup
 
-This tool supports integration with **VirusTotal** and **Hybrid-Analysis**. API keys are loaded from a `config.json` file located in the same directory as the script.
+This tool integrates with VirusTotal, Hybrid-Analysis, and MalwareBazaar. API keys must be placed in a `config.json` file in the same directory as the script. If keys are missing, corresponding online scans will be skipped automatically.
 
-### Example `config.json`:
+**Example `config.json`:**
 
-`{   "virustotal": {     "api_key": "YOUR_VIRUSTOTAL_API_KEY"   },   "hybrid_analysis": {     "api_key": "YOUR_HYBRID_ANALYSIS_API_KEY"   },   "rate_limits": {     "virustotal": 15,     "hybrid_analysis": 5   } }`
+```json
+{
+  "virustotal": {
+    "api_key": "YOUR_VIRUSTOTAL_API_KEY"
+  },
+  "hybrid_analysis": {
+    "api_key": "YOUR_HYBRID_ANALYSIS_API_KEY"
+  },
+  "malwarebazaar": {
+    "api_key": "YOUR_MALWAREBAZAAR_API_KEY",
+    "header": "Auth-Key"
+  },
+  "rate_limits": {
+    "virustotal": 15,
+    "hybrid_analysis": 5
+  }
+}
+```
 
--   `rate_limits` section (optional) allows you to adjust delays between API calls.
-    
--   If no keys are provided, the script will still run in **offline-only mode**.
-    
+---
 
 ## 🔧 Usage
 
-### Basic command:
+**Basic command**
 
-`python Malware_Analyzer.py <path_to_file_or_directory>`
+```bash
+python Malware_Analyzer.py <path_to_file_or_directory>
+```
 
-### Flags:
+**Command-Line Flags**
+- `--online`, `-o`: Force-enables all online scans.
+- `--offline`, `-f`: Force-enables all offline scans.
+- `--report-analysis`, `-r`: Generates report files. Specify formats like `-r txt,json`.
 
--   `--online, -o` → Enable online scans (VirusTotal, Hybrid-Analysis)
-    
--   `--offline, -f` → Enable offline scans (hash, YARA, strings, PE)
-    
--   `--report-format, -r` → Comma-separated list: `txt,html,pdf` or `none`
-    
+**Examples**
 
-### Example (full scan with all reports):
+Full scan with reports:
 
-`python Malware_Analyzer.py samples/malware.exe --online --offline --report-format txt,html,pdf`
+```bash
+python Malware_Analyzer.py samples/malware.exe -o -f -r txt,html,json
+```
 
-### Example (offline-only, no reports saved):
+Offline scan only, no reports:
 
-`python Malware_Analyzer.py samples/ -f -r none`
+```bash
+python Malware_Analyzer.py samples/suspicious.dll -f -r none
+```
 
-### Interactive Mode (default if no flags provided):
+**Interactive Mode**
 
-If you run without flags, the tool will ask:
+Run the script without flags to enter interactive mode. The script will prompt you to choose scan types (online/offline) and report formats. Ideal for first-time users.
 
--   Whether to run online/offline scans
-    
--   Which report formats to generate
-    
+---
 
-## 📝 Output
+## 📝 Example Output
 
--   **Indicators**
-    
-    -   VirusTotal detections
-        
-    -   Hybrid-Analysis threat score
-        
-    -   YARA matches
-        
-    -   MalwareBazaar match
-        
--   **Details**
-    
-    -   Suspicious strings (sample)
-        
-    -   YARA rules triggered
-        
-    -   PE sections & suspicious imports
-        
--   **Final Risk Score**
-    
-    -   Boxed, color-coded score with **LOW / MEDIUM / HIGH** label
-        
--   **Reports**
-    
-    -   Saves TXT, HTML, and PDF reports alongside the scanned file
-        
+```text
+Scanning malware.exe ...
 
-## 📂 Example Report (Summary)
+Scan summary: malware.exe
+────────────────────────────────────────────────────────────
+  MD5: e99a18c428cb38d5f260853678922e03
+  SHA256: 2c26b46b68ffc68ff99b453c1d30413413422b4a4b8bdfab6e12e0a6f1b9e3e3
+  Path: samples/malware.exe
 
-`File: samples/malware.exe MD5: e99a18c428cb38d5f260853678922e03 SHA256: 2c26b46b68ffc68ff99b453c1d30413413422b4a4b8bdfab6e12e0a6f1b9e3e3  VirusTotal: 25 AV engines flagged (malicious) Hybrid-Analysis: Threat Score = 80, Verdict = malicious YARA hits: 3 Suspicious strings: powershell, http://malicious[.]com, rundll32  Final Risk Score: 100/100 (HIGH RISK)`
+Indicators
+────────────────────────────────────────────────────────────
+  VirusTotal: 25
+  Hybrid-Analysis: 80
+  YARA hits: 3
+  MalwareBazaar match: True
+
+Details
+────────────────────────────────────────────────────────────
+  Suspicious strings (sample):
+    powershell
+    http://malicious[.]com
+    rundll32
+    CreateRemoteThread
+  YARA rules: rules.yar (approx 6)
+  YARA hit: Trojan_Signature_1
+  YARA hit: Suspicious_PowerShell
+  PE sections:
+    .text: size=6551040 entropy=6.78
+    .rdata: size=3507200 entropy=5.03
+  Suspicious imports: CreateRemoteThread, URLDownloadToFile
+
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ FINAL RISK SCORE: 100/100 (HIGH) ┃
+┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+
+A detailed JSON report is also generated for integration with other tools and systems.
+```
+
+---
+
+## 🤝 Contributing
+Contributions are welcome. See `CONTRIBUTING.md` for guidelines on how to get started.
+
+---
+
+## 📄 License
+This project is licensed under the **MIT License**. See the `LICENSE` file for more details.
+
+---
 
 ## ⚠️ Disclaimer
+This tool is intended for educational and defensive security purposes only. The author assumes no liability for misuse. Do not use this tool for malicious or illegal activities.
 
-This tool is for **educational and defensive security purposes only**.  
-Do **not** use it for offensive, malicious, or illegal activities.  
-The author assumes **no liability** for misuse.
