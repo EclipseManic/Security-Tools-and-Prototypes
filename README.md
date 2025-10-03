@@ -1,43 +1,52 @@
 # Malware Analyzer CLI
+
 **Author:** EclipseManic
 
 Malware Analyzer CLI is a comprehensive, Python-based triage tool for rapid malware analysis. It combines a powerful suite of offline and online analysis techniques to provide a detailed and actionable assessment of potentially malicious files.
 
 This tool is designed for security analysts, researchers, and developers who need a quick and efficient way to dissect suspicious files. By integrating with leading threat intelligence platforms, it delivers a holistic view of a file's risk profile, complete with a final score and detailed reports.
 
+> ⚙️ Note: This project was developed with the assistance of AI tools to accelerate development and improve functionality.
+
 ---
 
 ## 🚀 Features
 
 ### Offline Analysis
-- **File Hashes**: Calculates MD5 and SHA256 hashes for identification and lookups.
-- **String Extraction**: Scans the binary for suspicious strings, including commands, URLs, registry keys, and file paths.
-- **YARA Scanning**: Matches the file against a custom set of YARA rules (`rules.yar`) to detect known malware families and patterns.
-- **PE Analysis** *(optional — requires `pefile`)*: Extracts critical information from Windows executables, such as imported functions, section details (e.g., entropy), and suspicious imports.
+
+* **File Hashes**: Calculates MD5 and SHA256 hashes for identification and lookups.
+* **String Extraction**: Scans the binary for suspicious strings, including commands, URLs, registry keys, and file paths.
+* **YARA Scanning**: Matches the file against a custom set of YARA rules (`rules.yar`) to detect known malware families and patterns.
+* **PE Analysis** *(optional — requires `pefile`)*: Extracts critical information from Windows executables, such as imported functions, section details (e.g., entropy), and suspicious imports.
 
 ### Online Analysis
-- **VirusTotal Integration**: Queries the VirusTotal v3 API to get the number of antivirus engines that flagged the file.
-- **Hybrid-Analysis Integration**: Submits the file for a quick ML-based scan (CrowdStrike Falcon Sandbox or similar) and retrieves threat score/verdict.
-- **MalwareBazaar Lookup**: Checks if the file hash is already present in the MalwareBazaar threat intelligence database.
+
+* **VirusTotal Integration**: Queries the VirusTotal v3 API to get the number of antivirus engines that flagged the file.
+* **Hybrid-Analysis Integration**: Submits the file for a quick ML-based scan (CrowdStrike Falcon Sandbox or similar) and retrieves threat score/verdict.
+* **MalwareBazaar Lookup**: Checks if the file hash is already present in the MalwareBazaar threat intelligence database.
 
 ### Risk Scoring & Reporting
-- **Weighted Scoring Engine**: Calculates a final risk score from 0 to 100 based on findings from all analysis modules.
-- **Risk Categorization**: Classifies the file as `LOW`, `MEDIUM`, or `HIGH` risk.
-- **Multi-Format Reports**: Generates detailed reports in `TXT`, `HTML`, and `JSON` formats.
-- **Rich Console Output**: Color-coded, easy-to-read summary directly in the terminal for immediate triage.
+
+* **Weighted Scoring Engine**: Calculates a final risk score from 0 to 100 based on findings from all analysis modules.
+* **Risk Categorization**: Classifies the file as `LOW`, `MEDIUM`, or `HIGH` risk.
+* **Multi-Format Reports**: Generates detailed reports in `TXT`, `HTML`, and `JSON` formats.
+* **Rich Console Output**: Color-coded, easy-to-read summary directly in the terminal for immediate triage.
 
 ---
 
 ## 📦 Requirements
-- **Python:** 3.8+
+
+* **Python:** 3.8+
 
 **Required libraries**
-- `requests`
-- `yara-python`
-- `colorama`
+
+* `requests`
+* `yara-python`
+* `colorama`
 
 **Optional**
-- `pefile` (Enables PE file analysis)
+
+* `pefile` (Enables PE file analysis)
 
 **Note:** Valid API keys are required for the online scanning features.
 
@@ -87,9 +96,10 @@ python Malware_Analyzer.py <path_to_file_or_directory>
 ```
 
 **Command-Line Flags**
-- `--online`, `-o`: Force-enables all online scans.
-- `--offline`, `-f`: Force-enables all offline scans.
-- `--report-analysis`, `-r`: Generates report files. Specify formats like `-r txt,json`.
+
+* `--online`, `-o`: Force-enables all online scans.
+* `--offline`, `-f`: Force-enables all offline scans.
+* `--report-analysis`, `-r`: Generates report files. Specify formats like `-r txt,json`.
 
 **Examples**
 
@@ -154,15 +164,17 @@ A detailed JSON report is also generated for integration with other tools and sy
 ---
 
 ## 🤝 Contributing
+
 Contributions are welcome. See `CONTRIBUTING.md` for guidelines on how to get started.
 
 ---
 
 ## 📄 License
+
 This project is licensed under the **MIT License**. See the `LICENSE` file for more details.
 
 ---
 
 ## ⚠️ Disclaimer
-This tool is intended for educational and defensive security purposes only. The author assumes no liability for misuse. Do not use this tool for malicious or illegal activities.
 
+This tool is intended for educational and defensive security purposes only. The author assumes no liability for misuse. Do not use this tool for malicious or illegal activities.
