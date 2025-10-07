@@ -1,8 +1,3 @@
-### **`CODE_OF_CONDUCT.md`**
-
-This file has been updated to include a contact method for reporting violations of the code of conduct.
-
-```markdown
 # Contributor Covenant Code of Conduct
 
 ## Our Pledge
