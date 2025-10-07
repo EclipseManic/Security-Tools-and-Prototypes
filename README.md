@@ -1,3 +1,6 @@
+[![MIT License](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python Version](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+
 # Malware Analyzer CLI
 
 **Author:** EclipseManic
@@ -58,8 +61,6 @@ This tool is designed for security analysts, researchers, and developers who nee
 pip install -r requirements.txt
 ```
 
----
-
 ## 🔑 API Key Setup
 
 This tool integrates with VirusTotal, Hybrid-Analysis, and MalwareBazaar. API keys must be placed in a `config.json` file in the same directory as the script. If keys are missing, corresponding online scans will be skipped automatically.
@@ -76,11 +77,18 @@ This tool integrates with VirusTotal, Hybrid-Analysis, and MalwareBazaar. API ke
   },
   "malwarebazaar": {
     "api_key": "YOUR_MALWAREBAZAAR_API_KEY",
-    "header": "Auth-Key"
+    "header": "API-KEY"
   },
   "rate_limits": {
     "virustotal": 15,
     "hybrid_analysis": 5
+  },
+  "timeouts": {
+    "request_timeout": 30,
+    "max_retries": 2,
+    "backoff_factor": 1.5,
+    "max_file_size": 104857600,
+    "enable_ssl_verification": true
   }
 }
 ```
@@ -97,8 +105,8 @@ python Malware_Analyzer.py <path_to_file_or_directory>
 
 **Command-Line Flags**
 
-* `--online`, `-o`: Force-enables all online scans.
-* `--offline`, `-f`: Force-enables all offline scans.
+* `--online`, `-on`: Force-enables all online scans.
+* `--offline`, `-ff`: Force-enables all offline scans.
 * `--report-analysis`, `-r`: Generates report files. Specify formats like `-r txt,json`.
 
 **Examples**
