@@ -106,7 +106,7 @@ python Malware_Analyzer.py <path_to_file_or_directory>
 **Command-Line Flags**
 
 * `--online`, `-on`: Force-enables all online scans.
-* `--offline`, `-ff`: Force-enables all offline scans.
+* `--offline`, `-off`: Force-enables all offline scans.
 * `--report-analysis`, `-r`: Generates report files. Specify formats like `-r txt,json`.
 
 **Examples**
@@ -114,13 +114,13 @@ python Malware_Analyzer.py <path_to_file_or_directory>
 Full scan with reports:
 
 ```bash
-python Malware_Analyzer.py samples/malware.exe -o -f -r txt,html,json
+python Malware_Analyzer.py samples/malware.exe -on -off -r txt,html,json
 ```
 
 Offline scan only, no reports:
 
 ```bash
-python Malware_Analyzer.py samples/suspicious.dll -f -r none
+python Malware_Analyzer.py samples/suspicious.dll -off -r none
 ```
 
 **Interactive Mode**
