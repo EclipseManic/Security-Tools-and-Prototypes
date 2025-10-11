@@ -77,7 +77,7 @@ This tool integrates with VirusTotal, Hybrid-Analysis, and MalwareBazaar. API ke
   },
   "malwarebazaar": {
     "api_key": "YOUR_MALWAREBAZAAR_API_KEY",
-    "header": "API-KEY"
+    "header": "Auth-KEY"
   },
   "rate_limits": {
     "virustotal": 15,
@@ -144,7 +144,7 @@ Indicators
 ────────────────────────────────────────────────────────────
   VirusTotal: 25
   Hybrid-Analysis: 80
-  YARA hits: 3
+  YARA hits: 2
   MalwareBazaar match: True
 
 Details
