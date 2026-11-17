@@ -12,33 +12,6 @@ Plain Python, no dependencies, nothing to install. Needs Python 3.10 or newer.
 python fwscan.py demo
 ```
 
-## Why I made this
-
-I had one day of firewall deny records and three questions to answer from them: what
-kind of scan happened, what did I have to assume about where it came from, and what
-can this log not tell me.
-
-The tempting version of this tool is a script that groups by source, counts failed
-attempts, and prints anything over twenty. That answers the first question badly and
-skips the other two completely.
-
-The problem is the third question. A deny log only records what got blocked, so the
-interesting part is not the noise it contains, it is the silence. An attack that
-worked on the first try leaves no line at all. A port that answered is missing from
-the log. Build a detector without admitting that and you ship something that looks
-confident and is blind.
-
-So the tool is built backwards from that. Every finding shows the evidence behind it.
-Every assumption about a source is printed next to the reason for it and the thing
-that would prove it wrong. And the detection gap is not described in a paragraph, it
-is measured: the same log goes through twelve threshold settings and the table shows
-what each one catches and what it wrongly flags.
-
-The other reason is practical. Real logs do not come with answer keys, so there was
-no way to tell whether any of this worked. I wrote a generator that plants four
-different attacks in a day of realistic noise and writes down exactly what it
-planted. Now every claim in this README can be checked by running one command.
-
 ## What a port scan is, and why it matters
 
 A port scan is someone trying lots of ports on a machine to see which ones are
