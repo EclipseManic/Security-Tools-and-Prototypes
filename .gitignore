@@ -1,0 +1,15 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# tool output
+out/
+*.report.json
+
+# editor / tooling
+.vscode/
+.idea/
+.oxcode-memory/

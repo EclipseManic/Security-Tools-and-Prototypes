@@ -1,0 +1,60 @@
+{
+  "seed": 7,
+  "synthetic": true,
+  "firewall": "fw01",
+  "window_utc": "2025-03-01T00:00:00Z .. 2025-03-02T00:00:00Z",
+  "attack_campaigns": [
+    {
+      "id": "A",
+      "pattern": "vertical_port_scan",
+      "sources": [
+        "203.0.113.45"
+      ],
+      "target": "10.0.4.12",
+      "events": 1023,
+      "detail": "SYN scan of ports 1-1024 in ~9 min; 443 absent from the deny log because it is permitted on the target"
+    },
+    {
+      "id": "B",
+      "pattern": "horizontal_sweep",
+      "sources": [
+        "198.51.100.77"
+      ],
+      "target": "10.0.4.0/24",
+      "events": 756,
+      "detail": "ports 445/139/3389 across 252 hosts in ~11 min"
+    },
+    {
+      "id": "C",
+      "pattern": "distributed_low_and_slow",
+      "sources": [
+        "192.0.2.11",
+        "192.0.2.12",
+        "192.0.2.13",
+        "192.0.2.14",
+        "192.0.2.15",
+        "192.0.2.16"
+      ],
+      "target": "10.0.4.31-34",
+      "events": 48,
+      "detail": "6 sources, 8 denies each, converging on port 22 all day"
+    },
+    {
+      "id": "D",
+      "pattern": "slow_port_scan",
+      "sources": [
+        "203.0.113.90"
+      ],
+      "target": "10.0.4.12",
+      "events": 40,
+      "detail": "40 ports, one every 33 min: invisible to any 15-min window"
+    }
+  ],
+  "benign_sources": [
+    "10.0.4.50",
+    "10.0.4.21"
+  ],
+  "event_count": 2812,
+  "note": "Ground truth is known only because this log is synthetic. Do not treat the scores as real-world accuracy.",
+  "log_path": "data\\deny.log"
+}

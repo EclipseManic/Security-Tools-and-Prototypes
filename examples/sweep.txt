@@ -1,0 +1,30 @@
+==============================================================================
+ THRESHOLD SWEEP - the detection gap, measured
+==============================================================================
+ Same log, different settings. 'caught' counts planted campaigns found;
+ 'fp' counts benign sources wrongly flagged.
+
+ Planted campaigns: A=vertical_port_scan, B=horizontal_sweep, C=distributed_low_and_slow, D=slow_port_scan
+
+  WIN  PORTS  HOSTS  BASELINE  FLAG  CAUGHT  RECALL  FP  MISSED / FALSE POSITIVES
+ -----------------------------------------------------------------------------
+    5     20      6       off     9       3     75%   1  missed=D fp=10.0.4.50
+    5     20      6        on    10       4    100%   1  missed=- fp=10.0.4.50
+    5     20     15       off     8       3     75%   0  missed=D fp=-
+    5     20     15        on     9       4    100%   0  missed=- fp=-
+   15     20      6       off     9       3     75%   1  missed=D fp=10.0.4.50
+   15     20      6        on    10       4    100%   1  missed=- fp=10.0.4.50
+   15     20     15       off     8       3     75%   0  missed=D fp=-
+   15     20     15        on     9       4    100%   0  missed=- fp=-
+   60     20      6       off     9       3     75%   1  missed=D fp=10.0.4.50
+   60     20      6        on    10       4    100%   1  missed=- fp=10.0.4.50
+   60     20     15       off     8       3     75%   0  missed=D fp=-
+   60     20     15        on     9       4    100%   0  missed=- fp=-
+
+ Window size changed nothing here: the fast campaigns breach any window
+ of 5 min or more, and the paced one breaches none of them. The levers
+ that actually move the result are the host threshold and the baseline
+ rule - which is the point.
+
+ Read it as a curve, not a scoreboard: every row that catches more also
+ invents more, and no single row catches everything.
