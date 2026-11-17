@@ -12,6 +12,33 @@ Plain Python, no dependencies, nothing to install. Needs Python 3.10 or newer.
 python fwscan.py demo
 ```
 
+## Why I made this
+
+I had one day of firewall deny records and three questions to answer from them: what
+kind of scan happened, what did I have to assume about where it came from, and what
+can this log not tell me.
+
+The tempting version of this tool is a script that groups by source, counts failed
+attempts, and prints anything over twenty. That answers the first question badly and
+skips the other two completely.
+
+The problem is the third question. A deny log only records what got blocked, so the
+interesting part is not the noise it contains, it is the silence. An attack that
+worked on the first try leaves no line at all. A port that answered is missing from
+the log. Build a detector without admitting that and you ship something that looks
+confident and is blind.
+
+So the tool is built backwards from that. Every finding shows the evidence behind it.
+Every assumption about a source is printed next to the reason for it and the thing
+that would prove it wrong. And the detection gap is not described in a paragraph, it
+is measured: the same log goes through twelve threshold settings and the table shows
+what each one catches and what it wrongly flags.
+
+The other reason is practical. Real logs do not come with answer keys, so there was
+no way to tell whether any of this worked. I wrote a generator that plants four
+different attacks in a day of realistic noise and writes down exactly what it
+planted. Now every claim in this README can be checked by running one command.
+
 ## What a port scan is, and why it matters
 
 A port scan is someone trying lots of ports on a machine to see which ones are
@@ -160,6 +187,100 @@ Each one comes with what was actually seen, why it matters, and what to change t
 close it. They are not disclaimers, they are a to-do list for whoever owns the
 firewall.
 
+## Commands
+
+Four commands. `demo` is the tour, the other three are the real ones. Every command
+takes `--help`.
+
+### demo
+
+```
+python fwscan.py demo
+```
+
+Generates a day of sample logs, analyses it, and prints the sweep. Nothing to prepare
+first. With the same seed it writes the same day back, so running it twice does not
+change the repo.
+
+`--dir` where the sample files go, default `data`. `--seed` which day, default 7.
+`--year` the year used for syslog timestamps.
+
+### generate
+
+```
+python fwscan.py generate --out data/deny.log --truth data/truth.json
+```
+
+Writes a sample log and the answer key that says what was planted in it.
+
+`--out` where the log goes, default `data/deny.log`. `--truth` where the answer key
+goes, default `data/truth.json`; pass `--truth ""` if you do not want one. `--seed`
+picks the day. `--no-attacks` writes only the innocent traffic, which is the honest
+way to check for false positives, because a good run on that log finds nothing.
+
+### analyze
+
+The main command.
+
+```
+python fwscan.py analyze --log your.log
+python fwscan.py analyze --log data/deny.log --truth data/truth.json
+python fwscan.py analyze --log your.log --format json --out report.json
+```
+
+| flag | default | what it does |
+|---|---|---|
+| `--log` | required | the deny log to read |
+| `--truth` | none | answer key. Only meaningful on generated data, where it adds a scoring block |
+| `--format` | `text` | `text`, `json` or `markdown` |
+| `--out` | screen | write the report here instead of printing it |
+| `--window` | `15` | how many minutes count as "at once" |
+| `--min-ports` | `20` | distinct ports inside one window that trigger a scan finding |
+| `--min-hosts` | `15` | distinct hosts inside one window that trigger a sweep finding |
+| `--no-long-baseline` | off | turns the slow-scanner rule off. Run it once to watch the fourth campaign disappear |
+| `--fail-on-findings` | off | exit with code 3 if any high severity finding exists |
+| `--year` | `2025` | the year to assume when a syslog line has no year in it |
+
+### sweep
+
+```
+python fwscan.py sweep --log your.log
+python fwscan.py sweep --log data/deny.log --truth data/truth.json
+```
+
+Runs the same log through twelve settings and prints what each one caught and what it
+flagged by mistake. It varies the window (5, 15 and 60 minutes), the host threshold
+(6 and 15) and the slow rule (on and off). The port threshold stays at 20, because
+changing it moved nothing on this data and a table row that never changes is worse
+than no row at all.
+
+Takes the same `--log`, `--truth`, `--format`, `--out` and `--year` as `analyze`.
+Without a `--truth` file it still runs, it just cannot tell you which findings were
+real attacks, so the recall column stays empty. On a real log the useful columns are
+`FLAG` and `FP`.
+
+### Exit codes
+
+`0` ran and finished. `2` the log was missing or had no usable records, so nothing
+was analysed. `3` a high severity finding exists and you passed `--fail-on-findings`,
+which is how you put this in a script or a scheduled job.
+
+`python fwscan.py --version` prints the version.
+
+### Reading the report
+
+Five sections, in the order the questions were asked. One, a summary of what was read
+and what was found. Two, each finding in detail with its evidence, its reason and its
+reputation view. Three, the four assumptions with what breaks each one. Four, the
+seven gaps, each with what was seen, why it matters and what to change. Five, what to
+do next.
+
+If you passed `--truth`, a scoring block is appended saying which planted campaigns
+were detected and which were missed. That block is labelled synthetic, because it is.
+
+You can read both without running anything. `examples/report.txt` and
+`examples/sweep.txt` are real output from the sample log in this repo.
+
 ## Using it on your own log
 
 Three steps, in this order.
@@ -187,19 +308,9 @@ Do not block the source address on the strength of this alone. It might be a
 shared address for a whole office, a proxy, or a cloud range, and you would be
 blocking everyone behind it.
 
-### Options
-
-`--format json` or `--format markdown`, with `--out` to write a file. JSON is for
-feeding into something else, markdown for pasting into a ticket.
-
-`--window`, `--min-ports`, `--min-hosts` change the thresholds.
-
-`--no-long-baseline` turns the slow-scan rule off. Run it once just to watch the
-slow campaign vanish.
-
-`--fail-on-findings` makes it exit with code 3 when a high severity finding
-exists, so it can sit in a script. Exit code 2 means the log was missing or had
-no usable records.
+Every flag is listed under Commands above. The one worth trying first is
+`--no-long-baseline`, because watching the fourth campaign vanish from the sweep
+explains the whole point of the tool faster than reading about it.
 
 ## What it can't do
 
