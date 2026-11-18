@@ -92,8 +92,8 @@ python tool/log_triage.py -i sample_input/triage_sample.log --format json
 # Fail a CI job when high risk or worse is detected
 python tool/log_triage.py -i sample_input/triage_sample.log --fail-on high
 
-# Lower the brute-force threshold and widen the correlation window
-python tool/log_triage.py -i auth.log --brute-threshold 4 --window 900
+# Lower the brute-force threshold and broaden the correlation window
+python tool/log_triage.py -i auth.log --brute-threshold 4 --window 60
 
 # Custom watchlist, or disable watchlist matching entirely
 python tool/log_triage.py -i auth.log --watchlist my_watchlist.json
@@ -166,10 +166,10 @@ Colour is used only when stdout is a TTY and `--no-color`/`NO_COLOR` are absent.
 
 | Rule | Logic | Default threshold | MITRE ATT&CK |
 |---|---|---|---|
-| `brute_force` | Failed SSH logins clustered per source IP by inter-event gap; flags a successful login after the burst as critical | 5 failures / 600s | T1110, T1110.001, T1110.003 |
-| `http_scanning` | HTTP 4xx/5xx clustered per source IP; distinct paths and sensitive targets raise severity | 10 errors or 8 distinct paths / 600s | T1595, T1595.002, T1190 |
+| `brute_force` | Failed SSH logins clustered per source IP by inter-event gap; flags a successful login within 300s after the burst as critical | 5 failures / 20s | T1110, T1110.001, T1110.003 |
+| `http_scanning` | HTTP 4xx/5xx clustered per source IP; distinct paths and sensitive targets raise severity | 10 errors or 8 distinct paths / 20s | T1595, T1595.002, T1190 |
 | `sensitive_file_exposure` | HTTP 2xx returned for a sensitive path (`.env`, `.git`, backups, `.aws`, `.ssh`, admin panels, traversal) | any match | T1552.001, T1190 |
-| `port_scanning` | Firewall blocks clustered per source IP by distinct destination ports | 8 ports / 600s | T1046, T1595.001 |
+| `port_scanning` | Firewall blocks clustered per source IP by distinct destination ports | 8 ports / 20s | T1046, T1595.001 |
 | `scanner_user_agent` | User-agent matches sqlmap, Nikto, nmap, masscan, zgrab, Nuclei, gobuster, ffuf, etc. | any match | T1595, T1595.002 |
 | `watchlist_ip`, `watchlist_domain`, `watchlist_hash` | Extracted indicator matches the local JSON watchlist | any match | Rule-dependent |
 
@@ -192,11 +192,11 @@ Findings are sorted by severity, then first-seen time, and assigned stable IDs
 | `--format {both,json,md}` | `both` | Select output artifacts |
 | `--watchlist PATH` | `tool/watchlist.json` if present | Local JSON watchlist |
 | `--no-watchlist` | off | Disable watchlist matching |
-| `--window SECONDS` | `600` | Correlation window for clustering |
+| `--window SECONDS` | `20` | Correlation window for clustering |
 | `--brute-threshold N` | `5` | SSH failures per window |
 | `--scan-threshold N` | `10` | HTTP errors per window |
 | `--port-scan-threshold N` | `8` | Distinct blocked ports per window |
-| `--success-window SECONDS` | `1800` | Look-back for success after an SSH burst |
+| `--success-window SECONDS` | `300` | Look-back for success after an SSH burst |
 | `--assume-year YYYY` | current year | Year for year-less syslog timestamps |
 | `--max-bytes N` | `52,428,800` | Input size cap |
 | `--fail-on LEVEL` | off | Exit 1 at low/medium/high/critical overall risk |

@@ -58,11 +58,11 @@ def display_path(path: Path) -> str:
 
 @dataclass
 class Config:
-    window_seconds: int = 600
+    window_seconds: int = 20
     brute_threshold: int = 5
     scan_threshold: int = 10
     port_scan_threshold: int = 8
-    success_window_seconds: int = 1800
+    success_window_seconds: int = 300
     assume_year: int = field(default_factory=lambda: datetime.now().year)
     max_bytes: int = DEFAULT_MAX_BYTES
 

@@ -61,11 +61,11 @@ overwritten; the input is never written to.
 | `--format {both,json,md}` | `both` | Select output formats |
 | `--watchlist PATH` | `tool/watchlist.json` if present | Local JSON watchlist |
 | `--no-watchlist` | off | Disable watchlist matching |
-| `--window SECONDS` | `600` | Correlation window |
+| `--window SECONDS` | `20` | Correlation window |
 | `--brute-threshold N` | `5` | SSH failures per window |
 | `--scan-threshold N` | `10` | HTTP errors per window |
 | `--port-scan-threshold N` | `8` | Distinct blocked ports per window |
-| `--success-window SECONDS` | `1800` | Look-back for success after an SSH burst |
+| `--success-window SECONDS` | `300` | Look-back for success after an SSH burst |
 | `--assume-year YYYY` | current year | Year for year-less syslog timestamps |
 | `--max-bytes N` | 52,428,800 | Input size cap |
 | `--fail-on LEVEL` | off | Exit 1 if overall risk reaches low/medium/high/critical |

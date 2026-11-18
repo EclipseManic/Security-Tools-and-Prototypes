@@ -1,7 +1,7 @@
 # Log Triage Report
 
 **Tool:** LogTriage v1.0.0  
-**Generated (UTC):** 2026-11-18T09:13:13Z  
+**Generated (UTC):** 2026-11-18T11:31:37Z  
 **Input:** `sample_input/triage_sample.log` (11,934 bytes, 83 lines)  
 **SHA-256:** `577e7d1e1d5ed1dbe4ffac1bb29bf8a18c75a546c41c9164561ed57cad553e62`  
 **Watchlist:** `tool/watchlist.json` (3 indicators)  
@@ -322,10 +322,10 @@ None observed.
 
 | Rule | Logic | Default threshold |
 |---|---|---|
-| `brute_force` | Failed SSH logins clustered per source IP; optional successful login after the burst | 5 failures / 600s |
-| `http_scanning` | HTTP 4xx/5xx clustered per source IP, distinct paths and sensitive targets | 10 errors or 8 distinct paths / 600s |
+| `brute_force` | Failed SSH logins clustered per source IP; optional successful login after the burst | 5 failures / 20s |
+| `http_scanning` | HTTP 4xx/5xx clustered per source IP, distinct paths and sensitive targets | 10 errors or 8 distinct paths / 20s |
 | `sensitive_file_exposure` | HTTP 2xx response for a sensitive path | any match |
-| `port_scanning` | Firewall blocks clustered per source IP by distinct destination port | 8 ports / 600s |
+| `port_scanning` | Firewall blocks clustered per source IP by distinct destination port | 8 ports / 20s |
 | `scanner_user_agent` | User-agent matches a known offensive tool | any match |
 | `watchlist_*` | Extracted IOC matches the local JSON watchlist | any match |
 

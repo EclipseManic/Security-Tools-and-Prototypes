@@ -139,10 +139,10 @@ class TestDetectionEndToEnd(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             log_path = self._write_log(Path(tmp))
             config = Config(
-                window_seconds=600,
+                window_seconds=20,
                 brute_threshold=5,
                 scan_threshold=10,
-                success_window_seconds=600,
+                success_window_seconds=300,
                 assume_year=2026,
             )
             events, line_count, nonblank, _size, sha256 = ingest_file(

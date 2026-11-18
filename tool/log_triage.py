@@ -189,16 +189,16 @@ def build_parser() -> argparse.ArgumentParser:
                         help="JSON watchlist (default: tool/watchlist.json if present)")
     parser.add_argument("--no-watchlist", action="store_true",
                         help="disable watchlist matching")
-    parser.add_argument("--window", type=int, default=600,
-                        help="correlation window in seconds (default: 600)")
+    parser.add_argument("--window", type=int, default=20,
+                        help="correlation window in seconds (default: 20)")
     parser.add_argument("--brute-threshold", type=int, default=5,
                         help="failed SSH logins per window (default: 5)")
     parser.add_argument("--scan-threshold", type=int, default=10,
                         help="HTTP errors per window (default: 10)")
     parser.add_argument("--port-scan-threshold", type=int, default=8,
                         help="distinct blocked ports per window (default: 8)")
-    parser.add_argument("--success-window", type=int, default=1800,
-                        help="seconds after a burst to look for success (default: 1800)")
+    parser.add_argument("--success-window", type=int, default=300,
+                        help="seconds after a burst to look for success (default: 300)")
     parser.add_argument("--assume-year", type=int, default=datetime.now().year,
                         help="year for syslog timestamps without a year")
     parser.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES,

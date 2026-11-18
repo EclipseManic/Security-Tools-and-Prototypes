@@ -35,8 +35,9 @@ analyst in control of validation.
 - Text logs: OpenSSH auth logs, Apache/Nginx combined access logs, dnsmasq query
   logs, UFW/iptables block lines, and ISO-8601 endpoint/EDR lines.
 - Optional local JSON watchlist (`tool/watchlist.json` by default).
-- CLI thresholds with safe defaults (10-minute correlation window, 5 failed SSH
-  logins, 10 HTTP errors, 8 distinct blocked ports).
+- CLI thresholds with safe defaults (20-second correlation window, 5 failed SSH
+  logins, 10 HTTP errors, 8 distinct blocked ports; a successful login within
+  5 minutes of a burst is treated as critical).
 
 **Outputs**
 
