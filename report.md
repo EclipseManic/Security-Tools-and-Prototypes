@@ -35,6 +35,8 @@ analyst in control of validation.
 - Text logs: OpenSSH auth logs, Apache/Nginx combined access logs, dnsmasq query
   logs, UFW/iptables block lines, and ISO-8601 endpoint/EDR lines.
 - Optional local JSON watchlist (`tool/watchlist.json` by default).
+- Optional INI configuration file (`tool/tool.config`) covering every runtime
+  flag; command-line flags override file values.
 - CLI thresholds with safe defaults (20-second correlation window, 5 failed SSH
   logins, 10 HTTP errors, 8 distinct blocked ports; a successful login within
   5 minutes of a burst is treated as critical).
@@ -50,6 +52,9 @@ analyst in control of validation.
 **Logic / flow**
 
 ```text
+tool/tool.config + CLI flags
+   |
+   v
 input log
    |
    v
@@ -99,6 +104,11 @@ python tool/log_triage.py --input sample_input/triage_sample.log --out-dir sampl
 Expected console result: `CRITICAL (100/100)`, 9 findings, with JSON and
 Markdown written to `sample_output/`.
 
+Runtime defaults live in `tool/tool.config` (INI). Edit that file to change
+detection thresholds, output paths, watchlist behaviour, and reporting without
+touching code; command-line flags override it. Use `--config PATH` to load a
+different configuration file.
+
 Useful variants:
 
 ```bash
@@ -120,7 +130,7 @@ mixed log with five injected incidents).
 - JSON structure and first finding: ![JSON output](evidence/03_json_output.png)
 - Repro steps and committed artifacts are in [README.md](README.md) and
   [sample_output/](sample_output/).
-- Automated checks: 13 tests pass with `python -m unittest discover -s tool -p "test_*.py" -v`.
+- Automated checks: 18 tests pass with `python -m unittest discover -s tool -p "test_*.py" -v`.
 
 ## 7. Results
 

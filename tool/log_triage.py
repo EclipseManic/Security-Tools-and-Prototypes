@@ -16,14 +16,13 @@ import json
 import os
 import sys
 from collections import Counter
-from datetime import datetime
 from pathlib import Path
 
+from triage_config import resolve_settings
 from triage_detect import analyze, load_watchlist
 from triage_parse import ingest_file
 from triage_report import render_markdown, to_dict
 from triage_types import (
-    DEFAULT_MAX_BYTES,
     SEVERITY_RANK,
     TOOL_NAME,
     TOOL_VERSION,
@@ -65,11 +64,11 @@ def _human_size(size: int) -> str:
     return f"{size / (1024 * 1024):.2f} MiB"
 
 
-def _watchlist_path(args: argparse.Namespace) -> Path | None:
-    if args.no_watchlist:
+def _watchlist_path(settings: dict) -> Path | None:
+    if settings["no_watchlist"]:
         return None
-    if args.watchlist is not None:
-        return args.watchlist
+    if settings["watchlist"] is not None:
+        return Path(settings["watchlist"])
     default = Path(__file__).with_name("watchlist.json")
     return default if default.exists() else None
 
@@ -174,41 +173,49 @@ def build_parser() -> argparse.ArgumentParser:
             "  python tool/log_triage.py --input sample_input/triage_sample.log\n"
             "  python tool/log_triage.py -i auth.log -o reports --format json\n"
             "  python tool/log_triage.py -i auth.log --fail-on high\n\n"
-            "Exit codes: 0 success, 1 --fail-on threshold reached, 2 input error."
+            "Config:\n"
+            "  Defaults load from tool.config next to this script when present.\n"
+            "  Command-line flags override the file. Relative paths use the\n"
+            "  current working directory.\n\n"
+            "Exit codes: 0 success, 1 --fail-on threshold reached, "
+            "2 input/config error."
         ),
     )
-    parser.add_argument("-i", "--input", type=Path, required=True,
-                        help="input log file (text)")
-    parser.add_argument("-o", "--out-dir", type=Path, default=Path("sample_output"),
+    parser.add_argument("-i", "--input", type=Path, default=None,
+                        help="input log file (or set input in tool.config)")
+    parser.add_argument("--config", type=Path, default=None,
+                        help="INI config file (default: tool/tool.config if present)")
+    parser.add_argument("-o", "--out-dir", type=Path, default=None,
                         help="output directory (default: sample_output)")
-    parser.add_argument("--output-prefix", default="triage",
+    parser.add_argument("--output-prefix", default=None,
                         help="output filename prefix (default: triage)")
-    parser.add_argument("--format", choices=("both", "json", "md"), default="both",
+    parser.add_argument("--format", choices=("both", "json", "md"), default=None,
                         help="output format (default: both)")
     parser.add_argument("--watchlist", type=Path, default=None,
                         help="JSON watchlist (default: tool/watchlist.json if present)")
-    parser.add_argument("--no-watchlist", action="store_true",
+    parser.add_argument("--no-watchlist", action="store_true", default=None,
                         help="disable watchlist matching")
-    parser.add_argument("--window", type=int, default=20,
+    parser.add_argument("--window", dest="window_seconds", type=int, default=None,
                         help="correlation window in seconds (default: 20)")
-    parser.add_argument("--brute-threshold", type=int, default=5,
+    parser.add_argument("--brute-threshold", type=int, default=None,
                         help="failed SSH logins per window (default: 5)")
-    parser.add_argument("--scan-threshold", type=int, default=10,
+    parser.add_argument("--scan-threshold", type=int, default=None,
                         help="HTTP errors per window (default: 10)")
-    parser.add_argument("--port-scan-threshold", type=int, default=8,
+    parser.add_argument("--port-scan-threshold", type=int, default=None,
                         help="distinct blocked ports per window (default: 8)")
-    parser.add_argument("--success-window", type=int, default=300,
+    parser.add_argument("--success-window", dest="success_window_seconds",
+                        type=int, default=None,
                         help="seconds after a burst to look for success (default: 300)")
-    parser.add_argument("--assume-year", type=int, default=datetime.now().year,
+    parser.add_argument("--assume-year", type=int, default=None,
                         help="year for syslog timestamps without a year")
-    parser.add_argument("--max-bytes", type=int, default=DEFAULT_MAX_BYTES,
-                        help=f"maximum input size (default: {DEFAULT_MAX_BYTES})")
+    parser.add_argument("--max-bytes", type=int, default=None,
+                        help="maximum input size (default: 52428800)")
     parser.add_argument("--fail-on", choices=("low", "medium", "high", "critical"),
                         default=None,
                         help="exit 1 if the overall risk reaches this level")
-    parser.add_argument("--quiet", action="store_true",
+    parser.add_argument("--quiet", action="store_true", default=None,
                         help="suppress the console summary")
-    parser.add_argument("--no-color", action="store_true",
+    parser.add_argument("--no-color", action="store_true", default=None,
                         help="disable ANSI colour")
     parser.add_argument("--version", action="version",
                         version=f"%(prog)s {TOOL_VERSION}")
@@ -216,25 +223,33 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def run(args: argparse.Namespace) -> int:
+    settings, _config_path = resolve_settings(vars(args), args.config)
+
     config = Config(
-        window_seconds=args.window,
-        brute_threshold=args.brute_threshold,
-        scan_threshold=args.scan_threshold,
-        port_scan_threshold=args.port_scan_threshold,
-        success_window_seconds=args.success_window,
-        assume_year=args.assume_year,
-        max_bytes=args.max_bytes,
+        window_seconds=settings["window_seconds"],
+        brute_threshold=settings["brute_threshold"],
+        scan_threshold=settings["scan_threshold"],
+        port_scan_threshold=settings["port_scan_threshold"],
+        success_window_seconds=settings["success_window_seconds"],
+        assume_year=settings["assume_year"],
+        max_bytes=settings["max_bytes"],
     )
     config.validate()
 
-    events, line_count, nonblank, size, sha256 = ingest_file(args.input, config)
-    watchlist_path = _watchlist_path(args)
+    if not settings["input"]:
+        raise ValueError(
+            "no input file: pass --input or set 'input' in tool.config"
+        )
+    input_path = Path(settings["input"])
+
+    events, line_count, nonblank, size, sha256 = ingest_file(input_path, config)
+    watchlist_path = _watchlist_path(settings)
     watchlist = load_watchlist(watchlist_path)
     findings, iocs, score, level, stats = analyze(events, watchlist, config)
 
     result = TriageResult(
-        input_path=args.input,
-        display_path=display_path(args.input),
+        input_path=input_path,
+        display_path=display_path(input_path),
         size_bytes=size,
         sha256=sha256,
         line_count=line_count,
@@ -252,13 +267,18 @@ def run(args: argparse.Namespace) -> int:
         generated_at=utc_now(),
         stats=stats,
     )
-    written = _write_outputs(result, args.out_dir, args.output_prefix, args.format)
-    color = _use_color(args.no_color)
-    if not args.quiet:
+    written = _write_outputs(
+        result,
+        Path(settings["out_dir"]),
+        settings["output_prefix"],
+        settings["format"],
+    )
+    color = _use_color(settings["no_color"])
+    if not settings["quiet"]:
         _print_summary(result, written, color)
 
-    if args.fail_on:
-        threshold = SEVERITY_RANK[args.fail_on]
+    if settings["fail_on"]:
+        threshold = SEVERITY_RANK[settings["fail_on"]]
         if SEVERITY_RANK.get(result.risk_level, -1) >= threshold:
             return 1
     return 0

@@ -55,7 +55,8 @@ overwritten; the input is never written to.
 
 | Option | Default | Purpose |
 |---|---|---|
-| `-i, --input PATH` | required | Text log to triage |
+| `-i, --input PATH` | required (or `input` in config) | Text log to triage |
+| `--config PATH` | `tool/tool.config` if present | INI configuration file |
 | `-o, --out-dir PATH` | `sample_output` | Output directory (created if needed) |
 | `--output-prefix NAME` | `triage` | Output basename (`triage.json`, `triage.md`) |
 | `--format {both,json,md}` | `both` | Select output formats |
@@ -75,6 +76,41 @@ overwritten; the input is never written to.
 
 Exit codes: `0` success, `1` `--fail-on` threshold reached, `2` input/config
 error. Reports are still written before the `--fail-on` exit.
+
+## Configuration file
+
+The optional INI file **`tool/tool.config`** is loaded automatically when it
+sits next to `log_triage.py`. Every runtime option can be set there; explicit
+CLI flags override it. Relative paths resolve from the current working
+directory. Unknown sections/keys, invalid types, and invalid enum values exit
+with code 2.
+
+| Section | Keys | Maps to |
+|---|---|---|
+| `[detection]` | `window_seconds`, `brute_threshold`, `scan_threshold`, `port_scan_threshold`, `success_window_seconds` | `--window`, `--brute-threshold`, `--scan-threshold`, `--port-scan-threshold`, `--success-window` |
+| `[limits]` | `assume_year`, `max_bytes` | `--assume-year`, `--max-bytes` |
+| `[output]` | `out_dir`, `output_prefix`, `format` | `--out-dir`, `--output-prefix`, `--format` |
+| `[run]` | `input`, `watchlist`, `no_watchlist`, `fail_on`, `quiet`, `no_color` | `--input`, `--watchlist`, `--no-watchlist`, `--fail-on`, `--quiet`, `--no-color` |
+
+Example:
+
+```ini
+[detection]
+window_seconds = 20
+brute_threshold = 5
+
+[output]
+out_dir = sample_output
+format = both
+
+[run]
+quiet = false
+no_color = false
+```
+
+Use `--config PATH` to load a different file. The committed
+`tool/tool.config` documents every key, including optional entries that are
+commented out by default.
 
 ## Supported input formats
 
@@ -173,8 +209,8 @@ python -m unittest discover -s tool -p "test_*.py" -v
 ```
 
 The suite covers IOC extraction, timestamp/SSH/HTTP/firewall parsing, detection
-thresholds, watchlist loading, JSON serialisation, Markdown rendering, and a
-full CLI run on the committed sample.
+thresholds, watchlist loading, configuration loading and precedence, JSON
+serialisation, Markdown rendering, and a full CLI run on the committed sample.
 
 ## Assumptions and limitations
 
@@ -191,6 +227,8 @@ full CLI run on the committed sample.
 ```text
 tool/
   log_triage.py       CLI entry point
+  triage_config.py    INI config loading and validation
+  tool.config         editable runtime configuration
   triage_types.py     dataclasses and constants
   triage_parse.py     ingestion, parsing, IOC extraction
   triage_detect.py    watchlist, detectors, scoring

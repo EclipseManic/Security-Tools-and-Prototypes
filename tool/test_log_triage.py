@@ -5,6 +5,8 @@ Run from the repository root:
 """
 from __future__ import annotations
 
+import contextlib
+import io
 import json
 import sys
 import tempfile
@@ -236,6 +238,115 @@ class TestCLI(unittest.TestCase):
             payload = json.loads((Path(tmp) / "triage.json").read_text(encoding="utf-8"))
             self.assertGreater(payload["summary"]["findings_total"], 0)
             self.assertGreater(payload["summary"]["risk_score"], 0)
+
+
+class TestConfigFile(unittest.TestCase):
+    def _sample(self) -> Path:
+        sample = (
+            Path(__file__).resolve().parent.parent
+            / "sample_input"
+            / "triage_sample.log"
+        )
+        if not sample.exists():
+            self.skipTest("sample log not generated")
+        return sample
+
+    def _write(self, directory: Path, text: str) -> Path:
+        path = directory / "tool.config"
+        path.write_text(text, encoding="utf-8", newline="\n")
+        return path
+
+    def test_config_file_sets_detection_and_output(self) -> None:
+        sample = self._sample()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = self._write(
+                root,
+                "[detection]\n"
+                "window_seconds = 45\n"
+                "brute_threshold = 3\n\n"
+                "[output]\n"
+                "format = json\n",
+            )
+            exit_code = log_triage.main([
+                "--config", str(config),
+                "--input", str(sample),
+                "--out-dir", str(root / "out"),
+                "--quiet",
+                "--no-color",
+            ])
+            self.assertEqual(exit_code, 0)
+            payload = json.loads(
+                (root / "out" / "triage.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(payload["config"]["window_seconds"], 45)
+            self.assertEqual(payload["config"]["brute_threshold"], 3)
+            self.assertFalse((root / "out" / "triage.md").exists())
+
+    def test_cli_overrides_config(self) -> None:
+        sample = self._sample()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = self._write(root, "[detection]\nwindow_seconds = 45\n")
+            exit_code = log_triage.main([
+                "--config", str(config),
+                "--input", str(sample),
+                "--out-dir", str(root / "out"),
+                "--window", "7",
+                "--quiet",
+                "--no-color",
+            ])
+            self.assertEqual(exit_code, 0)
+            payload = json.loads(
+                (root / "out" / "triage.json").read_text(encoding="utf-8")
+            )
+            self.assertEqual(payload["config"]["window_seconds"], 7)
+
+    def test_config_can_supply_input_and_output(self) -> None:
+        sample = self._sample()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            out_dir = root / "out"
+            config = self._write(
+                root,
+                "[run]\n"
+                f"input = {sample.as_posix()}\n"
+                "quiet = true\n"
+                "no_color = true\n\n"
+                "[output]\n"
+                f"out_dir = {out_dir.as_posix()}\n"
+                "format = json\n",
+            )
+            exit_code = log_triage.main(["--config", str(config)])
+            self.assertEqual(exit_code, 0)
+            self.assertTrue((out_dir / "triage.json").exists())
+
+    def test_unknown_key_is_rejected(self) -> None:
+        sample = self._sample()
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = self._write(
+                root,
+                "[detection]\nwindow_seconds = 10\nbanana = 1\n",
+            )
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                exit_code = log_triage.main([
+                    "--config", str(config),
+                    "--input", str(sample),
+                    "--out-dir", str(root / "out"),
+                    "--quiet",
+                ])
+            self.assertEqual(exit_code, 2)
+            self.assertIn("unknown key", stderr.getvalue())
+
+    def test_missing_input_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            config = self._write(root, "[detection]\nwindow_seconds = 10\n")
+            with contextlib.redirect_stderr(io.StringIO()) as stderr:
+                exit_code = log_triage.main(["--config", str(config), "--quiet"])
+            self.assertEqual(exit_code, 2)
+            self.assertIn("no input file", stderr.getvalue())
 
 
 if __name__ == "__main__":

@@ -7,6 +7,7 @@
 - **Repo map:**
   - [Report](report.md)
   - [Tool](tool/)
+  - [Config](tool/tool.config)
   - [Sample input](sample_input/)
   - [Sample output](sample_output/)
   - [Evidence](evidence/)
@@ -75,13 +76,16 @@ Outputs
   Markdown : sample_output/triage.md
 ```
 
+Defaults come from `tool/tool.config`. Edit that file to change thresholds,
+output paths, or run defaults; CLI flags still override the file.
+
 Run the tests:
 
 ```bash
 python -m unittest discover -s tool -p "test_*.py" -v
 ```
 
-Expected result: `Ran 13 tests ... OK`.
+Expected result: `Ran 18 tests ... OK`.
 
 Useful variants:
 
@@ -186,7 +190,8 @@ Findings are sorted by severity, then first-seen time, and assigned stable IDs
 
 | Option | Default | Purpose |
 |---|---|---|
-| `-i, --input PATH` | required | Text log to triage |
+| `-i, --input PATH` | required (or `input` in config) | Text log to triage |
+| `--config PATH` | `tool/tool.config` if present | INI configuration file |
 | `-o, --out-dir PATH` | `sample_output` | Output directory (created if needed) |
 | `--output-prefix NAME` | `triage` | Output basename (`triage.json`, `triage.md`) |
 | `--format {both,json,md}` | `both` | Select output artifacts |
@@ -205,6 +210,57 @@ Findings are sorted by severity, then first-seen time, and assigned stable IDs
 | `--version` | - | Print version |
 
 Run `python tool/log_triage.py --help` for the full, current list.
+
+## Configuration
+
+Runtime defaults live in **`tool/tool.config`**, an INI file loaded
+automatically when it sits next to `log_triage.py`. Edit it to tune detection,
+output, and run behaviour without changing code or passing flags every time.
+
+Precedence: **command-line flags > `tool.config` > built-in defaults**.
+Use `--config PATH` to load a different file. Relative paths in the file are
+resolved from the directory you run the tool in. Unknown sections, unknown
+keys, and invalid values are rejected with exit code 2, so a typo cannot
+silently weaken detection.
+
+| Section | Key | Maps to flag | Built-in default |
+|---|---|---|---|
+| `[detection]` | `window_seconds` | `--window` | `20` |
+| `[detection]` | `brute_threshold` | `--brute-threshold` | `5` |
+| `[detection]` | `scan_threshold` | `--scan-threshold` | `10` |
+| `[detection]` | `port_scan_threshold` | `--port-scan-threshold` | `8` |
+| `[detection]` | `success_window_seconds` | `--success-window` | `300` |
+| `[limits]` | `assume_year` | `--assume-year` | current year |
+| `[limits]` | `max_bytes` | `--max-bytes` | `52428800` |
+| `[output]` | `out_dir` | `--out-dir` | `sample_output` |
+| `[output]` | `output_prefix` | `--output-prefix` | `triage` |
+| `[output]` | `format` | `--format` | `both` |
+| `[run]` | `input` | `--input` | none (CLI required) |
+| `[run]` | `watchlist` | `--watchlist` | auto-detect |
+| `[run]` | `no_watchlist` | `--no-watchlist` | `false` |
+| `[run]` | `fail_on` | `--fail-on` | none |
+| `[run]` | `quiet` | `--quiet` | `false` |
+| `[run]` | `no_color` | `--no-color` | `false` |
+
+Example file:
+
+```ini
+[detection]
+window_seconds = 20
+brute_threshold = 5
+
+[output]
+out_dir = sample_output
+format = both
+
+[run]
+quiet = false
+no_color = false
+```
+
+The committed `tool/tool.config` documents every key with comments. Optional
+entries (`input`, `watchlist`, `assume_year`, `fail_on`) are commented out by
+default so the tool does not silently reuse a stale target file.
 
 ## Watchlist
 
@@ -310,6 +366,8 @@ Coverage includes:
 - Watchlist loading, normalization, and lookup.
 - JSON serialization and Markdown rendering, including HTML escaping.
 - A full CLI run against the committed sample, asserting both output files.
+- Configuration loading, CLI-over-config precedence, config-supplied input and
+  output, and rejection of unknown keys.
 
 ## Repository Layout
 
@@ -319,6 +377,8 @@ Coverage includes:
 |-- report.md                  1-page mission report with evidence links
 |-- tool/
 |   |-- log_triage.py          CLI entry point and output writing
+|   |-- triage_config.py       INI config loading and validation
+|   |-- tool.config            Editable runtime configuration
 |   |-- triage_types.py        Dataclasses, constants, risk scoring
 |   |-- triage_parse.py        Ingestion, parsing, IOC extraction
 |   |-- triage_detect.py       Watchlist, detectors, orchestration
