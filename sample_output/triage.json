@@ -1,0 +1,1291 @@
+{
+  "schema_version": "1.0",
+  "tool": {
+    "name": "LogTriage",
+    "version": "1.0.0"
+  },
+  "generated_at": "2026-11-18T09:13:13Z",
+  "input": {
+    "path": "sample_input/triage_sample.log",
+    "sha256": "577e7d1e1d5ed1dbe4ffac1bb29bf8a18c75a546c41c9164561ed57cad553e62",
+    "size_bytes": 11934,
+    "lines": 83,
+    "nonblank_lines": 83,
+    "parsed_events": 83
+  },
+  "config": {
+    "window_seconds": 600,
+    "brute_threshold": 5,
+    "scan_threshold": 10,
+    "port_scan_threshold": 8,
+    "success_window_seconds": 1800,
+    "assume_year": 2026,
+    "max_bytes": 52428800
+  },
+  "watchlist": {
+    "path": "tool/watchlist.json",
+    "indicator_count": 3,
+    "categories": {
+      "ips": 1,
+      "domains": 1,
+      "hashes": 1
+    },
+    "warnings": []
+  },
+  "summary": {
+    "risk_score": 100,
+    "risk_level": "critical",
+    "findings_total": 9,
+    "severity_counts": {
+      "critical": 2,
+      "high": 5,
+      "medium": 2,
+      "low": 0,
+      "info": 0
+    },
+    "ioc_counts": {
+      "ipv4_external": 7,
+      "ipv4_internal": 9,
+      "ipv4_reserved": 0,
+      "domains": 4,
+      "hashes": 3,
+      "urls": 0,
+      "watchlist_hits": 3
+    },
+    "unparsed_lines": 0
+  },
+  "findings": [
+    {
+      "id": "F-001",
+      "rule": "brute_force",
+      "title": "SSH brute force succeeded for user 'deploy' from 203.0.113.45",
+      "severity": "critical",
+      "confidence": "high",
+      "source_ip": "203.0.113.45",
+      "first_seen": "2026-03-12T03:10:00Z",
+      "last_seen": "2026-03-12T03:12:24Z",
+      "count": 9,
+      "description": "9 failed SSH authentications from 203.0.113.45 between 2026-03-12T03:10:00Z and 2026-03-12T03:12:24Z were followed by a successful login as 'deploy' at 2026-03-12T03:13:40Z. This is consistent with a successful password-guessing or password-spraying attack.",
+      "recommendation": "Treat the account and host as potentially compromised: terminate sessions, rotate credentials and keys, review post-login commands, and block the source address.",
+      "mitre": [
+        "T1110",
+        "T1110.001",
+        "T1110.003"
+      ],
+      "evidence_lines": [
+        27,
+        29,
+        30,
+        32,
+        33,
+        34,
+        36,
+        37,
+        39
+      ],
+      "details": {
+        "attempts": 9,
+        "distinct_usernames": 7,
+        "usernames": [
+          "admin",
+          "deploy",
+          "oracle",
+          "postgres",
+          "root",
+          "test",
+          "ubuntu"
+        ],
+        "pattern": "password_spraying",
+        "window_seconds": 600,
+        "observed_span_seconds": 144,
+        "attempts_per_minute": 3.75,
+        "success_after_failures": true,
+        "success_user": "deploy",
+        "success_time": "2026-03-12T03:13:40Z"
+      }
+    },
+    {
+      "id": "F-002",
+      "rule": "sensitive_file_exposure",
+      "title": "Sensitive path returned HTTP 2xx to 198.51.100.77",
+      "severity": "critical",
+      "confidence": "medium",
+      "source_ip": "198.51.100.77",
+      "first_seen": "2026-03-12T03:20:16Z",
+      "last_seen": "2026-03-12T03:20:16Z",
+      "count": 1,
+      "description": "1 successful HTTP response returned for sensitive paths requested from 198.51.100.77: /backup.sql. A 2xx status does not prove that useful content was served (for example, an SPA fallback can return 200), so response bodies should be checked immediately.",
+      "recommendation": "Verify the response body and access logs, remove or restrict the exposed files, rotate any credentials they contained, and block the source address.",
+      "mitre": [
+        "T1552.001",
+        "T1190"
+      ],
+      "evidence_lines": [
+        50
+      ],
+      "details": {
+        "exposed_paths": [
+          {
+            "path": "/backup.sql",
+            "status": 200,
+            "labels": [
+              "database_dump"
+            ],
+            "line": 50
+          }
+        ]
+      }
+    },
+    {
+      "id": "F-003",
+      "rule": "http_scanning",
+      "title": "Web scanning from 198.51.100.77 (13 paths, 13 errors)",
+      "severity": "high",
+      "confidence": "high",
+      "source_ip": "198.51.100.77",
+      "first_seen": "2026-03-12T03:20:00Z",
+      "last_seen": "2026-03-12T03:21:44Z",
+      "count": 13,
+      "description": "13 HTTP 4xx/5xx responses were returned to 198.51.100.77 between 2026-03-12T03:20:00Z and 2026-03-12T03:21:44Z across 13 distinct paths. Sensitive targets requested: admin_panel, aws_credentials, cgi_bin, env_file, git_metadata, path_traversal, phpunit_rce, server_status, ssh_private_key. The pattern is consistent with automated content discovery or vulnerability scanning.",
+      "recommendation": "Block the source at the edge, review web logs for successful responses on the same paths, remove exposed files, and keep the web server and plugins patched.",
+      "mitre": [
+        "T1595",
+        "T1595.002",
+        "T1190"
+      ],
+      "evidence_lines": [
+        48,
+        49,
+        51,
+        52,
+        53,
+        54,
+        55,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61
+      ],
+      "details": {
+        "distinct_paths": 13,
+        "paths": [
+          "/../../etc/passwd",
+          "/.aws/credentials",
+          "/.env",
+          "/.git/config",
+          "/.ssh/id_rsa",
+          "/admin",
+          "/cgi-bin/test.cgi",
+          "/phpmyadmin/",
+          "/server-status",
+          "/shell.php",
+          "/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php",
+          "/wp-login.php",
+          "/xmlrpc.php"
+        ],
+        "status_counts": {
+          "403": 3,
+          "404": 9,
+          "400": 1
+        },
+        "sensitive_labels": [
+          "admin_panel",
+          "aws_credentials",
+          "cgi_bin",
+          "env_file",
+          "git_metadata",
+          "path_traversal",
+          "phpunit_rce",
+          "server_status",
+          "ssh_private_key"
+        ],
+        "sensitive_paths": [
+          {
+            "path": "/.env",
+            "status": 403,
+            "labels": [
+              "env_file"
+            ],
+            "line": 48
+          },
+          {
+            "path": "/.git/config",
+            "status": 404,
+            "labels": [
+              "git_metadata"
+            ],
+            "line": 49
+          },
+          {
+            "path": "/wp-login.php",
+            "status": 404,
+            "labels": [
+              "admin_panel"
+            ],
+            "line": 51
+          },
+          {
+            "path": "/phpmyadmin/",
+            "status": 404,
+            "labels": [
+              "admin_panel"
+            ],
+            "line": 52
+          },
+          {
+            "path": "/admin",
+            "status": 403,
+            "labels": [
+              "admin_panel"
+            ],
+            "line": 53
+          },
+          {
+            "path": "/server-status",
+            "status": 403,
+            "labels": [
+              "server_status"
+            ],
+            "line": 54
+          },
+          {
+            "path": "/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php",
+            "status": 404,
+            "labels": [
+              "phpunit_rce"
+            ],
+            "line": 55
+          },
+          {
+            "path": "/cgi-bin/test.cgi",
+            "status": 404,
+            "labels": [
+              "cgi_bin"
+            ],
+            "line": 56
+          },
+          {
+            "path": "/xmlrpc.php",
+            "status": 404,
+            "labels": [
+              "admin_panel"
+            ],
+            "line": 57
+          },
+          {
+            "path": "/.aws/credentials",
+            "status": 404,
+            "labels": [
+              "aws_credentials"
+            ],
+            "line": 58
+          },
+          {
+            "path": "/../../etc/passwd",
+            "status": 400,
+            "labels": [
+              "path_traversal"
+            ],
+            "line": 59
+          },
+          {
+            "path": "/.ssh/id_rsa",
+            "status": 404,
+            "labels": [
+              "ssh_private_key"
+            ],
+            "line": 61
+          }
+        ],
+        "user_agents": [
+          "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)",
+          "sqlmap/1.8.3#stable"
+        ]
+      }
+    },
+    {
+      "id": "F-004",
+      "rule": "port_scanning",
+      "title": "Port scan from 192.0.2.88 (12 destination ports)",
+      "severity": "high",
+      "confidence": "high",
+      "source_ip": "192.0.2.88",
+      "first_seen": "2026-03-12T03:25:00Z",
+      "last_seen": "2026-03-12T03:25:44Z",
+      "count": 12,
+      "description": "12 firewall blocks for 192.0.2.88 between 2026-03-12T03:25:00Z and 2026-03-12T03:25:44Z touched 12 distinct destination ports (21, 22, 23, 25, 53, 80, 110, 143, 443, 3306, 3389, 8080). Multiple blocked connection attempts across services indicate network reconnaissance.",
+      "recommendation": "Keep the default-deny policy, block the source, and confirm that no internal service is reachable from untrusted networks.",
+      "mitre": [
+        "T1046",
+        "T1595.001"
+      ],
+      "evidence_lines": [
+        62,
+        63,
+        64,
+        65,
+        66,
+        67,
+        68,
+        69,
+        70,
+        71,
+        72,
+        73
+      ],
+      "details": {
+        "distinct_ports": 12,
+        "ports": [
+          21,
+          22,
+          23,
+          25,
+          53,
+          80,
+          110,
+          143,
+          443,
+          3306,
+          3389,
+          8080
+        ],
+        "window_seconds": 600
+      }
+    },
+    {
+      "id": "F-005",
+      "rule": "watchlist_domain",
+      "title": "Watchlisted domain observed: update-check.example",
+      "severity": "high",
+      "confidence": "high",
+      "source_ip": "10.0.0.23",
+      "first_seen": "2026-03-12T03:27:05Z",
+      "last_seen": "2026-03-12T03:27:08Z",
+      "count": 2,
+      "description": "The domain update-check.example matched the local watchlist (Synthetic malware update domain (demo)) across 2 log lines.",
+      "recommendation": "Correlate the indicator with endpoint and network telemetry, contain affected hosts, and update blocking controls. Treat the match as a lead until independently validated.",
+      "mitre": [
+        "T1071.004",
+        "T1568"
+      ],
+      "evidence_lines": [
+        74,
+        75
+      ],
+      "details": {
+        "indicator": "update-check.example",
+        "indicator_type": "domain",
+        "watchlist_label": "Synthetic malware update domain (demo)",
+        "watchlist_confidence": "high",
+        "source_ips": [
+          "10.0.0.23"
+        ],
+        "hosts": [
+          "lab-dns"
+        ]
+      }
+    },
+    {
+      "id": "F-006",
+      "rule": "watchlist_hash",
+      "title": "Watchlisted file hash observed: d235842f1fa6b2bf...",
+      "severity": "high",
+      "confidence": "high",
+      "source_ip": null,
+      "first_seen": "2026-03-12T03:28:14Z",
+      "last_seen": "2026-03-12T03:28:14Z",
+      "count": 1,
+      "description": "The file hash d235842f1fa6b2bf5afef3c941af2bf777ea0ddd6a2d7370db75563248d729f3 matched the local watchlist (SHA-256 of a fixed demo string (not malware)) across 1 log line.",
+      "recommendation": "Correlate the indicator with endpoint and network telemetry, contain affected hosts, and update blocking controls. Treat the match as a lead until independently validated.",
+      "mitre": [
+        "T1204.002",
+        "T1105"
+      ],
+      "evidence_lines": [
+        79
+      ],
+      "details": {
+        "indicator": "d235842f1fa6b2bf5afef3c941af2bf777ea0ddd6a2d7370db75563248d729f3",
+        "indicator_type": "hash",
+        "watchlist_label": "SHA-256 of a fixed demo string (not malware)",
+        "watchlist_confidence": "high",
+        "source_ips": [],
+        "hosts": [
+          "lab-edr1"
+        ]
+      }
+    },
+    {
+      "id": "F-007",
+      "rule": "watchlist_ip",
+      "title": "Watchlisted IP observed: 192.0.2.200",
+      "severity": "high",
+      "confidence": "high",
+      "source_ip": "192.0.2.200",
+      "first_seen": "2026-03-12T03:30:01Z",
+      "last_seen": "2026-03-12T03:30:01Z",
+      "count": 1,
+      "description": "The IPv4 address 192.0.2.200 matched the local watchlist (Synthetic known-bad C2 endpoint (demo)) across 1 log line.",
+      "recommendation": "Correlate the indicator with endpoint and network telemetry, contain affected hosts, and update blocking controls. Treat the match as a lead until independently validated.",
+      "mitre": [
+        "T1071"
+      ],
+      "evidence_lines": [
+        81
+      ],
+      "details": {
+        "indicator": "192.0.2.200",
+        "indicator_type": "ipv4",
+        "watchlist_label": "Synthetic known-bad C2 endpoint (demo)",
+        "watchlist_confidence": "high",
+        "source_ips": [
+          "192.0.2.200"
+        ],
+        "hosts": [
+          "lab-gw"
+        ]
+      }
+    },
+    {
+      "id": "F-008",
+      "rule": "scanner_user_agent",
+      "title": "Offensive scanner user-agent ('nikto') from 198.51.100.77",
+      "severity": "medium",
+      "confidence": "high",
+      "source_ip": "198.51.100.77",
+      "first_seen": "2026-03-12T03:20:00Z",
+      "last_seen": "2026-03-12T03:21:44Z",
+      "count": 13,
+      "description": "13 requests used a user-agent associated with the offensive tool 'nikto'. This is a direct signature of automated scanning or exploitation attempts.",
+      "recommendation": "Block or challenge the source, inspect the requested paths for successful exploitation, and consider filtering known scanner user-agents at the reverse proxy.",
+      "mitre": [
+        "T1595",
+        "T1595.002"
+      ],
+      "evidence_lines": [
+        48,
+        49,
+        50,
+        51,
+        52,
+        53,
+        54,
+        56,
+        57,
+        58,
+        59,
+        60,
+        61
+      ],
+      "details": {
+        "tool": "nikto",
+        "user_agents": [
+          "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+        ]
+      }
+    },
+    {
+      "id": "F-009",
+      "rule": "scanner_user_agent",
+      "title": "Offensive scanner user-agent ('sqlmap') from 198.51.100.77",
+      "severity": "medium",
+      "confidence": "high",
+      "source_ip": "198.51.100.77",
+      "first_seen": "2026-03-12T03:20:56Z",
+      "last_seen": "2026-03-12T03:20:56Z",
+      "count": 1,
+      "description": "1 request used a user-agent associated with the offensive tool 'sqlmap'. This is a direct signature of automated scanning or exploitation attempts.",
+      "recommendation": "Block or challenge the source, inspect the requested paths for successful exploitation, and consider filtering known scanner user-agents at the reverse proxy.",
+      "mitre": [
+        "T1595",
+        "T1595.002"
+      ],
+      "evidence_lines": [
+        55
+      ],
+      "details": {
+        "tool": "sqlmap",
+        "user_agents": [
+          "sqlmap/1.8.3#stable"
+        ]
+      }
+    }
+  ],
+  "iocs": {
+    "ipv4_external": [
+      {
+        "value": "192.0.2.200",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "external",
+        "note": "RFC 5737 documentation range (synthetic sample)",
+        "hits": 1,
+        "first_seen": "2026-03-12T03:30:01Z",
+        "last_seen": "2026-03-12T03:30:01Z",
+        "lines": [
+          81
+        ],
+        "contexts": {
+          "firewall_block": 1
+        },
+        "source_ips": [
+          "192.0.2.200"
+        ],
+        "hosts": [
+          "lab-gw"
+        ],
+        "watchlist": {
+          "label": "Synthetic known-bad C2 endpoint (demo)",
+          "confidence": "high",
+          "source": "synthetic-demo-watchlist"
+        }
+      },
+      {
+        "value": "198.51.100.77",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "external",
+        "note": "RFC 5737 documentation range (synthetic sample)",
+        "hits": 14,
+        "first_seen": "2026-03-12T03:20:00Z",
+        "last_seen": "2026-03-12T03:21:44Z",
+        "lines": [
+          48,
+          49,
+          50,
+          51,
+          52,
+          53,
+          54,
+          55,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61
+        ],
+        "contexts": {
+          "http_request": 14
+        },
+        "source_ips": [
+          "198.51.100.77"
+        ],
+        "hosts": [],
+        "watchlist": null
+      },
+      {
+        "value": "192.0.2.88",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "external",
+        "note": "RFC 5737 documentation range (synthetic sample)",
+        "hits": 12,
+        "first_seen": "2026-03-12T03:25:00Z",
+        "last_seen": "2026-03-12T03:25:44Z",
+        "lines": [
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73
+        ],
+        "contexts": {
+          "firewall_block": 12
+        },
+        "source_ips": [
+          "192.0.2.88"
+        ],
+        "hosts": [
+          "lab-gw"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "203.0.113.45",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "external",
+        "note": "RFC 5737 documentation range (synthetic sample)",
+        "hits": 10,
+        "first_seen": "2026-03-12T03:10:00Z",
+        "last_seen": "2026-03-12T03:13:40Z",
+        "lines": [
+          27,
+          29,
+          30,
+          32,
+          33,
+          34,
+          36,
+          37,
+          39,
+          42
+        ],
+        "contexts": {
+          "ssh_failed_login": 9,
+          "ssh_success_login": 1
+        },
+        "source_ips": [
+          "203.0.113.45"
+        ],
+        "hosts": [
+          "lab-ubuntu"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "198.51.100.10",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "external",
+        "note": "RFC 5737 documentation range (synthetic sample)",
+        "hits": 7,
+        "first_seen": "2026-03-12T03:01:44Z",
+        "last_seen": "2026-03-12T03:32:00Z",
+        "lines": [
+          5,
+          9,
+          14,
+          20,
+          28,
+          38,
+          83
+        ],
+        "contexts": {
+          "http_request": 7
+        },
+        "source_ips": [
+          "198.51.100.10"
+        ],
+        "hosts": [],
+        "watchlist": null
+      },
+      {
+        "value": "198.51.100.11",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "external",
+        "note": "RFC 5737 documentation range (synthetic sample)",
+        "hits": 2,
+        "first_seen": "2026-03-12T03:14:00Z",
+        "last_seen": "2026-03-12T03:14:20Z",
+        "lines": [
+          43,
+          44
+        ],
+        "contexts": {
+          "http_request": 2
+        },
+        "source_ips": [
+          "198.51.100.11"
+        ],
+        "hosts": [],
+        "watchlist": null
+      },
+      {
+        "value": "198.51.100.12",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "external",
+        "note": "RFC 5737 documentation range (synthetic sample)",
+        "hits": 2,
+        "first_seen": "2026-03-12T03:14:40Z",
+        "last_seen": "2026-03-12T03:15:00Z",
+        "lines": [
+          45,
+          46
+        ],
+        "contexts": {
+          "http_request": 2
+        },
+        "source_ips": [
+          "198.51.100.12"
+        ],
+        "hosts": [],
+        "watchlist": null
+      }
+    ],
+    "ipv4_internal": [
+      {
+        "value": "10.0.0.5",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "internal",
+        "note": "Private or non-routable address",
+        "hits": 13,
+        "first_seen": "2026-03-12T03:25:00Z",
+        "last_seen": "2026-03-12T03:30:01Z",
+        "lines": [
+          62,
+          63,
+          64,
+          65,
+          66,
+          67,
+          68,
+          69,
+          70,
+          71,
+          72,
+          73,
+          81
+        ],
+        "contexts": {
+          "firewall_block": 13
+        },
+        "source_ips": [
+          "192.0.2.200",
+          "192.0.2.88"
+        ],
+        "hosts": [
+          "lab-gw"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "10.0.0.31",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "internal",
+        "note": "Private or non-routable address",
+        "hits": 7,
+        "first_seen": "2026-03-12T03:00:20Z",
+        "last_seen": "2026-03-12T03:12:56Z",
+        "lines": [
+          2,
+          6,
+          11,
+          16,
+          22,
+          31,
+          40
+        ],
+        "contexts": {
+          "http_request": 7
+        },
+        "source_ips": [
+          "10.0.0.31"
+        ],
+        "hosts": [],
+        "watchlist": null
+      },
+      {
+        "value": "10.0.0.32",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "internal",
+        "note": "Private or non-routable address",
+        "hits": 7,
+        "first_seen": "2026-03-12T03:01:02Z",
+        "last_seen": "2026-03-12T03:13:38Z",
+        "lines": [
+          3,
+          8,
+          12,
+          18,
+          25,
+          35,
+          41
+        ],
+        "contexts": {
+          "http_request": 7
+        },
+        "source_ips": [
+          "10.0.0.32"
+        ],
+        "hosts": [],
+        "watchlist": null
+      },
+      {
+        "value": "10.0.0.15",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "internal",
+        "note": "Private or non-routable address",
+        "hits": 4,
+        "first_seen": "2026-03-12T03:00:10Z",
+        "last_seen": "2026-03-12T03:31:20Z",
+        "lines": [
+          1,
+          7,
+          15,
+          82
+        ],
+        "contexts": {
+          "ssh_success_login": 4
+        },
+        "source_ips": [
+          "10.0.0.15"
+        ],
+        "hosts": [
+          "lab-ubuntu"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "10.0.0.23",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "internal",
+        "note": "Private or non-routable address",
+        "hits": 4,
+        "first_seen": "2026-03-12T03:27:05Z",
+        "last_seen": "2026-03-12T03:27:45Z",
+        "lines": [
+          74,
+          75,
+          76,
+          77
+        ],
+        "contexts": {
+          "dns_query": 4
+        },
+        "source_ips": [
+          "10.0.0.23"
+        ],
+        "hosts": [
+          "lab-dns"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "10.0.0.18",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "internal",
+        "note": "Private or non-routable address",
+        "hits": 3,
+        "first_seen": "2026-03-12T03:01:25Z",
+        "last_seen": "2026-03-12T03:09:05Z",
+        "lines": [
+          4,
+          13,
+          24
+        ],
+        "contexts": {
+          "ssh_success_login": 3
+        },
+        "source_ips": [
+          "10.0.0.18"
+        ],
+        "hosts": [
+          "lab-ubuntu"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "10.0.0.21",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "internal",
+        "note": "Private or non-routable address",
+        "hits": 2,
+        "first_seen": "2026-03-12T03:04:05Z",
+        "last_seen": "2026-03-12T03:07:50Z",
+        "lines": [
+          10,
+          19
+        ],
+        "contexts": {
+          "ssh_success_login": 2
+        },
+        "source_ips": [
+          "10.0.0.21"
+        ],
+        "hosts": [
+          "lab-ubuntu"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "10.0.0.44",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "internal",
+        "note": "Private or non-routable address",
+        "hits": 1,
+        "first_seen": "2026-03-12T03:28:00Z",
+        "last_seen": "2026-03-12T03:28:00Z",
+        "lines": [
+          78
+        ],
+        "contexts": {
+          "dns_query": 1
+        },
+        "source_ips": [
+          "10.0.0.44"
+        ],
+        "hosts": [
+          "lab-dns"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "10.0.0.77",
+        "kind": "ipv4",
+        "hash_type": null,
+        "scope": "internal",
+        "note": "Private or non-routable address",
+        "hits": 1,
+        "first_seen": "2026-03-12T03:19:00Z",
+        "last_seen": "2026-03-12T03:19:00Z",
+        "lines": [
+          47
+        ],
+        "contexts": {
+          "ssh_failed_login": 1
+        },
+        "source_ips": [
+          "10.0.0.77"
+        ],
+        "hosts": [
+          "lab-ubuntu"
+        ],
+        "watchlist": null
+      }
+    ],
+    "ipv4_reserved": [],
+    "domains": [
+      {
+        "value": "update-check.example",
+        "kind": "domain",
+        "hash_type": null,
+        "scope": null,
+        "note": null,
+        "hits": 2,
+        "first_seen": "2026-03-12T03:27:05Z",
+        "last_seen": "2026-03-12T03:27:08Z",
+        "lines": [
+          74,
+          75
+        ],
+        "contexts": {
+          "dns_query": 2
+        },
+        "source_ips": [
+          "10.0.0.23"
+        ],
+        "hosts": [
+          "lab-dns"
+        ],
+        "watchlist": {
+          "label": "Synthetic malware update domain (demo)",
+          "confidence": "high",
+          "source": "synthetic-demo-watchlist"
+        }
+      },
+      {
+        "value": "deb.debian.org",
+        "kind": "domain",
+        "hash_type": null,
+        "scope": null,
+        "note": null,
+        "hits": 1,
+        "first_seen": "2026-03-12T03:27:30Z",
+        "last_seen": "2026-03-12T03:27:30Z",
+        "lines": [
+          76
+        ],
+        "contexts": {
+          "dns_query": 1
+        },
+        "source_ips": [
+          "10.0.0.23"
+        ],
+        "hosts": [
+          "lab-dns"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "github.com",
+        "kind": "domain",
+        "hash_type": null,
+        "scope": null,
+        "note": null,
+        "hits": 1,
+        "first_seen": "2026-03-12T03:27:45Z",
+        "last_seen": "2026-03-12T03:27:45Z",
+        "lines": [
+          77
+        ],
+        "contexts": {
+          "dns_query": 1
+        },
+        "source_ips": [
+          "10.0.0.23"
+        ],
+        "hosts": [
+          "lab-dns"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "telemetry.example",
+        "kind": "domain",
+        "hash_type": null,
+        "scope": null,
+        "note": null,
+        "hits": 1,
+        "first_seen": "2026-03-12T03:28:00Z",
+        "last_seen": "2026-03-12T03:28:00Z",
+        "lines": [
+          78
+        ],
+        "contexts": {
+          "dns_query": 1
+        },
+        "source_ips": [
+          "10.0.0.44"
+        ],
+        "hosts": [
+          "lab-dns"
+        ],
+        "watchlist": null
+      }
+    ],
+    "hashes": [
+      {
+        "value": "d235842f1fa6b2bf5afef3c941af2bf777ea0ddd6a2d7370db75563248d729f3",
+        "kind": "hash",
+        "hash_type": "sha256",
+        "scope": null,
+        "note": null,
+        "hits": 1,
+        "first_seen": "2026-03-12T03:28:14Z",
+        "last_seen": "2026-03-12T03:28:14Z",
+        "lines": [
+          79
+        ],
+        "contexts": {
+          "malware_alert": 1
+        },
+        "source_ips": [],
+        "hosts": [
+          "lab-edr1"
+        ],
+        "watchlist": {
+          "label": "SHA-256 of a fixed demo string (not malware)",
+          "confidence": "high",
+          "hash_type": "sha256",
+          "source": "synthetic-demo-watchlist"
+        }
+      },
+      {
+        "value": "90fe540a068e4954aca2a7f6969e0f65",
+        "kind": "hash",
+        "hash_type": "md5",
+        "scope": null,
+        "note": null,
+        "hits": 1,
+        "first_seen": "2026-03-12T03:29:02Z",
+        "last_seen": "2026-03-12T03:29:02Z",
+        "lines": [
+          80
+        ],
+        "contexts": {
+          "endpoint_scan": 1
+        },
+        "source_ips": [],
+        "hosts": [
+          "lab-edr1"
+        ],
+        "watchlist": null
+      },
+      {
+        "value": "b0c98431229bdb155964ce2609b9f0e102c1672300069f10beee4f4f2ce93277",
+        "kind": "hash",
+        "hash_type": "sha256",
+        "scope": null,
+        "note": null,
+        "hits": 1,
+        "first_seen": "2026-03-12T03:29:02Z",
+        "last_seen": "2026-03-12T03:29:02Z",
+        "lines": [
+          80
+        ],
+        "contexts": {
+          "endpoint_scan": 1
+        },
+        "source_ips": [],
+        "hosts": [
+          "lab-edr1"
+        ],
+        "watchlist": null
+      }
+    ],
+    "urls": []
+  },
+  "timeline": [
+    {
+      "time": "2026-03-12T03:10:00Z",
+      "line": 27,
+      "finding_id": "F-001",
+      "event": "ssh_failed_login",
+      "summary": "Mar 12 03:10:00 lab-ubuntu sshd[2400]: Failed password for invalid user root from 203.0.113.45 port 45001 ssh2"
+    },
+    {
+      "time": "2026-03-12T03:10:18Z",
+      "line": 29,
+      "finding_id": "F-001",
+      "event": "ssh_failed_login",
+      "summary": "Mar 12 03:10:18 lab-ubuntu sshd[2401]: Failed password for invalid user admin from 203.0.113.45 port 45002 ssh2"
+    },
+    {
+      "time": "2026-03-12T03:10:36Z",
+      "line": 30,
+      "finding_id": "F-001",
+      "event": "ssh_failed_login",
+      "summary": "Mar 12 03:10:36 lab-ubuntu sshd[2402]: Failed password for invalid user oracle from 203.0.113.45 port 45003 ssh2"
+    },
+    {
+      "time": "2026-03-12T03:20:00Z",
+      "line": 48,
+      "finding_id": "F-003",
+      "event": "http_request",
+      "summary": "198.51.100.77 - - [12/Mar/2026:03:20:00 +0000] \"GET /.env HTTP/1.1\" 403 233 \"-\" \"Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)\""
+    },
+    {
+      "time": "2026-03-12T03:20:00Z",
+      "line": 48,
+      "finding_id": "F-008",
+      "event": "http_request",
+      "summary": "198.51.100.77 - - [12/Mar/2026:03:20:00 +0000] \"GET /.env HTTP/1.1\" 403 233 \"-\" \"Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)\""
+    },
+    {
+      "time": "2026-03-12T03:20:08Z",
+      "line": 49,
+      "finding_id": "F-003",
+      "event": "http_request",
+      "summary": "198.51.100.77 - - [12/Mar/2026:03:20:08 +0000] \"GET /.git/config HTTP/1.1\" 404 233 \"-\" \"Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)\""
+    },
+    {
+      "time": "2026-03-12T03:20:08Z",
+      "line": 49,
+      "finding_id": "F-008",
+      "event": "http_request",
+      "summary": "198.51.100.77 - - [12/Mar/2026:03:20:08 +0000] \"GET /.git/config HTTP/1.1\" 404 233 \"-\" \"Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)\""
+    },
+    {
+      "time": "2026-03-12T03:20:16Z",
+      "line": 50,
+      "finding_id": "F-002",
+      "event": "http_request",
+      "summary": "198.51.100.77 - - [12/Mar/2026:03:20:16 +0000] \"GET /backup.sql HTTP/1.1\" 200 18432 \"-\" \"Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)\""
+    },
+    {
+      "time": "2026-03-12T03:20:16Z",
+      "line": 50,
+      "finding_id": "F-008",
+      "event": "http_request",
+      "summary": "198.51.100.77 - - [12/Mar/2026:03:20:16 +0000] \"GET /backup.sql HTTP/1.1\" 200 18432 \"-\" \"Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)\""
+    },
+    {
+      "time": "2026-03-12T03:20:24Z",
+      "line": 51,
+      "finding_id": "F-003",
+      "event": "http_request",
+      "summary": "198.51.100.77 - - [12/Mar/2026:03:20:24 +0000] \"GET /wp-login.php HTTP/1.1\" 404 233 \"-\" \"Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)\""
+    },
+    {
+      "time": "2026-03-12T03:20:56Z",
+      "line": 55,
+      "finding_id": "F-009",
+      "event": "http_request",
+      "summary": "198.51.100.77 - - [12/Mar/2026:03:20:56 +0000] \"GET /vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1\" 404 233 \"-\" \"sqlmap/1.8.3#stable\""
+    },
+    {
+      "time": "2026-03-12T03:25:00Z",
+      "line": 62,
+      "finding_id": "F-004",
+      "event": "firewall_block",
+      "summary": "Mar 12 03:25:00 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41000 DPT=21 WINDOW=1024 RES=0x00 SYN URGP="
+    },
+    {
+      "time": "2026-03-12T03:25:04Z",
+      "line": 63,
+      "finding_id": "F-004",
+      "event": "firewall_block",
+      "summary": "Mar 12 03:25:04 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41001 DPT=22 WINDOW=1024 RES=0x00 SYN URGP="
+    },
+    {
+      "time": "2026-03-12T03:25:08Z",
+      "line": 64,
+      "finding_id": "F-004",
+      "event": "firewall_block",
+      "summary": "Mar 12 03:25:08 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41002 DPT=23 WINDOW=1024 RES=0x00 SYN URGP="
+    },
+    {
+      "time": "2026-03-12T03:27:05Z",
+      "line": 74,
+      "finding_id": "F-005",
+      "event": "dns_query",
+      "summary": "Mar 12 03:27:05 lab-dns dnsmasq[811]: query[A] update-check.example from 10.0.0.23"
+    },
+    {
+      "time": "2026-03-12T03:27:08Z",
+      "line": 75,
+      "finding_id": "F-005",
+      "event": "dns_query",
+      "summary": "Mar 12 03:27:08 lab-dns dnsmasq[811]: query[A] update-check.example from 10.0.0.23"
+    },
+    {
+      "time": "2026-03-12T03:28:14Z",
+      "line": 79,
+      "finding_id": "F-006",
+      "event": "malware_alert",
+      "summary": "2026-03-12T03:28:14Z lab-edr1 edr-agent[221]: ALERT verdict=malicious action=quarantined file=\"/tmp/invoice_scan.pdf\" sha256=d235842f1fa6b2bf5afef3c941af2bf777ea0ddd6a2d7370db75563248d729f3"
+    },
+    {
+      "time": "2026-03-12T03:30:01Z",
+      "line": 81,
+      "finding_id": "F-007",
+      "event": "firewall_block",
+      "summary": "Mar 12 03:30:01 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.200 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=55555 DPT=4444 WINDOW=1024 RES=0x00 SYN UR"
+    }
+  ],
+  "stats": {
+    "event_types": {
+      "http_request": 39,
+      "firewall_block": 13,
+      "ssh_success_login": 10,
+      "ssh_failed_login": 10,
+      "dns_query": 5,
+      "sudo_command": 2,
+      "syslog": 2,
+      "malware_alert": 1,
+      "endpoint_scan": 1
+    },
+    "source_types": {
+      "http": 39,
+      "ssh": 20,
+      "firewall": 13,
+      "dns": 5,
+      "sudo": 2,
+      "syslog": 2,
+      "edr": 2
+    },
+    "unparsed_lines": 0,
+    "malware_alerts": 1
+  },
+  "limitations": [
+    "Timestamps without an explicit zone are treated as UTC; syslog lines use the year supplied with --assume-year.",
+    "Detection is behavioural and threshold-based, so tuning is required for each environment; the defaults target small lab logs.",
+    "Only IPv4 addresses are inventoried as IOCs; IPv6 source addresses are parsed where the log format exposes them but are not aggregated.",
+    "No packet payload, HTTP body, or file content is inspected. A 2xx response for a sensitive path is a lead that requires manual validation.",
+    "Watchlist matching is local and static; the included watchlist is synthetic and is not a threat-intelligence feed.",
+    "The tool is read-only and makes no network calls. It does not block, quarantine, or modify any system.",
+    "Mixed log formats are supported on a best-effort basis; unknown lines are still scanned for indicators but are not correlated behaviourally.",
+    "The input size is capped (default 50 MiB) because events are held in memory."
+  ]
+}

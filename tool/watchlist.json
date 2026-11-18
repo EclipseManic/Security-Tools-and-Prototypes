@@ -1,0 +1,29 @@
+{
+  "metadata": {
+    "description": "Synthetic demo watchlist for LogTriage. Every value is reserved or derived from a fixed demo string. This is not a real threat-intelligence feed.",
+    "updated": "2026-03-10",
+    "safety": "Only RFC 5737 documentation addresses and reserved .example domains are used."
+  },
+  "ips": {
+    "192.0.2.200": {
+      "label": "Synthetic known-bad C2 endpoint (demo)",
+      "confidence": "high",
+      "source": "synthetic-demo-watchlist"
+    }
+  },
+  "domains": {
+    "update-check.example": {
+      "label": "Synthetic malware update domain (demo)",
+      "confidence": "high",
+      "source": "synthetic-demo-watchlist"
+    }
+  },
+  "hashes": {
+    "d235842f1fa6b2bf5afef3c941af2bf777ea0ddd6a2d7370db75563248d729f3": {
+      "label": "SHA-256 of a fixed demo string (not malware)",
+      "confidence": "high",
+      "hash_type": "sha256",
+      "source": "synthetic-demo-watchlist"
+    }
+  }
+}
