@@ -146,7 +146,7 @@ export default function Dashboard() {
           {/* File Types Bar Chart */}
           <div className="rounded-lg border border-border bg-card p-4">
             <h3 className="mb-4 text-sm font-medium text-muted-foreground uppercase">
-              Files by Type
+              Files by Category
             </h3>
             <ResponsiveContainer width="100%" height={280}>
               <BarChart data={dist.file_types.filter(d => d.value > 0)}>
@@ -186,35 +186,9 @@ export default function Dashboard() {
             </ResponsiveContainer>
           </div>
 
-          {/* Category Pie Chart */}
-          {dist.categories.length > 0 && (
-            <div className="rounded-lg border border-border bg-card p-4">
-              <h3 className="mb-4 text-sm font-medium text-muted-foreground uppercase">
-                File Categories
-              </h3>
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={dist.categories}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    dataKey="value"
-                    label={({ name, value }) => `${name}: ${value}`}
-                  >
-                    {dist.categories.map((_, i) => (
-                      <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-
           {/* Top Extensions Bar Chart */}
           {dist.extensions.length > 0 && (
-            <div className="rounded-lg border border-border bg-card p-4">
+            <div className="rounded-lg border border-border bg-card p-4 lg:col-span-2">
               <h3 className="mb-4 text-sm font-medium text-muted-foreground uppercase">
                 Top Extensions
               </h3>

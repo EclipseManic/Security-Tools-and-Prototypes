@@ -639,6 +639,32 @@ class ScanService:
         job.progress = 95.0
         await self.db.commit()
 
+        # Every indexed file must have a category, even when no analyzer
+        # produced content (for example, an image format the analyzer cannot
+        # decode). This also repairs files from older scans.
+        uncategorized = (
+            await self.db.execute(
+                select(FileRecord)
+                .outerjoin(FileCategory, FileCategory.file_id == FileRecord.id)
+                .where(FileCategory.file_id.is_(None))
+            )
+        ).scalars().all()
+        if uncategorized:
+            for record in uncategorized:
+                category_name, subcategory_name = _categorize_by_extension(record.path)
+                await self.db.execute(
+                    sqlite_insert(FileCategory)
+                    .values(
+                        file_id=record.id,
+                        category=category_name,
+                        subcategory=subcategory_name,
+                        confidence=1.0,
+                        explanation="Categorized by file extension",
+                    )
+                    .on_conflict_do_nothing(index_elements=["file_id"])
+                )
+            await self.db.commit()
+
         # ── Batch AI analysis ─────────────────────────────────────────────
         if collected_summaries and ai_available:
             try:

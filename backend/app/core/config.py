@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     )
 
     app_name: str = "File Intelligence Platform"
-    app_version: str = "1.0.0"
+    app_version: str = "1.0.1"
     debug: bool = False
 
     database_url: str = "sqlite+aiosqlite:///./data/fip.db"

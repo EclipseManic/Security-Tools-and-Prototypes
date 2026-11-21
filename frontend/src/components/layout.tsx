@@ -51,7 +51,7 @@ export function Sidebar() {
       <div className="absolute bottom-4 left-4 right-4">
         <div className="flex items-center gap-3 rounded-lg px-3 py-2 text-xs text-sidebar-foreground/60">
           <HardDrive className="h-3 w-3" />
-          <span>v1.0.0 • Local</span>
+          <span>v1.0.1 • Local</span>
         </div>
       </div>
     </aside>

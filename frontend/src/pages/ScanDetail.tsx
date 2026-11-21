@@ -168,8 +168,8 @@ export default function ScanDetail() {
           <div className="space-y-2">
             {safeFiles.map((s, i) => (
               <div key={i} className="flex items-start gap-3 rounded-md border border-border p-3">
-                <Badge className={severityColors[s.confidence] || ""}>
-                  {s.confidence}
+                <Badge className="bg-green-500/10 text-green-500 border-green-500/20">
+                  safe
                 </Badge>
                 <div>
                   <div className="text-sm font-medium">{s.id}</div>
@@ -192,7 +192,7 @@ export default function ScanDetail() {
               <div key={i} className="rounded-md border border-border p-3">
                 <div className="flex items-center gap-2 mb-1">
                   <Badge className={priorityColors[r.priority] || ""}>
-                    {r.priority}
+                    Priority: {r.priority}
                   </Badge>
                   <span className="text-sm font-medium">{r.recommendation}</span>
                 </div>

@@ -15,6 +15,8 @@ have access to.
 
 ![Dashboard](docs/screenshots/dashboard.png)
 
+![Walkthrough: dashboard, scans, scan detail, and reports](docs/screenshots/demo.gif)
+
 ## What you get
 
 - **Recursive scans with control.** Start, pause, resume, and cancel a scan.
@@ -182,7 +184,7 @@ file-intelligence-platform/
 │   │       ├── detector/      # Sensitive-data patterns and risk scoring
 │   │       ├── ai/            # Optional providers and batch insights
 │   │       └── report/        # CSV, HTML, and JSON reports
-│   ├── tests/                 # 21 pytest tests (hermetic temp database)
+│   ├── tests/                 # 22 pytest tests (hermetic temp database)
 │   └── requirements.txt
 ├── frontend/
 │   └── src/                   # React + TypeScript + Tailwind GUI
@@ -235,8 +237,8 @@ cd backend
 python -m pytest -q
 ```
 
-The suite has **21 tests** covering the detector, analyzers, scanner, scan API,
-health endpoint, and AI fallback. It runs against a temporary database, so it
+The suite has **22 tests** covering the detector, analyzers, scanner, scan API,
+statistics, health endpoint, and AI fallback. It runs against a temporary database, so it
 never touches your real data. Lint with `ruff check app tests`.
 
 The frontend is type-checked and built with:

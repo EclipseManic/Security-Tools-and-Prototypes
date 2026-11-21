@@ -90,6 +90,13 @@ async def get_distributions(db: AsyncSession = Depends(get_db)):
             .group_by(Ft.category).order_by(func.count(Ft.file_id).desc())
         )).all()
         categories = [{"name": r[0], "value": r[1]} for r in cat_rows]
+        total_files = await _scalar(db, select(func.count(F.id)))
+        categorized = sum(item["value"] for item in categories)
+        if total_files > categorized:
+            # Files indexed before the category backfill existed, or whose
+            # analysis produced no metadata, still belong in the total.
+            categories.append({"name": "Uncategorized", "value": total_files - categorized})
+        categories.sort(key=lambda item: item["value"], reverse=True)
 
         sens_rows = (await db.execute(
             select(Fs.sensitivity_level, func.count(Fs.file_id).label("c"))
@@ -105,21 +112,9 @@ async def get_distributions(db: AsyncSession = Depends(get_db)):
         )).all()
         extensions = [{"name": r[0], "value": r[1]} for r in ext_rows]
 
-        docs = await _scalar(db, select(func.count(F.id)).where(F.extension.in_(DOC_EXTS)))
-        exes = await _scalar(db, select(func.count(F.id)).where(F.extension.in_(EXE_EXTS)))
-        code = await _scalar(db, select(func.count(F.id)).where(F.extension.in_(CODE_EXTS)))
-        images = await _scalar(db, select(func.count(F.id)).where(F.extension.in_(IMAGE_EXTS)))
-        media = await _scalar(db, select(func.count(F.id)).where(F.extension.in_(MEDIA_EXTS)))
-        archives = await _scalar(db, select(func.count(F.id)).where(F.extension.in_(ARCHIVE_EXTS)))
-
-        return categories, sensitivity, extensions, [
-            {"name": "Documents", "value": docs},
-            {"name": "Executables", "value": exes},
-            {"name": "Source Code", "value": code},
-            {"name": "Images", "value": images},
-            {"name": "Media", "value": media},
-            {"name": "Archives", "value": archives},
-        ]
+        # The dashboard shows one category breakdown. Deriving both series from
+        # the same rows keeps the card, the chart, and the file total in sync.
+        return categories, sensitivity, extensions, categories
 
     try:
         categories, sensitivity, extensions, ft = await _run()
