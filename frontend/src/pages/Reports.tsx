@@ -43,7 +43,7 @@ export default function Reports() {
     setLoading((prev) => ({ ...prev, [key]: true }));
     try {
       await downloadReport(reportId, fmt);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Download failed:", err);
     } finally {
       setLoading((prev) => ({ ...prev, [key]: false }));

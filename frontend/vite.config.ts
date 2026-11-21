@@ -9,6 +9,24 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          charts: ["recharts"],
+          react: ["react", "react-dom", "react-router-dom"],
+          data: ["axios", "@tanstack/react-query", "zustand"],
+          ui: [
+            "lucide-react",
+            "sonner",
+            "clsx",
+            "tailwind-merge",
+            "class-variance-authority",
+          ],
+        },
+      },
+    },
+  },
   server: {
     port: 5173,
     proxy: {

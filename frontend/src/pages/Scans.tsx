@@ -58,7 +58,7 @@ export default function Scans() {
     queryFn: fetchScans,
     refetchInterval: (q) => {
       const scans = q?.state?.data?.items ?? [];
-      const hasActive = scans.some((s: any) => s.status === "running" || s.status === "pending");
+      const hasActive = scans.some((s: ScanJob) => s.status === "running" || s.status === "pending");
       return hasActive ? 1000 : 5000;
     },
     refetchIntervalInBackground: true,
@@ -72,15 +72,23 @@ export default function Scans() {
       setShowNew(false);
       setScanPath("");
       const started = { ...job, status: "running", started_at: new Date().toISOString() };
-      queryClient.setQueryData(["scans"], (old: any) => {
-        const items = old?.items ?? [];
-        return { items: [started, ...items], total: (old?.total ?? 0) + 1 };
-      });
+      queryClient.setQueryData(
+        ["scans"],
+        (old: { items?: ScanJob[]; total?: number } | undefined) => {
+          const items = old?.items ?? [];
+          return { items: [started, ...items], total: (old?.total ?? 0) + 1 };
+        },
+      );
       try {
         await api.post(`/scans/${job.id}/start`);
-      } catch {}
+      } catch {
+        // Starting is best-effort here; the scans query will resync the real state.
+      }
     },
-    onError: (err: any) => toast.error(err?.response?.data?.detail || err?.message || "Failed to create scan"),
+    onError: (err: Error) => {
+      const detail = (err as Error & { response?: { data?: { detail?: string } } }).response?.data?.detail;
+      toast.error(detail || err.message || "Failed to create scan");
+    },
   });
 
   const startMutation = useMutation({
@@ -91,10 +99,13 @@ export default function Scans() {
   const pauseMutation = useMutation({
     mutationFn: pauseScan,
     onMutate: async (id) => {
-      queryClient.setQueryData(["scans"], (old: any) => {
-        if (!old?.items) return old;
-        return { ...old, items: old.items.map((s: any) => s.id === id ? { ...s, status: "paused" } : s) };
-      });
+      queryClient.setQueryData(
+        ["scans"],
+        (old: { items?: ScanJob[] } | undefined) => {
+          if (!old?.items) return old;
+          return { ...old, items: old.items.map((s) => (s.id === id ? { ...s, status: "paused" } : s)) };
+        },
+      );
     },
     onSuccess: () => queryClient.refetchQueries({ queryKey: ["scans"] }),
   });
@@ -102,10 +113,13 @@ export default function Scans() {
   const resumeMutation = useMutation({
     mutationFn: resumeScan,
     onMutate: async (id) => {
-      queryClient.setQueryData(["scans"], (old: any) => {
-        if (!old?.items) return old;
-        return { ...old, items: old.items.map((s: any) => s.id === id ? { ...s, status: "running" } : s) };
-      });
+      queryClient.setQueryData(
+        ["scans"],
+        (old: { items?: ScanJob[] } | undefined) => {
+          if (!old?.items) return old;
+          return { ...old, items: old.items.map((s) => (s.id === id ? { ...s, status: "running" } : s)) };
+        },
+      );
     },
     onSuccess: () => queryClient.refetchQueries({ queryKey: ["scans"] }),
   });
@@ -113,10 +127,13 @@ export default function Scans() {
   const cancelMutation = useMutation({
     mutationFn: cancelScan,
     onMutate: async (id) => {
-      queryClient.setQueryData(["scans"], (old: any) => {
-        if (!old?.items) return old;
-        return { ...old, items: old.items.map((s: any) => s.id === id ? { ...s, status: "cancelled", progress: s.progress } : s) };
-      });
+      queryClient.setQueryData(
+        ["scans"],
+        (old: { items?: ScanJob[] } | undefined) => {
+          if (!old?.items) return old;
+          return { ...old, items: old.items.map((s) => (s.id === id ? { ...s, status: "cancelled", progress: s.progress } : s)) };
+        },
+      );
     },
     onSuccess: () => queryClient.refetchQueries({ queryKey: ["scans"] }),
   });
@@ -172,7 +189,7 @@ export default function Scans() {
           <div className="text-center">
             <div className="text-destructive font-bold text-lg">Failed to load scans</div>
             <div className="text-sm text-muted-foreground mt-1">
-              {(error as any)?.message || "An unexpected error occurred"}
+              {error instanceof Error ? error.message : "An unexpected error occurred"}
             </div>
             <button
               className="mt-4 rounded-md border border-border px-4 py-2 text-sm hover:bg-accent"

@@ -144,6 +144,40 @@ export interface ScanInsightsResponse {
   has_ai_data: boolean;
 }
 
+export interface ExecutiveSummaryInsight {
+  summary?: string;
+}
+
+export interface ThreatInsightItem {
+  id: string;
+  threat_type?: string;
+  details?: string;
+  confidence: string;
+}
+
+export interface SafeFileInsightItem {
+  id: string;
+  description?: string;
+}
+
+export interface RecommendationInsightItem {
+  priority: string;
+  recommendation: string;
+  context?: string;
+}
+
+export interface AnomalyInsightItem {
+  severity: string;
+  description: string;
+  file_ids?: (string | number)[];
+}
+
+export interface PriorityInsightItem {
+  id: string;
+  priority_score: number;
+  reason?: string;
+}
+
 export interface DashboardSummary {
   total_files: number;
   total_storage: number;

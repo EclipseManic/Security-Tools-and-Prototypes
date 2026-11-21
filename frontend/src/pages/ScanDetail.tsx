@@ -1,7 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link } from "react-router-dom";
 import api from "@/services/api";
-import { ScanJob, ScanInsightsResponse } from "@/types";
+import {
+  ScanJob,
+  ScanInsightsResponse,
+  ExecutiveSummaryInsight,
+  ThreatInsightItem,
+  SafeFileInsightItem,
+  RecommendationInsightItem,
+  AnomalyInsightItem,
+  PriorityInsightItem,
+} from "@/types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/utils";
@@ -29,6 +38,11 @@ const priorityColors: Record<string, string> = {
   medium: "bg-yellow-500/10 text-yellow-500 border-yellow-500/20",
   high: "bg-orange-500/10 text-orange-500 border-orange-500/20",
 };
+
+function insightItems<T>(map: Map<string, Record<string, unknown>>, type: string): T[] {
+  const items = map.get(type)?.items;
+  return Array.isArray(items) ? (items as T[]) : [];
+}
 
 export default function ScanDetail() {
   const { id } = useParams<{ id: string }>();
@@ -63,17 +77,19 @@ export default function ScanDetail() {
     );
   }
 
-  const insightMap = new Map<string, any>();
+  const insightMap = new Map<string, Record<string, unknown>>();
   for (const ins of insights?.insights ?? []) {
     insightMap.set(ins.type, ins.content);
   }
 
-  const execSummary = insightMap.get("executive_summary");
-  const threats: any[] = (insightMap.get("threats_found") as any)?.items ?? [];
-  const safeFiles: any[] = (insightMap.get("known_safe_files") as any)?.items ?? [];
-  const recommendations: any[] = (insightMap.get("recommendations") as any)?.items ?? [];
-  const anomalies: any[] = (insightMap.get("anomalies") as any)?.items ?? [];
-  const priority: any[] = (insightMap.get("priority_ranking") as any)?.items ?? [];
+  const execSummary = insightMap.get("executive_summary") as
+    | ExecutiveSummaryInsight
+    | undefined;
+  const threats = insightItems<ThreatInsightItem>(insightMap, "threats_found");
+  const safeFiles = insightItems<SafeFileInsightItem>(insightMap, "known_safe_files");
+  const recommendations = insightItems<RecommendationInsightItem>(insightMap, "recommendations");
+  const anomalies = insightItems<AnomalyInsightItem>(insightMap, "anomalies");
+  const priority = insightItems<PriorityInsightItem>(insightMap, "priority_ranking");
   const hasAiData = insights?.has_ai_data ?? false;
 
   return (
@@ -133,7 +149,7 @@ export default function ScanDetail() {
             <FileText className="h-4 w-4 text-blue-500" />
             <h3 className="text-sm font-medium text-muted-foreground uppercase">Executive Summary</h3>
           </div>
-          <p className="text-sm leading-relaxed">{(execSummary as any).summary || ""}</p>
+          <p className="text-sm leading-relaxed">{execSummary.summary || ""}</p>
         </div>
       )}
 
@@ -222,8 +238,8 @@ export default function ScanDetail() {
                 </div>
                 {a.file_ids && a.file_ids.length > 0 && (
                   <div className="flex flex-wrap gap-1 mt-1">
-                    {(a.file_ids as string[]).map((fid) => (
-                      <span key={fid} className="text-xs bg-muted px-1.5 py-0.5 rounded">{fid}</span>
+                    {a.file_ids.map((fid) => (
+                      <span key={String(fid)} className="text-xs bg-muted px-1.5 py-0.5 rounded">{fid}</span>
                     ))}
                   </div>
                 )}
