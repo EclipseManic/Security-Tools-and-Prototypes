@@ -1,0 +1,163 @@
+id: vpn_bruteforce___legacy_appliance
+name: VPN Brute Force — Legacy Appliance
+category: Network
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: 'You are the Tier-1 SOC analyst on shift. VPN appliance alert: authentication flood and CPU exhaustion. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond Legacy VPN appliance.'
+  incident_manager: You are the Incident Manager coordinating the response to Authentication Flood Against End-of-Life VPN Appliance. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Authentication Flood Against End-of-Life VPN Appliance. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Authentication Flood Against End-of-Life VPN Appliance. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Authentication Flood Against End-of-Life VPN Appliance incident. The attack is a volumetric brute-force campaign against a VPN endpoint that lacks rate limiting. No compromise is evident. Business impact: Remote access is degraded and the appliance could be overwhelmed or bypassed. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Authentication Flood Against End-of-Life VPN Appliance
+  opening: A legacy VPN appliance logged 12,000 failed logins from a botnet over six hours. No account succeeded, but the appliance CPU is at 95% and legitimate users report timeouts.
+  summary: The attack is a volumetric brute-force campaign against a VPN endpoint that lacks rate limiting. No compromise is evident.
+  compromised_assets:
+  - Legacy VPN appliance
+  - Remote-access users
+  - Authentication logs
+  detected_via: 'VPN appliance alert: authentication flood and CPU exhaustion.'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: vpn_bruteforce___legacy_appliance_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: 'A legacy VPN appliance logged 12,000 failed logins from a botnet over six hours. No account succeeded, but the appliance CPU is at 95% and legitimate users report timeouts. VPN appliance alert: authentication flood and CPU exhaustion.'
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for Legacy VPN appliance.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - successful logins
+  - source ranges
+  - targeted accounts
+  - vpn logs
+  - appliance version
+  - cpu
+  reference_answer: Confirm no successful logins, identify source ranges and targeted accounts, and preserve VPN logs; check whether the appliance has known vulnerabilities.
+  followup_good: Triage confirms the activity is real. The failures target common usernames and come from 400 IPs. No successful login is present. The appliance is end-of-life and has no geo-blocking or rate limiting.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. The failures target common usernames and come from 400 IPs. No successful login is present. The appliance is end-of-life and has no geo-blocking or rate limiting.
+  next: vpn_bruteforce___legacy_appliance_phase_2
+  mitre_tactic: Credential Access
+  mitre_technique: T1110.004 Credential Stuffing
+- id: vpn_bruteforce___legacy_appliance_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. The failures target common usernames and come from 400 IPs. No successful login is present. The appliance is end-of-life and has no geo-blocking or rate limiting.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - rate limiting
+  - geo-blocking
+  - block source ranges
+  - backup vpn
+  - failover
+  reference_answer: Enable rate limiting and geo-blocking where possible, block the top source ranges at the edge, and fail over to the backup VPN gateway.
+  followup_good: Containment is in place. The VPN endpoint is internet-exposed without rate limiting and uses an end-of-life appliance.
+  followup_weak: The activity continues while the team debates. Remote access is degraded and the appliance could be overwhelmed or bypassed.
+  next: vpn_bruteforce___legacy_appliance_phase_3
+  mitre_tactic: Initial Access
+  mitre_technique: T1133 External Remote Services
+- id: vpn_bruteforce___legacy_appliance_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. The VPN endpoint is internet-exposed without rate limiting and uses an end-of-life appliance.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - patch appliance
+  - replace appliance
+  - disable accounts
+  - enforce mfa
+  - end-of-life
+  reference_answer: Patch or replace the legacy appliance, disable unused accounts, and enforce MFA.
+  followup_good: Restore normal VPN capacity, monitor authentication, and validate failover.
+  followup_weak: The visible symptom is gone, but the root cause remains. Remote access is degraded and the appliance could be overwhelmed or bypassed.
+  next: vpn_bruteforce___legacy_appliance_phase_4
+  mitre_tactic: Collection
+  mitre_technique: T1040 Network Sniffing
+- id: vpn_bruteforce___legacy_appliance_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Restore normal VPN capacity, monitor authentication, and validate failover.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - restore capacity
+  - monitor authentication
+  - validate failover
+  - mfa
+  - gateway
+  reference_answer: Restore normal VPN capacity on the patched or replacement gateway, validate failover, and monitor authentication for renewed flooding.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: vpn_bruteforce___legacy_appliance_phase_5
+  mitre_tactic: Impact
+  mitre_technique: T1498 Network Denial of Service
+- id: vpn_bruteforce___legacy_appliance_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for VPN Brute Force — Legacy Appliance.
+  prompt: What must change so VPN Brute Force — Legacy Appliance is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - retire end-of-life
+  - rate limiting
+  - mfa
+  - authentication flood alert
+  - redundancy
+  reference_answer: Retire end-of-life VPN hardware, add rate limiting and MFA, and monitor authentication floods.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Credential Access
+  mitre_technique: T1110.004 Credential Stuffing

@@ -1,0 +1,211 @@
+id: container_registry_poisoning_-_malicious_image_deployment
+name: Container Registry Poisoning - Malicious Image Deployment
+category: Cloud
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Container Registry Poisoning — Malicious Image Deployment. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Container Registry Poisoning — Malicious Image Deployment. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Container Registry Poisoning — Malicious Image Deployment. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Container Registry Poisoning — Malicious Image Deployment incident. At 03:45 UTC, the container orchestration platform detected a deployment anomaly: a new image ''nginx-custom:1.25.3'' was pushed to the private ECR registry and immediately deployed to the production cluster via a GitOps pipeline. The image was pushed using the CI/CD service account (github-actions-deployer). Investigation revealed: (1) the GitHub Actions workflow was modified by a contributor with write access (external contractor), (2) the workflow now includes a step that exfiltrates environment variables (including AWS_ACCESS_KEY_ID) to an external endpoint, (3) the modified image contains a reverse shell connecting to 45.33.32.156, and (4) the image was tagged as a production release to bypass review gates. The attacker used compromised contributor credentials to modify the workflow and deploy the malicious image. Business impact: cloud-hosted data and service availability
+  are at risk, and provider notification plus key rotation may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy and cloud counsel should assess notification duties and contractual reporting obligations.'
+incident:
+  title: Container Registry Poisoning — Malicious Image Deployment
+  opening: 'At 03:45 UTC, the container orchestration platform detected a deployment anomaly: a new image ''nginx-custom:1.25.3'' was pushed to the private ECR registry and immediately deployed to the production cluster via a GitOps pipeline. The image was pushed using the CI/CD service account (github-actions-deployer).'
+  summary: 'At 03:45 UTC, the container orchestration platform detected a deployment anomaly: a new image ''nginx-custom:1.25.3'' was pushed to the private ECR registry and immediately deployed to the production cluster via a GitOps pipeline. The image was pushed using the CI/CD service account (github-actions-deployer). Investigation revealed: (1) the GitHub Actions workflow was modified by a contributor with write access (external contractor), (2) the workflow now includes a step that exfiltrates environment variables (including AWS_ACCESS_KEY_ID) to an external endpoint, (3) the modified image contains a reverse shell connecting to 45.33.32.156, and (4) the image was tagged as a production release to bypass review gates. The attacker used compromised contributor credentials to modify the workflow and deploy the malicious image.'
+  compromised_assets:
+  - 'GitHub repository: contoso/nginx-custom (CI/CD workflows modified)'
+  - 'ECR registry: contoso-ecr (malicious image pushed)'
+  - 'Production cluster: prod-cluster (3 pods running malicious image)'
+  - 'CI/CD service account: github-actions-deployer (credentials exfiltrated)'
+  detected_via: Deployment anomaly detection — unusual image source + network egress from production pods
+  kill_chain:
+  - Initial Access (Compromised contributor credentials)
+  - Persistence (Modified CI/CD workflow)
+  - Privilege Escalation (CI/CD SA credentials exfiltrated)
+  - Lateral Movement (Malicious image deployed to production)
+  mitre_tactics:
+  - Initial Access
+  - Persistence
+  - Privilege Escalation
+  - Lateral Movement
+phases:
+- id: emergency_containment_stop_malicious_image_deployment
+  phase_type: triage
+  title: Emergency Containment — Stop Malicious Image Deployment
+  situation: The malicious image is deployed to 3 production pods. The reverse shell may be active. The CI/CD pipeline is compromised and could deploy more malicious images. You need to contain immediately.
+  prompt: What is your next action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on GitHub repository: contoso/nginx-custom, its severity, and the affected accounts.'
+    action: What is your next action?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Emergency Containment — Stop Malicious Image Deployment. Asset in scope: GitHub repository: contoso/nginx-custom.'
+  hints:
+  - Rolling back stops the immediate threat but the compromised pipeline will re-deploy the malicious image.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - scale down
+  - down affected
+  - affected deployments
+  - deployments replicas
+  - replicas quarantine
+  - quarantine malicious
+  - malicious ecr
+  - ecr image
+  reference_answer: |-
+    Scale down the affected deployments to 0 replicas, quarantine the malicious ECR image, revoke the CI/CD service account credentials, disable the GitHub Actions workflow, and block the C2 IP at the network level
+
+    Why: Multi-vector containment: scaling to 0 stops the reverse shell, quarantine prevents further deployment, revoking credentials stops CI/CD abuse, disabling the workflow stops re-deployment, and blocking C2 stops callback.
+  followup_good: The GitHub Actions workflow was modified by an external contractor with write access. The modification added a step that exfiltrates environment variables. You need to determine how the contractor's credentials were compromised and whether other workflows or repositories were affected.
+  followup_weak: |-
+    Multi-vector containment: scaling to 0 stops the reverse shell, quarantine prevents further deployment, revoking credentials stops CI/CD abuse, disabling the workflow stops re-deployment, and blocking C2 stops callback.
+
+    The GitHub Actions workflow was modified by an external contractor with write access. The modification added a step that exfiltrates environment variables. You need to determine how the contractor's credentials were compromised and whether other workflows or repositories were affected.
+  next: supply_chain_investigation_how_was_the_workflow_compromised
+  mitre_tactic: Persistence
+  mitre_technique: 'T1053.007 — Container Orchestration: Deployment'
+- id: supply_chain_investigation_how_was_the_workflow_compromised
+  phase_type: analysis
+  title: Supply Chain Investigation — How Was the Workflow Compromised?
+  situation: The GitHub Actions workflow was modified by an external contractor with write access. The modification added a step that exfiltrates environment variables. You need to determine how the contractor's credentials were compromised and whether other workflows or repositories were affected.
+  prompt: What is your next action?
+  guidance:
+    what: 'Determine what the evidence says about scope, access, and privilege on GitHub repository: contoso/nginx-custom.'
+    action: What is your next action?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Supply Chain Investigation — How Was the Workflow Compromised?. Asset in scope: GitHub repository: contoso/nginx-custom.'
+  hints:
+  - Focusing only on the known compromise misses potential other compromised workflows.
+  - Immediate revocation is a good containment step but investigation is needed to understand the full scope.
+  ideal_concepts:
+  - audit contractor
+  - contractor github
+  - github activity
+  - activity across
+  - across repositories
+  - repositories review
+  - review access
+  - access history
+  reference_answer: |-
+    Audit the contractor's GitHub activity across all repositories, review their access history, check for other workflow modifications, and investigate whether their personal device was compromised
+
+    Why: Supply chain investigation requires understanding the contractor's full access scope. Other repositories may be compromised. Device compromise explains how credentials were stolen.
+  followup_good: The malicious image nginx-custom:1.25.3 contains a reverse shell and environment variable exfiltration. You need to analyze the full payload to understand the attacker's capabilities and determine if the image accessed any sensitive data in the cluster.
+  followup_weak: |-
+    Supply chain investigation requires understanding the contractor's full access scope.
+
+    The malicious image nginx-custom:1.25.3 contains a reverse shell and environment variable exfiltration. You need to analyze the full payload to understand the attacker's capabilities and determine if the image accessed any sensitive data in the cluster.
+  next: image_forensics_analyzing_the_malicious_container
+  mitre_tactic: Initial Access
+  mitre_technique: 'T1195.002 — Supply Chain Compromise: Software Supply Chain'
+- id: image_forensics_analyzing_the_malicious_container
+  phase_type: eradication
+  title: Image Forensics — Analyzing the Malicious Container
+  situation: The malicious image nginx-custom:1.25.3 contains a reverse shell and environment variable exfiltration. You need to analyze the full payload to understand the attacker's capabilities and determine if the image accessed any sensitive data in the cluster.
+  prompt: What is your next action?
+  guidance:
+    what: 'Find every foothold the attacker left on GitHub repository: contoso/nginx-custom, including persistence and stolen credentials.'
+    action: What is your next action?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Image Forensics — Analyzing the Malicious Container. Asset in scope: GitHub repository: contoso/nginx-custom.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - perform static
+  - static dynamic
+  - dynamic analysis
+  - analysis image
+  - image layers
+  - layers extract
+  - extract reverse
+  - reverse shell
+  reference_answer: |-
+    Perform static and dynamic analysis of the image layers, extract the reverse shell configuration, check what environment variables and secrets were accessible to the pods, and review network logs for data exfiltration
+
+    Why: Complete image forensics: static analysis reveals the payload structure, dynamic analysis reveals runtime behavior, env var access shows credential exposure, and network logs show data exfiltration.
+  followup_good: 'The root cause is: (1) external contributor with write access to workflows, (2) no image signing or verification, (3) CI/CD secrets stored as environment variables, and (4) no image provenance tracking. You need to implement a secure supply chain architecture.'
+  followup_weak: |-
+    Complete image forensics: static analysis reveals the payload structure, dynamic analysis reveals runtime behavior, env var access shows credential exposure, and network logs show data exfiltration.
+
+    The root cause is: (1) external contributor with write access to workflows, (2) no image signing or verification, (3) CI/CD secrets stored as environment variables, and (4) no image provenance tracking. You need to implement a secure supply chain architecture.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1610 — Deploy Container
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: 'Containment is holding and the attacker''s active access has been removed. GitHub repository: contoso/nginx-custom is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.'
+  prompt: 'What must be true before you return GitHub repository: contoso/nginx-custom to production?'
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: 'What must be true before you return GitHub repository: contoso/nginx-custom to production?'
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: GitHub repository: contoso/nginx-custom.'
+  hints:
+  - 'Which backup or rebuild image is known-good for GitHub repository: contoso/nginx-custom, and when was it validated?'
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore GitHub repository: contoso/nginx-custom from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: supply_chain_hardening_securing_ci_cd_pipelines
+  next_weak: ''
+  mitre_tactic: Recovery
+  mitre_technique: 'T1562.008 — Impair Defenses: Disable or Modify Cloud Logs'
+  role_prompts: {}
+- id: supply_chain_hardening_securing_ci_cd_pipelines
+  phase_type: lessons
+  title: Supply Chain Hardening — Securing CI/CD Pipelines
+  situation: 'The root cause is: (1) external contributor with write access to workflows, (2) no image signing or verification, (3) CI/CD secrets stored as environment variables, and (4) no image provenance tracking. You need to implement a secure supply chain architecture.'
+  prompt: What is your next action?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What is your next action?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Supply Chain Hardening — Securing CI/CD Pipelines. Asset in scope: GitHub repository: contoso/nginx-custom.'
+  hints:
+  - Image scanning catches known vulnerabilities but doesn't prevent custom malware or reverse shells.
+  - OIDC-based authentication and image signing provide equivalent security without operational overhead.
+  - Signed commits, required reviews, and OIDC authentication provide security without restricting contributors.
+  ideal_concepts:
+  - implement sigstore
+  - sigstore cosign
+  - cosign image
+  - image signing
+  - signing enforce
+  - enforce image
+  - image verification
+  - verification admission
+  reference_answer: |-
+    Implement Sigstore/cosign image signing, enforce image verification via admission controller, use OIDC for CI/CD (no stored secrets), restrict workflow write access to core maintainers, and deploy SLSA Level 3 provenance
+
+    Why: Secure supply chain: image signing prevents tampering, admission controllers block unsigned images, OIDC eliminates stored secrets, restricted access reduces attack surface, and SLSA provenance provides verifiable build chain.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Container Registry Poisoning — Malicious Image Deployment incident. At 03:45 UTC, the container orchestration platform detected a deployment anomaly: a new image 'nginx-custom:1.25.3' was pushed to the private ECR registry and immediately deployed to the production cluster via a GitOps pipeline. The image was pushed using the CI/CD service account (github-actions-deployer). Investigation revealed: (1) the GitHub Actions workflow was modified by a contributor with write access (external contractor), (2) the workflow now includes a step that exfiltrates environmen...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Container Registry Poisoning — Malicious Image Deployment incident. At 03:45 UTC, the container orchestration platform detected a deployment anomaly: a new image 'nginx-custom:1.25.3' was pushed to the private ECR registry and immediately deployed to the production cluster via a GitOps pipeline. The image was pushed using the CI/CD service account (github-actions-deployer). Investigation revealed: (1) the GitHub Actions workflow was modified by a contributor with write access (external contractor), (2) the workflow now includes a step that exfiltrates environmen...
+  mitre_tactic: Recovery
+  mitre_technique: 'T1562.008 — Impair Defenses: Disable or Modify Cloud Logs'

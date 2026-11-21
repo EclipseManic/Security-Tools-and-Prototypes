@@ -1,0 +1,204 @@
+id: steganography-based_data_exfiltration
+name: Steganography-Based Data Exfiltration
+category: Advanced Threats
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Covert Channel Exfiltration — Data Hidden in Image Uploads. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Covert Channel Exfiltration — Data Hidden in Image Uploads. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Covert Channel Exfiltration — Data Hidden in Image Uploads. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Covert Channel Exfiltration — Data Hidden in Image Uploads incident. The DLP team flagged an unusual pattern: employee Marcus Webb (m.webb, Senior R&D Engineer) has been uploading an average of 47 JPEG images per day to a personal Imgur account over the past 3 weeks. The images appear to be innocuous landscape photos taken with his company phone. However, network forensics reveals each image contains approximately 15 KB of hidden data appended to the JPEG EOI marker using LSB (Least Significant Bit) steganography. The steganographic payload uses a custom encoding scheme with a rotating XOR key derived from image metadata. Analysis of the decoded data shows fragments of confidential engineering schematics, source code from the ''Project Aurora'' repository, and internal API documentation. Total estimated exfiltration: 2.1 MB across 1,410 images. Business impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party
+  notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: Covert Channel Exfiltration — Data Hidden in Image Uploads
+  opening: 'The DLP team flagged an unusual pattern: employee Marcus Webb (m.webb, Senior R&D Engineer) has been uploading an average of 47 JPEG images per day to a personal Imgur account over the past 3 weeks. The images appear to be innocuous landscape photos taken with his company phone.'
+  summary: 'The DLP team flagged an unusual pattern: employee Marcus Webb (m.webb, Senior R&D Engineer) has been uploading an average of 47 JPEG images per day to a personal Imgur account over the past 3 weeks. The images appear to be innocuous landscape photos taken with his company phone. However, network forensics reveals each image contains approximately 15 KB of hidden data appended to the JPEG EOI marker using LSB (Least Significant Bit) steganography. The steganographic payload uses a custom encoding scheme with a rotating XOR key derived from image metadata. Analysis of the decoded data shows fragments of confidential engineering schematics, source code from the ''Project Aurora'' repository, and internal API documentation. Total estimated exfiltration: 2.1 MB across 1,410 images.'
+  compromised_assets:
+  - m.webb workstation (WS-RD-017)
+  - Imgur personal account (attacker-controlled or self-exfiltration)
+  - Project Aurora source code repository
+  - Engineering schematic repository
+  detected_via: DLP volume anomaly — excessive image uploads to personal cloud storage
+  kill_chain:
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: m.webb is uploading steganographically-encoded data to Imgur at a rate of ~47 images/day. The exfiltration has been ongoing for 3 weeks (1,410 images, ~2.1 MB). m.webb is currently at his desk. His workstation WS-RD-017 has access to Project Aurora. The Imgur uploads are to a personal account, bypassing corporate DLP which only inspects approved cloud services.
+  prompt: What is your first containment action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on m.webb workstation, its severity, and the affected accounts.'
+    action: What is your first containment action?
+    why: Every later decision depends on an accurate picture of m.webb workstation and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: m.webb workstation.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - isolate ws-rd-017
+  - ws-rd-017 network
+  - network block
+  - imgur uploads
+  - uploads proxy
+  - proxy preserve
+  - preserve workstation
+  - workstation forensic
+  reference_answer: |-
+    Isolate WS-RD-017 from the network, block Imgur uploads at the proxy, and preserve the workstation for forensic imaging without alerting m.webb
+
+    Why: Network isolation stops ongoing exfiltration. Proxy block prevents uploads. Silent forensic preservation maintains the investigation.
+  followup_good: 'WS-RD-017 is isolated. Forensic imaging reveals: (1) a custom Python script ''aurora_encoder.py'' in m.webb''s Documents folder, (2) the script uses LSB steganography with a rotating XOR key derived from EXIF metadata, (3) the script has a config file pointing to three output channels: Imgur, a Discord webhook, and a Telegram bot, (4) the Discord and Telegram channels were also used — 210 messages to Discord and 89 to Telegram over the same period. Total exfiltration across all three channels: approximately 4.7 MB.'
+  followup_weak: |-
+    Network isolation stops ongoing exfiltration.
+
+    WS-RD-017 is isolated. Forensic imaging reveals: (1) a custom Python script 'aurora_encoder.py' in m.webb's Documents folder, (2) the script uses LSB steganography with a rotating XOR key derived from EXIF metadata, (3) the script has a config file pointing to three output channels: Imgur, a Discord webhook, and a Telegram bot, (4) the Discord and Telegram channels were also used — 210 messages to Discord and 89 to Telegram over the same period. Total exfiltration across all three channels: approximately 4.7 MB.
+  next: steganographic_analysis_phase_2
+  mitre_tactic: Exfiltration
+  mitre_technique: T1027.003 Steganography
+- id: steganographic_analysis_phase_2
+  phase_type: analysis
+  title: Steganographic Analysis — Phase 2
+  situation: 'WS-RD-017 is isolated. Forensic imaging reveals: (1) a custom Python script ''aurora_encoder.py'' in m.webb''s Documents folder, (2) the script uses LSB steganography with a rotating XOR key derived from EXIF metadata, (3) the script has a config file pointing to three output channels: Imgur, a Discord webhook, and a Telegram bot, (4) the Discord and Telegram channels were also used — 210 messages to Discord and 89 to Telegram over the same period. Total exfiltration across all three channels: approximately 4.7 MB.'
+  prompt: How do you fully characterize the exfiltration?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on m.webb workstation.
+    action: How do you fully characterize the exfiltration?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Steganographic Analysis — Phase 2. Asset in scope: m.webb workstation.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - decode steganographic
+  - steganographic content
+  - content three
+  - three channels
+  - channels imgur
+  - imgur discord
+  - discord telegram
+  - telegram identify
+  reference_answer: |-
+    Decode the steganographic content from all three channels (Imgur, Discord, Telegram) to identify the exact data exfiltrated, then correlate with classified document access logs to quantify the breach
+
+    Why: Full decoding reveals what was stolen — critical for breach notification, damage assessment, and legal proceedings. Access log correlation confirms scope.
+  followup_good: Decoded data confirms exfiltration of Project Aurora source code (v2.3.1 through v2.5.7), engineering schematics for a classified defense subsystem, and 14 internal API specifications. m.webb's browser history shows visits to steganography forums and a 'how-to' guide on hiding data in images. His financial records (obtained via HR) show a recent $25,000 deposit from an offshore account. He has a pending two-week vacation to a non-extradition country starting in 10 days.
+  followup_weak: |-
+    Full decoding reveals what was stolen — critical for breach notification, damage assessment, and legal proceedings.
+
+    Decoded data confirms exfiltration of Project Aurora source code (v2.3.1 through v2.5.7), engineering schematics for a classified defense subsystem, and 14 internal API specifications. m.webb's browser history shows visits to steganography forums and a 'how-to' guide on hiding data in images. His financial records (obtained via HR) show a recent $25,000 deposit from an offshore account. He has a pending two-week vacation to a non-extradition country starting in 10 days.
+  next: insider_threat_assessment_phase_3
+  mitre_tactic: Collection
+  mitre_technique: T1567 Exfiltration Over Web Service
+- id: insider_threat_assessment_phase_3
+  phase_type: eradication
+  title: Insider Threat Assessment — Phase 3
+  situation: Decoded data confirms exfiltration of Project Aurora source code (v2.3.1 through v2.5.7), engineering schematics for a classified defense subsystem, and 14 internal API specifications. m.webb's browser history shows visits to steganography forums and a 'how-to' guide on hiding data in images. His financial records (obtained via HR) show a recent $25,000 deposit from an offshore account. He has a pending two-week vacation to a non-extradition country starting in 10 days.
+  prompt: How do you handle the insider threat assessment?
+  guidance:
+    what: Find every foothold the attacker left on m.webb workstation, including persistence and stolen credentials.
+    action: How do you handle the insider threat assessment?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Insider Threat Assessment — Phase 3. Asset in scope: m.webb workstation.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - engage legal
+  - legal immediately
+  - immediately coordinate
+  - coordinate law
+  - law enforcement
+  - enforcement fbi
+  - fbi preserve
+  - preserve digital
+  reference_answer: |-
+    Engage HR and legal immediately, coordinate with law enforcement (FBI), preserve all digital evidence with chain of custody, restrict m.webb's access to additional systems, and monitor his communications under legal guidance
+
+    Why: Financial indicators and pending travel suggest espionage. Law enforcement engagement is critical for criminal prosecution. Legal coordination ensures evidence admissibility.
+  followup_good: 'The breach scope is: Project Aurora source code (all versions from past 3 weeks), classified defense subsystem schematics, and 14 API specifications. The source code and schematics are classified under ITAR regulations. The exfiltrated data has been on Imgur (public), Discord, and Telegram for up to 3 weeks. The data cannot be recalled.'
+  followup_weak: |-
+    Financial indicators and pending travel suggest espionage.
+
+    The breach scope is: Project Aurora source code (all versions from past 3 weeks), classified defense subsystem schematics, and 14 API specifications. The source code and schematics are classified under ITAR regulations. The exfiltrated data has been on Imgur (public), Discord, and Telegram for up to 3 weeks. The data cannot be recalled.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. m.webb workstation is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return m.webb workstation to production?
+  guidance:
+    what: 'Define what ''clean'' means for m.webb workstation: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return m.webb workstation to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: m.webb workstation.'
+  hints:
+  - Which backup or rebuild image is known-good for m.webb workstation, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore m.webb workstation from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: breach_scope_notification_phase_4
+  next_weak: ''
+  mitre_tactic: Exfiltration
+  mitre_technique: T1048.003 Exfiltration Over Unencrypted Non-C2 Protocol
+  role_prompts: {}
+- id: breach_scope_notification_phase_4
+  phase_type: lessons
+  title: Breach Scope & Notification — Phase 4
+  situation: 'The breach scope is: Project Aurora source code (all versions from past 3 weeks), classified defense subsystem schematics, and 14 API specifications. The source code and schematics are classified under ITAR regulations. The exfiltrated data has been on Imgur (public), Discord, and Telegram for up to 3 weeks. The data cannot be recalled.'
+  prompt: What notifications and breach response steps do you take?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on m.webb workstation.
+    action: What notifications and breach response steps do you take?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Breach Scope & Notification — Phase 4. Asset in scope: m.webb workstation.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - report ddtc
+  - ddtc directorate
+  - directorate defense
+  - defense trade
+  - trade controls
+  - controls itar
+  - itar violation
+  - violation notify
+  reference_answer: |-
+    Report to DDTC (Directorate of Defense Trade Controls) for ITAR violation, notify DoD program office for Project Aurora, engage specialized cyber incident response firm, issue breach notifications per regulatory requirements, and begin damage assessment for classified programs
+
+    Why: ITAR-classified data exfiltration triggers mandatory DDTC reporting. The DoD program office must be notified for classified programs. Specialized IR firm needed for complex insider case.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Covert Channel Exfiltration — Data Hidden in Image Uploads incident. The DLP team flagged an unusual pattern: employee Marcus Webb (m.webb, Senior R&D Engineer) has been uploading an average of 47 JPEG images per day to a personal Imgur account over the past 3 weeks. The images appear to be innocuous landscape photos taken with his company phone. However, network forensics reveals each image contains approximately 15 KB of hidden data appended to the JPEG EOI marker using LSB (Least Significant Bit) steganography. The steganographic payload uses a custom encoding...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Covert Channel Exfiltration — Data Hidden in Image Uploads incident. The DLP team flagged an unusual pattern: employee Marcus Webb (m.webb, Senior R&D Engineer) has been uploading an average of 47 JPEG images per day to a personal Imgur account over the past 3 weeks. The images appear to be innocuous landscape photos taken with his company phone. However, network forensics reveals each image contains approximately 15 KB of hidden data appended to the JPEG EOI marker using LSB (Least Significant Bit) steganography. The steganographic payload uses a custom encoding...
+  mitre_tactic: Exfiltration
+  mitre_technique: T1048.003 Exfiltration Over Unencrypted Non-C2 Protocol

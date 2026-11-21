@@ -1,0 +1,163 @@
+id: chrome_extension___session_cookie_theft
+name: Browser Extension — Session Cookie Theft
+category: Endpoint
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: 'You are the Tier-1 SOC analyst on shift. Proxy alert: extension posting encoded cookie data to an unknown endpoint. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond 12 marketing workstations.'
+  incident_manager: You are the Incident Manager coordinating the response to Malicious Chrome Extension Steals SaaS Session Cookies. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Malicious Chrome Extension Steals SaaS Session Cookies. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Malicious Chrome Extension Steals SaaS Session Cookies. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Malicious Chrome Extension Steals SaaS Session Cookies incident. The extension exfiltrated session cookies to a remote endpoint and tampered with search results. It was installed on 12 marketing workstations through a sideloaded update. Business impact: Session cookies could allow account takeover without a password or MFA prompt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Malicious Chrome Extension Steals SaaS Session Cookies
+  opening: Several users reported being signed out of SaaS apps, and a security review found a newly installed Chrome extension with permission to read all sites and cookies. It was pushed by a fake 'PDF merge' update.
+  summary: The extension exfiltrated session cookies to a remote endpoint and tampered with search results. It was installed on 12 marketing workstations through a sideloaded update.
+  compromised_assets:
+  - 12 marketing workstations
+  - Chrome extension 'PDFMerge Pro'
+  - SaaS session cookies
+  detected_via: 'Proxy alert: extension posting encoded cookie data to an unknown endpoint.'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: chrome_extension___session_cookie_theft_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: 'Several users reported being signed out of SaaS apps, and a security review found a newly installed Chrome extension with permission to read all sites and cookies. It was pushed by a fake ''PDF merge'' update. Proxy alert: extension posting encoded cookie data to an unknown endpoint.'
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for 12 marketing workstations.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - extension id
+  - extension version
+  - install source
+  - affected hosts
+  - destination domain
+  - saas logs
+  reference_answer: Identify the extension ID, version, install source, affected hosts, and destination domain; preserve proxy and browser logs, and check SaaS sign-in logs for anomalous sessions.
+  followup_good: Triage confirms the activity is real. Proxy logs show POSTs to api.pdfmerge-sync[.]com from 12 hosts. The extension has 'read and change all your data on all websites' and was installed outside the Chrome Web Store. SaaS logs show no logins from new locations yet.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. Proxy logs show POSTs to api.pdfmerge-sync[.]com from 12 hosts. The extension has 'read and change all your data on all websites' and was installed outside the Chrome Web Store. SaaS logs show no logins from new locations yet.
+  next: chrome_extension___session_cookie_theft_phase_2
+  mitre_tactic: Credential Access
+  mitre_technique: T1552.001 Credentials In Files
+- id: chrome_extension___session_cookie_theft_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. Proxy logs show POSTs to api.pdfmerge-sync[.]com from 12 hosts. The extension has 'read and change all your data on all websites' and was installed outside the Chrome Web Store. SaaS logs show no logins from new locations yet.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - force-remove extension
+  - browser policy
+  - block extension
+  - revoke sessions
+  - isolate host
+  reference_answer: Force-remove the extension through browser policy, block its ID and destination domain, revoke active SaaS sessions for affected users, and isolate one host for analysis.
+  followup_good: Containment is in place. A sideloaded extension update gained broad browser permissions and exfiltrated cookies. Extension installs are not centrally controlled.
+  followup_weak: The activity continues while the team debates. Session cookies could allow account takeover without a password or MFA prompt.
+  next: chrome_extension___session_cookie_theft_phase_3
+  mitre_tactic: Lateral Movement
+  mitre_technique: T1550.002 Pass the Hash
+- id: chrome_extension___session_cookie_theft_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. A sideloaded extension update gained broad browser permissions and exfiltrated cookies. Extension installs are not centrally controlled.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - remove remnants
+  - scan extensions
+  - rotate credentials
+  - policy exceptions
+  - sideloaded
+  reference_answer: Remove extension remnants and policy exceptions, scan the 12 hosts for other sideloaded extensions, and rotate credentials for any account with suspicious session activity.
+  followup_good: Re-enroll browsers under central extension allowlisting, restore user profiles from trusted sync where needed, and monitor SaaS logins for 48 hours.
+  followup_weak: The visible symptom is gone, but the root cause remains. Session cookies could allow account takeover without a password or MFA prompt.
+  next: chrome_extension___session_cookie_theft_phase_4
+  mitre_tactic: Lateral Movement
+  mitre_technique: T1550.002 Pass the Hash
+- id: chrome_extension___session_cookie_theft_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Re-enroll browsers under central extension allowlisting, restore user profiles from trusted sync where needed, and monitor SaaS logins for 48 hours.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - extension allowlist
+  - restore profiles
+  - monitor saas
+  - browser policy
+  - validate clean
+  reference_answer: Re-enroll the affected browsers under central extension allowlisting, restore user profiles from trusted sync where needed, and monitor SaaS logins for 48 hours before closing the incident.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: chrome_extension___session_cookie_theft_phase_5
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1562.001 Disable or Modify Tools
+- id: chrome_extension___session_cookie_theft_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Browser Extension — Session Cookie Theft.
+  prompt: What must change so Browser Extension — Session Cookie Theft is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - extension allowlist
+  - block sideloading
+  - high-permission alert
+  - browser policy
+  - user awareness
+  reference_answer: Enforce an extension allowlist through Chrome policy, block sideloaded extensions, and add monitoring for new high-permission extensions.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Credential Access
+  mitre_technique: T1552.001 Credentials In Files

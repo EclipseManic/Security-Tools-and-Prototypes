@@ -1,0 +1,247 @@
+id: uefi_rootkit_implantation
+name: UEFI Rootkit Implantation
+category: Advanced Threats
+format_version: 2
+difficulty: Expert
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to UEFI Bootkit — ESP Manipulation and Firmware Persistence. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for UEFI Bootkit — ESP Manipulation and Firmware Persistence. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for UEFI Bootkit — ESP Manipulation and Firmware Persistence. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the UEFI Bootkit — ESP Manipulation and Firmware Persistence incident. During a security assessment, the firmware integrity monitoring agent on server PROD-DB-01 flagged a SHA-256 hash mismatch on the UEFI ESP (EFI System Partition) boot files. The ESP contains a modified bootx64.efi and a newly added ''winload_debug.efi'' that chains into the legitimate Windows boot manager after installing a rootkit. Forensic analysis reveals the UEFI rootkit: (1) hooks the Boot Services protocol table to intercept block I/O reads, (2) installs a malicious DXE driver that persists across disk replacement and OS reinstallation, (3) provides a hidden boot menu option that loads a backdoored Windows kernel with a stealth driver, (4) modifies Secure Boot validation by exploiting a known vulnerability in the vendor''s DBX revocation list. The rootkit has been active for approximately 3 months. The server hosts the primary customer database (2.3M records) and the attacker
+  has been exfiltrating data through the rootkit''s covert network channel that operates below the OS network stack. Business impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: UEFI Bootkit — ESP Manipulation and Firmware Persistence
+  opening: During a security assessment, the firmware integrity monitoring agent on server PROD-DB-01 flagged a SHA-256 hash mismatch on the UEFI ESP (EFI System Partition) boot files. The ESP contains a modified bootx64.efi and a newly added 'winload_debug.efi' that chains into the legitimate Windows boot manager after installing a rootkit.
+  summary: 'During a security assessment, the firmware integrity monitoring agent on server PROD-DB-01 flagged a SHA-256 hash mismatch on the UEFI ESP (EFI System Partition) boot files. The ESP contains a modified bootx64.efi and a newly added ''winload_debug.efi'' that chains into the legitimate Windows boot manager after installing a rootkit. Forensic analysis reveals the UEFI rootkit: (1) hooks the Boot Services protocol table to intercept block I/O reads, (2) installs a malicious DXE driver that persists across disk replacement and OS reinstallation, (3) provides a hidden boot menu option that loads a backdoored Windows kernel with a stealth driver, (4) modifies Secure Boot validation by exploiting a known vulnerability in the vendor''s DBX revocation list. The rootkit has been active for approximately 3 months. The server hosts the primary customer database (2.3M records) and the attacker has been exfiltrating data through the rootkit''s covert network channel that operates below the
+    OS network stack.'
+  compromised_assets:
+  - PROD-DB-01 (Primary database server)
+  - UEFI ESP (EFI System Partition compromised)
+  - Customer database (2.3M records potentially accessed)
+  - UEFI Boot Services (hooked by rootkit)
+  detected_via: Firmware integrity monitoring agent — ESP hash mismatch
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Persistence
+  - Privilege Escalation
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Persistence
+  - Privilege Access
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: The UEFI rootkit on PROD-DB-01 provides OS-level persistence that survives disk replacement. The rootkit hooks Boot Services to intercept I/O, has a DXE driver that loads before the OS, and operates a covert network channel below the OS network stack. The customer database (2.3M records) is actively being accessed. Standard containment (reboot, re-image) will not remove the rootkit.
+  prompt: What is your first containment action?
+  guidance:
+    what: Establish what fired on PROD-DB-01, which accounts are involved, and how urgent the signal is.
+    action: What is your first containment action?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: PROD-DB-01.'
+  hints:
+  - Stops the active exfiltration but destroys volatile memory evidence.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - isolate prod-db-01
+  - prod-db-01 network
+  - network switch
+  - switch level
+  - level vlan
+  - vlan quarantine
+  - quarantine capture
+  - capture full
+  reference_answer: |-
+    Isolate PROD-DB-01 at the network switch level (VLAN quarantine), capture full memory and firmware dumps for forensics, activate the disaster recovery database replica, and begin monitoring all network traffic from the isolated host for covert channels
+
+    Why: Network isolation at the switch level is most effective for UEFI rootkits that operate below the OS network stack. DR replica maintains service. Traffic monitoring captures the covert channel behavior.
+  followup_good: 'Firmware analysis reveals: (1) bootx64.efi was modified with a 12 KB patch that hooks EFI_BOOT_SERVICES.Protect(), (2) winload_debug.efi is a full UEFI application that loads a modified Windows bootloader with a rootkit driver (winload_debug.sys), (3) the DXE driver (amdkmpfd.efi masquerading as an AMD driver) installs hooks in the UEFI block I/O protocol, (4) Secure Boot was bypassed by exploiting a DBX revocation list gap in the vendor''s firmware update process, (5) the rootkit communicates via a covert channel using SMBus (I2C) to an external hardware device connected to the server''s management port.'
+  followup_weak: |-
+    Network isolation at the switch level is most effective for UEFI rootkits that operate below the OS network stack.
+
+    Firmware analysis reveals: (1) bootx64.efi was modified with a 12 KB patch that hooks EFI_BOOT_SERVICES.Protect(), (2) winload_debug.efi is a full UEFI application that loads a modified Windows bootloader with a rootkit driver (winload_debug.sys), (3) the DXE driver (amdkmpfd.efi masquerading as an AMD driver) installs hooks in the UEFI block I/O protocol, (4) Secure Boot was bypassed by exploiting a DBX revocation list gap in the vendor's firmware update process, (5) the rootkit communicates via a covert channel using SMBus (I2C) to an external hardware device connected to the server's management port.
+  next: firmware_forensic_analysis_phase_2
+  mitre_tactic: Persistence
+  mitre_technique: 'T1542.001 System Firmware: UEFI'
+- id: firmware_forensic_analysis_phase_2
+  phase_type: analysis
+  title: Firmware Forensic Analysis — Phase 2
+  situation: 'Firmware analysis reveals: (1) bootx64.efi was modified with a 12 KB patch that hooks EFI_BOOT_SERVICES.Protect(), (2) winload_debug.efi is a full UEFI application that loads a modified Windows bootloader with a rootkit driver (winload_debug.sys), (3) the DXE driver (amdkmpfd.efi masquerading as an AMD driver) installs hooks in the UEFI block I/O protocol, (4) Secure Boot was bypassed by exploiting a DBX revocation list gap in the vendor''s firmware update process, (5) the rootkit communicates via a covert channel using SMBus (I2C) to an external hardware device connected to the server''s management port.'
+  prompt: How do you fully characterize the rootkit's capabilities?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on PROD-DB-01.
+    action: How do you fully characterize the rootkit's capabilities?
+    why: Acting on an unverified scope either misses the attacker or over-contains the business.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Firmware Forensic Analysis — Phase 2. Asset in scope: PROD-DB-01.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - disassemble dxe
+  - dxe driver
+  - driver bootkit
+  - bootkit code
+  - code document
+  - document boot
+  - boot services
+  - services hooks
+  reference_answer: |-
+    Disassemble the DXE driver and bootkit code, document all Boot Services hooks, identify the SMBus covert channel protocol, extract the rootkit's detection evasion techniques, and build firmware-specific detection signatures
+
+    Why: Full firmware reverse engineering reveals all persistence mechanisms, the covert channel protocol, and enables building detection tools for other potentially compromised systems.
+  followup_good: The UEFI rootkit on PROD-DB-01 was delivered through a compromised firmware update utility. The same utility was used on 12 other production servers. SMBus covert channel analysis reveals the external hardware device is a custom PCB attached to the management port — this is a hardware implant. The database access logs show the rootkit's OS-level driver has been copying customer records to a staging area in unallocated disk space, which the SMBus channel exfiltrates.
+  followup_weak: |-
+    Full firmware reverse engineering reveals all persistence mechanisms, the covert channel protocol, and enables building detection tools for other potentially compromised systems.
+
+    The UEFI rootkit on PROD-DB-01 was delivered through a compromised firmware update utility. The same utility was used on 12 other production servers. SMBus covert channel analysis reveals the external hardware device is a custom PCB attached to the management port — this is a hardware implant. The database access logs show the rootkit's OS-level driver has been copying customer records to a staging area in unallocated disk space, which the SMBus channel exfiltrates.
+  next: scope_lateral_assessment_phase_3
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1542 Pre-OS Boot
+- id: scope_lateral_assessment_phase_3
+  phase_type: containment
+  title: Scope & Lateral Assessment — Phase 3
+  situation: The UEFI rootkit on PROD-DB-01 was delivered through a compromised firmware update utility. The same utility was used on 12 other production servers. SMBus covert channel analysis reveals the external hardware device is a custom PCB attached to the management port — this is a hardware implant. The database access logs show the rootkit's OS-level driver has been copying customer records to a staging area in unallocated disk space, which the SMBus channel exfiltrates.
+  prompt: How do you determine if other servers are compromised?
+  guidance:
+    what: 'Balance speed against disruption: what must be isolated now, and what can wait for scoping?'
+    action: How do you determine if other servers are compromised?
+    why: Containment buys the time needed to investigate without letting the attacker expand.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Scope & Lateral Assessment — Phase 3. Asset in scope: PROD-DB-01.'
+  hints:
+  - Consider the affected accounts and their privilege level.
+  - Preserve evidence before disrupting anything.
+  ideal_concepts:
+  - deploy firmware
+  - firmware integrity
+  - integrity scanning
+  - scanning agents
+  - agents servers
+  - servers compromised
+  - compromised update
+  - update utility
+  reference_answer: |-
+    Deploy firmware integrity scanning agents to all 12 servers that used the compromised update utility, check for SMBus covert channel hardware devices on all servers, and compare ESP hashes against known-good baselines
+
+    Why: Firmware integrity scanning detects the ESP modification. Physical inspection finds hardware implants. Hash comparison confirms compromise.
+  followup_good: Firmware scanning confirms 3 additional servers have matching ESP modifications. All 4 compromised servers have SMBus hardware implants. The rootkit was active for 3 months, accessing the customer database of 2.3M records. Eradication requires flashing clean UEFI firmware, removing the hardware implants, and rebuilding the servers from verified media.
+  followup_weak: |-
+    Firmware integrity scanning detects the ESP modification.
+
+    Firmware scanning confirms 3 additional servers have matching ESP modifications. All 4 compromised servers have SMBus hardware implants. The rootkit was active for 3 months, accessing the customer database of 2.3M records. Eradication requires flashing clean UEFI firmware, removing the hardware implants, and rebuilding the servers from verified media.
+  next: eradication_firmware_recovery_phase_4
+  mitre_tactic: Discovery
+  mitre_technique: T1082 System Information Discovery
+- id: eradication_firmware_recovery_phase_4
+  phase_type: eradication
+  title: Eradication & Firmware Recovery — Phase 4
+  situation: Firmware scanning confirms 3 additional servers have matching ESP modifications. All 4 compromised servers have SMBus hardware implants. The rootkit was active for 3 months, accessing the customer database of 2.3M records. Eradication requires flashing clean UEFI firmware, removing the hardware implants, and rebuilding the servers from verified media.
+  prompt: What is your eradication and recovery plan?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: What is your eradication and recovery plan?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Eradication & Firmware Recovery — Phase 4. Asset in scope: PROD-DB-01.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - physically remove
+  - smbus hardware
+  - hardware implants
+  - implants servers
+  - servers flash
+  - flash verified
+  - verified clean
+  - clean uefi
+  reference_answer: |-
+    Physically remove SMBus hardware implants from all 4 servers, flash verified clean UEFI firmware with Secure Boot re-enabled using updated DBX revocation lists, rebuild all servers from verified installation media, rotate all customer database credentials, and deploy hardware security modules (HSMs) for key storage
+
+    Why: Physical removal eliminates the hardware implant. Verified firmware with updated DBX closes the Secure Boot bypass. HSMs protect keys from firmware-level access.
+  followup_good: 'Eradication is complete. The incident exposed critical gaps: no firmware integrity monitoring was in place before the assessment, firmware update utilities were not validated, Secure Boot was not properly configured with DBX revocation lists, and server management ports had no physical access controls. The UEFI rootkit was one of the most sophisticated persistence mechanisms ever encountered.'
+  followup_weak: |-
+    Physical removal eliminates the hardware implant.
+
+    Eradication is complete. The incident exposed critical gaps: no firmware integrity monitoring was in place before the assessment, firmware update utilities were not validated, Secure Boot was not properly configured with DBX revocation lists, and server management ports had no physical access controls. The UEFI rootkit was one of the most sophisticated persistence mechanisms ever encountered.
+  next: recovery_and_validation
+  mitre_tactic: Persistence
+  mitre_technique: 'T1542.001 System Firmware: UEFI'
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. PROD-DB-01 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return PROD-DB-01 to production?
+  guidance:
+    what: 'Define what ''clean'' means for PROD-DB-01: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return PROD-DB-01 to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: PROD-DB-01.'
+  hints:
+  - Which backup or rebuild image is known-good for PROD-DB-01, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore PROD-DB-01 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: long_term_firmware_security_phase_5
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1027 Obfuscated Files or Information
+  role_prompts: {}
+- id: long_term_firmware_security_phase_5
+  phase_type: lessons
+  title: Long-Term Firmware Security — Phase 5
+  situation: 'Eradication is complete. The incident exposed critical gaps: no firmware integrity monitoring was in place before the assessment, firmware update utilities were not validated, Secure Boot was not properly configured with DBX revocation lists, and server management ports had no physical access controls. The UEFI rootkit was one of the most sophisticated persistence mechanisms ever encountered.'
+  prompt: What long-term firmware security measures do you implement?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What long-term firmware security measures do you implement?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Long-Term Firmware Security — Phase 5. Asset in scope: PROD-DB-01.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - deploy continuous
+  - continuous firmware
+  - firmware integrity
+  - integrity monitoring
+  - monitoring tpm-based
+  - tpm-based measured
+  - measured boot
+  - boot remote
+  reference_answer: |-
+    Deploy continuous firmware integrity monitoring (TPM-based measured boot + remote attestation), implement firmware bill-of-materials tracking, enforce cryptographic verification of all firmware updates, install physical port locks on management interfaces, enable Secure Boot with strict DBX policies, and establish a firmware incident response playbook
+
+    Why: TPM measured boot detects pre-OS tampering. Firmware BOM tracking ensures supply chain integrity. Physical port locks prevent hardware implant installation. DBX policies close Secure Boot bypasses.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the UEFI Bootkit — ESP Manipulation and Firmware Persistence incident. During a security assessment, the firmware integrity monitoring agent on server PROD-DB-01 flagged a SHA-256 hash mismatch on the UEFI ESP (EFI System Partition) boot files. The ESP contains a modified bootx64.efi and a newly added 'winload_debug.efi' that chains into the legitimate Windows boot manager after installing a rootkit. Forensic analysis reveals the UEFI rootkit: (1) hooks the Boot Services protocol table to intercept block I/O reads, (2) installs a malicious DXE driver that persists ...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the UEFI Bootkit — ESP Manipulation and Firmware Persistence incident. During a security assessment, the firmware integrity monitoring agent on server PROD-DB-01 flagged a SHA-256 hash mismatch on the UEFI ESP (EFI System Partition) boot files. The ESP contains a modified bootx64.efi and a newly added 'winload_debug.efi' that chains into the legitimate Windows boot manager after installing a rootkit. Forensic analysis reveals the UEFI rootkit: (1) hooks the Boot Services protocol table to intercept block I/O reads, (2) installs a malicious DXE driver that persists ...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1027 Obfuscated Files or Information

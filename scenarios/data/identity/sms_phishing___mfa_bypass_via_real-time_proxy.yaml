@@ -1,0 +1,208 @@
+id: sms_phishing___mfa_bypass_via_real-time_proxy
+name: SMS Phishing — MFA Bypass via Real-Time Proxy
+category: Identity & Access
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Smishing + MFA Proxy — Compromised Executive Account via Real-Time Phishing. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Smishing + MFA Proxy — Compromised Executive Account via Real-Time Phishing. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Smishing + MFA Proxy — Compromised Executive Account via Real-Time Phishing. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Smishing + MFA Proxy — Compromised Executive Account via Real-Time Phishing incident. At 11:45 on Thursday, the VP of Sales (Brian Cox) received an SMS message from ''+1-800-ACME-SUP'' (spoofed to look like the company''s IT support number): ''ACME IT: Your VPN access expires in 2 hours. Renew now: https://vpn-renew.acme-corp[.]com''. Brian clicked the link, which presented a convincing replica of the company''s VPN login page. He entered his username and password. The site then prompted for MFA (push notification). The attacker''s EvilProxy server relayed Brian''s credentials and MFA token in real-time to the REAL VPN portal. The attacker established a VPN session as Brian within 30 seconds. The SOC detected the VPN login from an unusual IP (residential ISP in Miami — Brian is based in New York). The attacker spent 45 minutes in the VPN session, accessing the CRM system, downloading 340 customer records including contract values and contact information,
+  and exfiltrating the data via an encrypted upload to a cloud storage service. Business impact: account takeover could enable lateral movement and privilege abuse across the directory, so identity trust must be rebuilt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess notification duties for any account or directory data accessed.'
+incident:
+  title: Smishing + MFA Proxy — Compromised Executive Account via Real-Time Phishing
+  opening: 'At 11:45 on Thursday, the VP of Sales (Brian Cox) received an SMS message from ''+1-800-ACME-SUP'' (spoofed to look like the company''s IT support number): ''ACME IT: Your VPN access expires in 2 hours. Renew now: https://vpn-renew.acme-corp[.]com''.'
+  summary: 'At 11:45 on Thursday, the VP of Sales (Brian Cox) received an SMS message from ''+1-800-ACME-SUP'' (spoofed to look like the company''s IT support number): ''ACME IT: Your VPN access expires in 2 hours. Renew now: https://vpn-renew.acme-corp[.]com''. Brian clicked the link, which presented a convincing replica of the company''s VPN login page. He entered his username and password. The site then prompted for MFA (push notification). The attacker''s EvilProxy server relayed Brian''s credentials and MFA token in real-time to the REAL VPN portal. The attacker established a VPN session as Brian within 30 seconds. The SOC detected the VPN login from an unusual IP (residential ISP in Miami — Brian is based in New York). The attacker spent 45 minutes in the VPN session, accessing the CRM system, downloading 340 customer records including contract values and contact information, and exfiltrating the data via an encrypted upload to a cloud storage service.'
+  compromised_assets:
+  - Brian Cox's VPN account
+  - 340 customer records (CRM data)
+  - VP Sales email (via VPN session)
+  detected_via: VPN login from unusual geographic IP (Miami vs. New York)
+  kill_chain:
+  - Recon
+  - Resource Development
+  - Delivery
+  - Credential Harvest
+  - MFA Bypass
+  - Lateral Movement
+  mitre_tactics:
+  - Initial Access
+  - Credential Access
+  - Collection
+phases:
+- id: session_termination_phase_1
+  phase_type: triage
+  title: Session Termination — Phase 1
+  situation: The attacker has an active VPN session as Brian Cox, accessing from a Miami IP. They've been in the session for 45 minutes, downloading CRM data. The session is still active.
+  prompt: What is your FIRST action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on Brian Cox''s VPN account, its severity, and the affected accounts.'
+    action: What is your FIRST action?
+    why: Every later decision depends on an accurate picture of Brian Cox's VPN account and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Session Termination — Phase 1. Asset in scope: Brian Cox''s VPN account.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - immediately terminate
+  - terminate brian
+  - brian cox
+  - cox active
+  - active vpn
+  - vpn session
+  - session revoke
+  - revoke his
+  reference_answer: |-
+    Immediately terminate Brian Cox's active VPN session; revoke his VPN tokens; force a password reset; enable enhanced monitoring on his account; block the Miami IP at the VPN gateway
+
+    Why: Kill the active session, revoke credentials, and block the source — all simultaneously.
+  followup_good: The phishing site (vpn-renew.acme-corp[.]com) is a look-alike domain hosted on a bulletproof VPS. Analysis reveals it's an EvilProxy instance — a phishing-as-a-service platform that relays credentials and MFA tokens in real-time to the real service. The platform captures session cookies after MFA, allowing session hijacking even after MFA is completed.
+  followup_weak: |-
+    Kill the active session, revoke credentials, and block the source — all simultaneously.
+
+    The phishing site (vpn-renew.acme-corp[.]com) is a look-alike domain hosted on a bulletproof VPS. Analysis reveals it's an EvilProxy instance — a phishing-as-a-service platform that relays credentials and MFA tokens in real-time to the real service. The platform captures session cookies after MFA, allowing session hijacking even after MFA is completed.
+  next: evilproxy_infrastructure_analysis_phase_2
+  mitre_tactic: Credential Access
+  mitre_technique: T1621 Multi-Factor Authentication Request Generation
+- id: evilproxy_infrastructure_analysis_phase_2
+  phase_type: analysis
+  title: EvilProxy Infrastructure Analysis — Phase 2
+  situation: The phishing site (vpn-renew.acme-corp[.]com) is a look-alike domain hosted on a bulletproof VPS. Analysis reveals it's an EvilProxy instance — a phishing-as-a-service platform that relays credentials and MFA tokens in real-time to the real service. The platform captures session cookies after MFA, allowing session hijacking even after MFA is completed.
+  prompt: How do you analyze the EvilProxy infrastructure?
+  guidance:
+    what: Test the initial theory against telemetry from Brian Cox's VPN account before committing to a response.
+    action: How do you analyze the EvilProxy infrastructure?
+    why: Acting on an unverified scope either misses the attacker or over-contains the business.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: EvilProxy Infrastructure Analysis — Phase 2. Asset in scope: Brian Cox''s VPN account.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - analyze phishing
+  - phishing site
+  - site html
+  - html proxies
+  - proxies real
+  - real vpn
+  - vpn login
+  - login identify
+  reference_answer: |-
+    Analyze the phishing site's HTML/JS (it proxies the real VPN login); identify the EvilProxy C2 infrastructure; report the domain and IP for takedown; search for other employees who may have received similar SMS messages; check for other EvilProxy campaigns targeting your domain
+
+    Why: Full infrastructure analysis reveals the scope and helps identify other targets.
+  followup_good: The attacker bypassed MFA using an EvilProxy relay that captured the push notification response. This technique works against SMS, push, and TOTP-based MFA. The only MFA methods resistant to EvilProxy are hardware security keys (FIDO2/WebAuthn).
+  followup_weak: |-
+    Full infrastructure analysis reveals the scope and helps identify other targets.
+
+    The attacker bypassed MFA using an EvilProxy relay that captured the push notification response. This technique works against SMS, push, and TOTP-based MFA. The only MFA methods resistant to EvilProxy are hardware security keys (FIDO2/WebAuthn).
+  next: mfa_bypass_mitigation_phase_3
+  mitre_tactic: Initial Access
+  mitre_technique: T1566.002 Spearphishing Link
+- id: mfa_bypass_mitigation_phase_3
+  phase_type: eradication
+  title: MFA Bypass Mitigation — Phase 3
+  situation: The attacker bypassed MFA using an EvilProxy relay that captured the push notification response. This technique works against SMS, push, and TOTP-based MFA. The only MFA methods resistant to EvilProxy are hardware security keys (FIDO2/WebAuthn).
+  prompt: How do you harden MFA against proxy-based phishing?
+  guidance:
+    what: Find every foothold the attacker left on Brian Cox's VPN account, including persistence and stolen credentials.
+    action: How do you harden MFA against proxy-based phishing?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: MFA Bypass Mitigation — Phase 3. Asset in scope: Brian Cox''s VPN account.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - deploy fido2
+  - fido2 webauthn
+  - webauthn hardware
+  - hardware security
+  - security keys
+  - keys users
+  - users phishing-resistant
+  - phishing-resistant mfa
+  reference_answer: |-
+    Deploy FIDO2/WebAuthn hardware security keys for all users (phishing-resistant MFA); enforce number matching on push notifications as an interim measure; implement conditional access policies that check device compliance and risk signals
+
+    Why: FIDO2 keys are the gold standard — they bind authentication to the domain and can't be proxied. Number matching and conditional access provide interim protection.
+  followup_good: '340 customer records were downloaded from the CRM during the 45-minute VPN session. The records include: customer names, email addresses, phone numbers, contract values (ranging from $10K to $2.1M), contract terms, and internal notes. This data could be used for targeted phishing of your customers or competitive intelligence.'
+  followup_weak: |-
+    FIDO2 keys are the gold standard — they bind authentication to the domain and can't be proxied.
+
+    340 customer records were downloaded from the CRM during the 45-minute VPN session. The records include: customer names, email addresses, phone numbers, contract values (ranging from $10K to $2.1M), contract terms, and internal notes. This data could be used for targeted phishing of your customers or competitive intelligence.
+  next: recovery_and_validation
+  mitre_tactic: Credential Access
+  mitre_technique: T1621 Multi-Factor Authentication Request Generation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Brian Cox's VPN account is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Brian Cox's VPN account to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return Brian Cox's VPN account to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Brian Cox''s VPN account.'
+  hints:
+  - Which backup or rebuild image is known-good for Brian Cox's VPN account, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Brian Cox's VPN account from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: crm_data_breach_assessment_phase_4
+  next_weak: ''
+  mitre_tactic: Collection
+  mitre_technique: T1213 Data from Information Repositories
+  role_prompts: {}
+- id: crm_data_breach_assessment_phase_4
+  phase_type: lessons
+  title: CRM Data Breach Assessment — Phase 4
+  situation: '340 customer records were downloaded from the CRM during the 45-minute VPN session. The records include: customer names, email addresses, phone numbers, contract values (ranging from $10K to $2.1M), contract terms, and internal notes. This data could be used for targeted phishing of your customers or competitive intelligence.'
+  prompt: How do you assess and respond to the CRM data breach?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on Brian Cox's VPN account.
+    action: How do you assess and respond to the CRM data breach?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: CRM Data Breach Assessment — Phase 4. Asset in scope: Brian Cox''s VPN account.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - legal compliance
+  - compliance about
+  - about customer
+  - customer data
+  - data exposure
+  - exposure determine
+  - determine contracts
+  - contracts contain
+  reference_answer: |-
+    Notify legal/compliance about the customer data exposure; determine if any contracts contain confidentiality clauses; notify affected customers; assess if the data triggers any regulatory notification requirements; implement enhanced monitoring on the 340 customer accounts
+
+    Why: Customer data exposure has legal, contractual, and regulatory implications. Notification and monitoring are essential.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Smishing + MFA Proxy — Compromised Executive Account via Real-Time Phishing incident. At 11:45 on Thursday, the VP of Sales (Brian Cox) received an SMS message from '+1-800-ACME-SUP' (spoofed to look like the company's IT support number): 'ACME IT: Your VPN access expires in 2 hours. Renew now: https://vpn-renew.acme-corp[.]com'. Brian clicked the link, which presented a convincing replica of the company's VPN login page. He entered his username and password. The site then prompted for MFA (push notification). The attacker's EvilProxy server relayed Brian's credentials and MFA to...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Smishing + MFA Proxy — Compromised Executive Account via Real-Time Phishing incident. At 11:45 on Thursday, the VP of Sales (Brian Cox) received an SMS message from '+1-800-ACME-SUP' (spoofed to look like the company's IT support number): 'ACME IT: Your VPN access expires in 2 hours. Renew now: https://vpn-renew.acme-corp[.]com'. Brian clicked the link, which presented a convincing replica of the company's VPN login page. He entered his username and password. The site then prompted for MFA (push notification). The attacker's EvilProxy server relayed Brian's credentials and MFA to...
+  mitre_tactic: Collection
+  mitre_technique: T1213 Data from Information Repositories

@@ -1,0 +1,245 @@
+id: sim_swapping___mfa_bypass_via_carrier_fraud
+name: SIM Swapping — MFA Bypass via Carrier Fraud
+category: Identity & Access
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to SIM Swap Attack Enables Corporate Account Takeover. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for SIM Swap Attack Enables Corporate Account Takeover. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for SIM Swap Attack Enables Corporate Account Takeover. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the SIM Swap Attack Enables Corporate Account Takeover incident. At 14:30 today, the VP of Finance (Sarah Chen) called the helpdesk in a panic: her corporate phone has no signal and she''s receiving 2FA codes for accounts she didn''t request. Investigation reveals that at 13:50, an attacker called T-Mobile customer service and successfully performed a SIM swap on Sarah''s number (555-867-5309), porting it to a new SIM the attacker controls. The attacker used publicly available information (Sarah''s LinkedIn, corporate website bio, and a data broker purchase of her date of birth and address) to pass T-Mobile''s identity verification. With control of Sarah''s phone number, the attacker: reset her Microsoft 365 password via SMS recovery (14:01), bypassed SMS-based MFA on the corporate VPN (14:08), accessed the corporate expense system (Concur) and initiated three wire transfers totaling $287,000 to an offshore account (14:15-14:25). The fraud was detected
+  when the CFO noticed the wire transfers and called Sarah directly. Business impact: account takeover could enable lateral movement and privilege abuse across the directory, so identity trust must be rebuilt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess notification duties for any account or directory data accessed.'
+incident:
+  title: SIM Swap Attack Enables Corporate Account Takeover
+  opening: 'At 14:30 today, the VP of Finance (Sarah Chen) called the helpdesk in a panic: her corporate phone has no signal and she''s receiving 2FA codes for accounts she didn''t request. Investigation reveals that at 13:50, an attacker called T-Mobile customer service and successfully performed a SIM swap on Sarah''s number (555-867-5309), porting it to a new SIM the attacker controls.'
+  summary: 'At 14:30 today, the VP of Finance (Sarah Chen) called the helpdesk in a panic: her corporate phone has no signal and she''s receiving 2FA codes for accounts she didn''t request. Investigation reveals that at 13:50, an attacker called T-Mobile customer service and successfully performed a SIM swap on Sarah''s number (555-867-5309), porting it to a new SIM the attacker controls. The attacker used publicly available information (Sarah''s LinkedIn, corporate website bio, and a data broker purchase of her date of birth and address) to pass T-Mobile''s identity verification. With control of Sarah''s phone number, the attacker: reset her Microsoft 365 password via SMS recovery (14:01), bypassed SMS-based MFA on the corporate VPN (14:08), accessed the corporate expense system (Concur) and initiated three wire transfers totaling $287,000 to an offshore account (14:15-14:25). The fraud was detected when the CFO noticed the wire transfers and called Sarah directly.'
+  compromised_assets:
+  - Sarah Chen's corporate phone number (555-867-5309)
+  - Microsoft 365 account (password reset + MFA bypass)
+  - Corporate VPN access
+  - Concur expense system
+  - $287,000 in fraudulent wire transfers
+  detected_via: CFO noticed unauthorized wire transfers and contacted Sarah directly
+  kill_chain:
+  - Resource Development
+  - Initial Access
+  - Credential Access
+  - Lateral Movement
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Credential Access
+  - Lateral Movement
+  - Impact
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: The attacker controls Sarah's phone number. SMS-based MFA and password recovery are compromised. The wire transfers are processing. Sarah has no phone service. The attacker may still have active sessions.
+  prompt: What do you do RIGHT NOW?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on Sarah Chen''s corporate phone number, its severity, and the affected accounts.'
+    action: What do you do RIGHT NOW?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: Sarah Chen''s corporate phone number.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - immediately lock
+  - lock sarah
+  - sarah microsoft
+  - microsoft account
+  - account revoke
+  - revoke sessions
+  - sessions call
+  - bank freeze
+  reference_answer: |-
+    Immediately lock Sarah's Microsoft 365 account and revoke all sessions, call the bank to freeze the wire transfers, contact T-Mobile to reverse the SIM swap and secure the number, disable SMS-based MFA for all privileged accounts, and place a carrier port-freeze PIN on all executive phone numbers
+
+    Why: Multi-pronged containment: kills attacker's access (lock account + revoke sessions), stops financial loss (freeze wires), secures the phone number (reverse SIM swap), prevents MFA bypass (disable SMS MFA), and protects other executives (port-freeze PIN).
+  followup_good: The immediate threat is contained. You need to reconstruct the full attack timeline. T-Mobile call records show the SIM swap at 13:50. Microsoft 365 audit logs show the password reset at 14:01. VPN logs show a login from a new device at 14:08. Concur logs show wire transfer authorizations at 14:15, 14:20, and 14:25. The attacker may have also accessed other systems.
+  followup_weak: |-
+    Multi-pronged containment: kills attacker's access (lock account + revoke sessions), stops financial loss (freeze wires), secures the phone number (reverse SIM swap), prevents MFA bypass (disable SMS MFA), and protects other executives (port-freeze PIN).
+
+    The immediate threat is contained. You need to reconstruct the full attack timeline. T-Mobile call records show the SIM swap at 13:50. Microsoft 365 audit logs show the password reset at 14:01. VPN logs show a login from a new device at 14:08. Concur logs show wire transfer authorizations at 14:15, 14:20, and 14:25. The attacker may have also accessed other systems.
+  next: attack_timeline_reconstruction_phase_2
+  mitre_tactic: Credential Access
+  mitre_technique: T1621 Multi-Factor Authentication Request Generation
+- id: attack_timeline_reconstruction_phase_2
+  phase_type: analysis
+  title: Attack Timeline Reconstruction — Phase 2
+  situation: The immediate threat is contained. You need to reconstruct the full attack timeline. T-Mobile call records show the SIM swap at 13:50. Microsoft 365 audit logs show the password reset at 14:01. VPN logs show a login from a new device at 14:08. Concur logs show wire transfer authorizations at 14:15, 14:20, and 14:25. The attacker may have also accessed other systems.
+  prompt: How do you reconstruct the full attack scope?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on Sarah Chen's corporate phone number.
+    action: How do you reconstruct the full attack scope?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Attack Timeline Reconstruction — Phase 2. Asset in scope: Sarah Chen''s corporate phone number.'
+  hints:
+  - Wire transfers are the financial impact but the attacker may have also exfiltrated data, set up email forwarding, or accessed other systems.
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - azure sign-in
+  - sign-in logs
+  - logs sarah
+  - sarah accounts
+  - accounts review
+  - review vpn
+  - vpn connection
+  - connection logs
+  reference_answer: |-
+    Pull Azure AD sign-in logs for all Sarah's accounts, review VPN connection logs for new devices/IPs, audit Concur for all actions during the compromise window, check for any new forwarding rules or delegate access in her email, and review T-Mobile call records for what info the attacker provided
+
+    Why: Full scope assessment across all systems Sarah can access. The attacker may have done more than wire transfers — email forwarding, data access, etc.
+  followup_good: The root cause of the MFA bypass is that SMS-based MFA and password recovery both rely on the same phone number. The attacker only needed to compromise one factor (the phone number) to bypass both the password and the MFA. Your organization uses SMS-based MFA for all 2,800 employees.
+  followup_weak: |-
+    Full scope assessment across all systems Sarah can access.
+
+    The root cause of the MFA bypass is that SMS-based MFA and password recovery both rely on the same phone number. The attacker only needed to compromise one factor (the phone number) to bypass both the password and the MFA. Your organization uses SMS-based MFA for all 2,800 employees.
+  next: mfa_architecture_review_phase_3
+  mitre_tactic: Discovery
+  mitre_technique: T1087 Account Discovery
+- id: mfa_architecture_review_phase_3
+  phase_type: containment
+  title: MFA Architecture Review — Phase 3
+  situation: The root cause of the MFA bypass is that SMS-based MFA and password recovery both rely on the same phone number. The attacker only needed to compromise one factor (the phone number) to bypass both the password and the MFA. Your organization uses SMS-based MFA for all 2,800 employees.
+  prompt: What is the correct remediation for the MFA architecture?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: What is the correct remediation for the MFA architecture?
+    why: The first containment action sets the blast radius for everything that follows.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: MFA Architecture Review — Phase 3. Asset in scope: Sarah Chen''s corporate phone number.'
+  hints:
+  - Consider the affected accounts and their privilege level.
+  - Preserve evidence before disrupting anything.
+  ideal_concepts:
+  - migrate privileged
+  - privileged accounts
+  - accounts app-based
+  - app-based totp
+  - totp hardware
+  - hardware security
+  - security keys
+  - keys fido2
+  reference_answer: |-
+    Migrate all privileged accounts to app-based TOTP or hardware security keys (FIDO2), implement SIM swap detection (carrier API monitoring), separate password recovery from the primary phone number, and establish a port-freeze PIN policy for all employees
+
+    Why: Eliminates the single point of failure (phone number), adds SIM swap detection as an early warning, separates recovery channels, and prevents future swaps.
+  followup_good: Three wire transfers totaling $287,000 were initiated. Two have already cleared to an offshore account in the Cayman Islands. One is still pending. The bank needs documentation for the fraud claim. Law enforcement may need to be involved.
+  followup_weak: |-
+    Eliminates the single point of failure (phone number), adds SIM swap detection as an early warning, separates recovery channels, and prevents future swaps.
+
+    Three wire transfers totaling $287,000 were initiated. Two have already cleared to an offshore account in the Cayman Islands. One is still pending. The bank needs documentation for the fraud claim. Law enforcement may need to be involved.
+  next: financial_fraud_response_phase_4
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1562 Impair Defenses
+- id: financial_fraud_response_phase_4
+  phase_type: eradication
+  title: Financial Fraud Response — Phase 4
+  situation: Three wire transfers totaling $287,000 were initiated. Two have already cleared to an offshore account in the Cayman Islands. One is still pending. The bank needs documentation for the fraud claim. Law enforcement may need to be involved.
+  prompt: How do you handle the financial fraud?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: How do you handle the financial fraud?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Financial Fraud Response — Phase 4. Asset in scope: Sarah Chen''s corporate phone number.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - file formal
+  - formal fraud
+  - fraud report
+  - report bank
+  - bank three
+  - three transfers
+  - transfers provide
+  - provide full
+  reference_answer: |-
+    File a formal fraud report with the bank for all three transfers, provide full forensic documentation (attack timeline, evidence of SIM swap, screenshots of unauthorized access), contact the FBI IC3 for the cybercrime report, engage legal counsel for international wire recovery, and document the incident for cyber insurance claim
+
+    Why: Comprehensive fraud response: bank reporting initiates recovery, forensic documentation supports the claim, FBI involvement is appropriate for this scale, legal counsel handles international recovery, insurance covers the loss.
+  followup_good: Sarah Chen is the VP of Finance — a high-value target. The attacker found her information on LinkedIn and the corporate website. Other C-suite executives may be similarly targeted. The organization has 12 executives with SMS-based MFA.
+  followup_weak: |-
+    Comprehensive fraud response: bank reporting initiates recovery, forensic documentation supports the claim, FBI involvement is appropriate for this scale, legal counsel handles international recovery, insurance covers the loss.
+
+    Sarah Chen is the VP of Finance — a high-value target. The attacker found her information on LinkedIn and the corporate website. Other C-suite executives may be similarly targeted. The organization has 12 executives with SMS-based MFA.
+  next: recovery_and_validation
+  mitre_tactic: Impact
+  mitre_technique: T1657 Financial Theft
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Sarah Chen's corporate phone number is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Sarah Chen's corporate phone number to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return Sarah Chen's corporate phone number to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Sarah Chen''s corporate phone number.'
+  hints:
+  - Which backup or rebuild image is known-good for Sarah Chen's corporate phone number, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Sarah Chen's corporate phone number from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: executive_protection_program_phase_5
+  next_weak: ''
+  mitre_tactic: Initial Access
+  mitre_technique: T1589 Gather Victim Identity Information
+  role_prompts: {}
+- id: executive_protection_program_phase_5
+  phase_type: lessons
+  title: Executive Protection Program — Phase 5
+  situation: Sarah Chen is the VP of Finance — a high-value target. The attacker found her information on LinkedIn and the corporate website. Other C-suite executives may be similarly targeted. The organization has 12 executives with SMS-based MFA.
+  prompt: What executive protection measures do you implement?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on Sarah Chen's corporate phone number.
+    action: What executive protection measures do you implement?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Executive Protection Program — Phase 5. Asset in scope: Sarah Chen''s corporate phone number.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - migrate executives
+  - executives hardware
+  - hardware security
+  - security keys
+  - keys yubikey
+  - yubikey implement
+  - implement carrier-level
+  - carrier-level port-freeze
+  reference_answer: |-
+    Migrate all executives to hardware security keys (YubiKey), implement carrier-level port-freeze PINs, remove executive personal info from public websites and LinkedIn, add SIM swap monitoring via carrier API, and create an executive incident response playbook with pre-authorized bank contacts
+
+    Why: Layered executive protection: strongest MFA (hardware keys), carrier protections (port-freeze), OSINT reduction (remove public info), early warning (SIM monitoring), and rapid response (playbook).
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the SIM Swap Attack Enables Corporate Account Takeover incident. At 14:30 today, the VP of Finance (Sarah Chen) called the helpdesk in a panic: her corporate phone has no signal and she's receiving 2FA codes for accounts she didn't request. Investigation reveals that at 13:50, an attacker called T-Mobile customer service and successfully performed a SIM swap on Sarah's number (555-867-5309), porting it to a new SIM the attacker controls. The attacker used publicly available information (Sarah's LinkedIn, corporate website bio, and a data broker purchase of he...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the SIM Swap Attack Enables Corporate Account Takeover incident. At 14:30 today, the VP of Finance (Sarah Chen) called the helpdesk in a panic: her corporate phone has no signal and she's receiving 2FA codes for accounts she didn't request. Investigation reveals that at 13:50, an attacker called T-Mobile customer service and successfully performed a SIM swap on Sarah's number (555-867-5309), porting it to a new SIM the attacker controls. The attacker used publicly available information (Sarah's LinkedIn, corporate website bio, and a data broker purchase of he...
+  mitre_tactic: Initial Access
+  mitre_technique: T1589 Gather Victim Identity Information

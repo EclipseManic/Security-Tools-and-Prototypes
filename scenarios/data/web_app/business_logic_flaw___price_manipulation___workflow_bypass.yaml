@@ -1,0 +1,176 @@
+id: business_logic_flaw___price_manipulation___workflow_bypass
+name: Business Logic Flaw — Price Manipulation & Workflow Bypass
+category: Web App
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Business Logic Flaw Enables Price Manipulation and Inventory Theft. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Business Logic Flaw Enables Price Manipulation and Inventory Theft. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Business Logic Flaw Enables Price Manipulation and Inventory Theft. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Business Logic Flaw Enables Price Manipulation and Inventory Theft incident. Your organization runs an e-commerce platform at shop.acmecorp.com (Node.js/Express, MongoDB, Stripe for payments). At 10:00 today, the finance team flagged $340,000 in discrepancies between inventory and revenue. Investigation revealed the attacker exploited multiple business logic flaws: 1) The /api/cart/update-price endpoint accepts a ''price'' parameter from the client — the server uses this price instead of the database price. 2) The checkout flow processes payment first, then checks inventory — the attacker placed orders for out-of-stock items. 3) The coupon system allows unlimited stacking — the attacker applied 47 coupons to a single order. 4) The order status can be changed via the API without authentication — the attacker changed ''cancelled'' orders back to ''completed'' to trigger refunds while keeping the products. Over 3 days, the attacker purchased $340,000
+  worth of electronics for $2,300 (using price manipulation + coupon stacking) and received refunds for cancelled orders while keeping the products. The attacker operated from 5 different accounts with stolen credit cards. Business impact: customer-facing service availability and data confidentiality are at risk, and customer notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties for exposed customer records.'
+incident:
+  title: Business Logic Flaw Enables Price Manipulation and Inventory Theft
+  opening: Your organization runs an e-commerce platform at shop.acmecorp.com (Node.js/Express, MongoDB, Stripe for payments). At 10:00 today, the finance team flagged $340,000 in discrepancies between inventory and revenue.
+  summary: 'Your organization runs an e-commerce platform at shop.acmecorp.com (Node.js/Express, MongoDB, Stripe for payments). At 10:00 today, the finance team flagged $340,000 in discrepancies between inventory and revenue. Investigation revealed the attacker exploited multiple business logic flaws: 1) The /api/cart/update-price endpoint accepts a ''price'' parameter from the client — the server uses this price instead of the database price. 2) The checkout flow processes payment first, then checks inventory — the attacker placed orders for out-of-stock items. 3) The coupon system allows unlimited stacking — the attacker applied 47 coupons to a single order. 4) The order status can be changed via the API without authentication — the attacker changed ''cancelled'' orders back to ''completed'' to trigger refunds while keeping the products. Over 3 days, the attacker purchased $340,000 worth of electronics for $2,300 (using price manipulation + coupon stacking) and received refunds for cancelled
+    orders while keeping the products. The attacker operated from 5 different accounts with stolen credit cards.'
+  compromised_assets:
+  - shop.acmecorp.com business logic
+  - $340,000 in fraudulent orders
+  - 'Inventory: 1,200 electronics units'
+  - Payment system integrity
+  detected_via: 'Finance team: inventory vs. revenue discrepancy + refund anomaly'
+  kill_chain:
+  - Initial Access
+  - Collection
+  - Impact
+  - Fraud
+  mitre_tactics:
+  - Initial Access
+  - Impact
+  - Fraud
+phases:
+- id: immediate_business_logic_fix_phase_1
+  phase_type: triage
+  title: Immediate Business Logic Fix — Phase 1
+  situation: The attacker is actively exploiting 4 business logic flaws. The price manipulation endpoint is still accepting client-side prices. The checkout flow still processes payment before inventory check. The coupon system still allows unlimited stacking.
+  prompt: How do you immediately fix the critical business logic flaws?
+  guidance:
+    what: 'Frame the decision for ''Immediate Business Logic Fix — Phase 1'': the asset at risk, the evidence available, and the time pressure.'
+    action: How do you immediately fix the critical business logic flaws?
+    why: Every later decision depends on an accurate picture of shop.acmecorp.com business logic and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Business Logic Fix — Phase 1. Asset in scope: shop.acmecorp.com business logic.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - immediately remove
+  - client-side price
+  - price parameter
+  - parameter api
+  - api cart
+  - cart update-price
+  - update-price database
+  - database price
+  reference_answer: |-
+    Immediately: 1) Remove the client-side price parameter from /api/cart/update-price (use database price only), 2) Add inventory check BEFORE payment processing, 3) Limit coupon stacking to max 3 per order, 4) Add authentication to order status change endpoint, 5) Disable the 5 fraudulent accounts
+
+    Why: Fixes all 4 logic flaws simultaneously and stops the attacker's accounts.
+  followup_good: The attacker used 5 accounts with stolen credit cards to purchase $340,000 in electronics for $2,300. They also received refunds for cancelled orders while keeping the products. You need to determine the full scope of fraudulent activity.
+  followup_weak: |-
+    Fixes all 4 logic flaws simultaneously and stops the attacker's accounts.
+
+    The attacker used 5 accounts with stolen credit cards to purchase $340,000 in electronics for $2,300. They also received refunds for cancelled orders while keeping the products. You need to determine the full scope of fraudulent activity.
+  next: fraud_assessment_phase_2
+  mitre_tactic: Impact
+  mitre_technique: T1657 Financial Theft
+- id: fraud_assessment_phase_2
+  phase_type: containment
+  title: Fraud Assessment — Phase 2
+  situation: The attacker used 5 accounts with stolen credit cards to purchase $340,000 in electronics for $2,300. They also received refunds for cancelled orders while keeping the products. You need to determine the full scope of fraudulent activity.
+  prompt: How do you assess the full fraud scope?
+  guidance:
+    what: 'Balance speed against disruption: what must be isolated now, and what can wait for scoping?'
+    action: How do you assess the full fraud scope?
+    why: Containment buys the time needed to investigate without letting the attacker expand.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Fraud Assessment — Phase 2. Asset in scope: shop.acmecorp.com business logic.'
+  hints:
+  - Useful but you need to assess the full scope first.
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - query orders
+  - orders accounts
+  - accounts cross-reference
+  - cross-reference payment
+  - payment records
+  - records identify
+  - identify price
+  - price discrepancies
+  reference_answer: |-
+    Query all orders from the 5 accounts, cross-reference with payment records to identify price discrepancies, review all coupon usage for the accounts, check refund history for cancelled orders, calculate total financial impact, and compile evidence for law enforcement
+
+    Why: Complete fraud assessment: order analysis, payment verification, coupon abuse, refund fraud, and evidence compilation.
+  followup_good: 'The business logic flaws exist because: prices are accepted from the client, inventory is checked after payment, coupons have no stacking limits, and order status changes have no authentication. The application assumes client-side values are trustworthy.'
+  followup_weak: |-
+    Complete fraud assessment: order analysis, payment verification, coupon abuse, refund fraud, and evidence compilation.
+
+    The business logic flaws exist because: prices are accepted from the client, inventory is checked after payment, coupons have no stacking limits, and order status changes have no authentication. The application assumes client-side values are trustworthy.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. shop.acmecorp.com business logic is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return shop.acmecorp.com business logic to production?
+  guidance:
+    what: 'Define what ''clean'' means for shop.acmecorp.com business logic: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return shop.acmecorp.com business logic to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: shop.acmecorp.com business logic.'
+  hints:
+  - Which backup or rebuild image is known-good for shop.acmecorp.com business logic, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore shop.acmecorp.com business logic from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: business_logic_security_architecture_phase_3
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+  role_prompts: {}
+- id: business_logic_security_architecture_phase_3
+  phase_type: lessons
+  title: Business Logic Security Architecture — Phase 3
+  situation: 'The business logic flaws exist because: prices are accepted from the client, inventory is checked after payment, coupons have no stacking limits, and order status changes have no authentication. The application assumes client-side values are trustworthy.'
+  prompt: How do you build business logic security into the application?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: How do you build business logic security into the application?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Business Logic Security Architecture — Phase 3. Asset in scope: shop.acmecorp.com business logic.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - implement server-side
+  - server-side price
+  - price validation
+  - validation always
+  - always database
+  - database prices
+  - prices add
+  - inventory checks
+  reference_answer: |-
+    Implement server-side price validation (always use database prices), add inventory checks before payment, enforce business rules (coupon limits, order quantity limits), add authentication and authorization to all state-changing endpoints, implement server-side validation for all business logic, and add anomaly detection for order patterns
+
+    Why: Comprehensive business logic security: server-side validation, proper ordering, business rules, and anomaly detection.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Business Logic Flaw Enables Price Manipulation and Inventory Theft incident. Your organization runs an e-commerce platform at shop.acmecorp.com (Node.js/Express, MongoDB, Stripe for payments). At 10:00 today, the finance team flagged $340,000 in discrepancies between inventory and revenue. Investigation revealed the attacker exploited multiple business logic flaws: 1) The /api/cart/update-price endpoint accepts a 'price' parameter from the client — the server uses this price instead of the database price. 2) The checkout flow processes payment first, then checks inventor...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Business Logic Flaw Enables Price Manipulation and Inventory Theft incident. Your organization runs an e-commerce platform at shop.acmecorp.com (Node.js/Express, MongoDB, Stripe for payments). At 10:00 today, the finance team flagged $340,000 in discrepancies between inventory and revenue. Investigation revealed the attacker exploited multiple business logic flaws: 1) The /api/cart/update-price endpoint accepts a 'price' parameter from the client — the server uses this price instead of the database price. 2) The checkout flow processes payment first, then checks inventor...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation

@@ -1,0 +1,215 @@
+id: process_injection___hiding_in_legitimate_processes
+name: Process Injection — Hiding in Legitimate Processes
+category: Endpoint
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to C2 Beacon Injected into Legitimate svchost.exe Process. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for C2 Beacon Injected into Legitimate svchost.exe Process. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for C2 Beacon Injected into Legitimate svchost.exe Process. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the C2 Beacon Injected into Legitimate svchost.exe Process incident. An attacker gained local administrator access to APP-SRV-03 (10.10.40.23, Windows Server 2022) and injected a Cobalt Strike beacon into a legitimate svchost.exe process (PID 4832) using CreateRemoteThread and VirtualAllocEx APIs to allocate memory in the target process, write the shellcode payload, and create a remote thread to execute it. The injection technique uses classic DLL injection with a reflective DLL loader that loads the beacon entirely from memory without writing any DLL files to disk. The svchost.exe process was chosen because it naturally runs multiple instances on every Windows system, handles network communications, and is rarely investigated by security tools. The injected beacon communicates over HTTPS to 198.51.100.78:443 using the legitimate process''s network stack, making the traffic appear as normal HTTPS from a Windows system. The compromise was detected when
+  a scheduled endpoint audit using Volatility (volatility -f memory.dump malfind --pid 4832) identified the injected code region in svchost.exe''s virtual address space (RWX permissions at 0x000001A800000000), and network analysis showed HTTPS connections to 198.51.100.78 from a server that should have no direct internet access. Business impact: endpoint availability and integrity are at risk, and affected hosts may need reimaging before normal work resumes. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed.'
+incident:
+  title: C2 Beacon Injected into Legitimate svchost.exe Process
+  opening: An attacker gained local administrator access to APP-SRV-03 (10.10.40.23, Windows Server 2022) and injected a Cobalt Strike beacon into a legitimate svchost.exe process (PID 4832) using CreateRemoteThread and VirtualAllocEx APIs to allocate memory in the target process, write the shellcode payload, and create a remote thread to execute it. The injection technique uses classic DLL injection with a reflective DLL…
+  summary: An attacker gained local administrator access to APP-SRV-03 (10.10.40.23, Windows Server 2022) and injected a Cobalt Strike beacon into a legitimate svchost.exe process (PID 4832) using CreateRemoteThread and VirtualAllocEx APIs to allocate memory in the target process, write the shellcode payload, and create a remote thread to execute it. The injection technique uses classic DLL injection with a reflective DLL loader that loads the beacon entirely from memory without writing any DLL files to disk. The svchost.exe process was chosen because it naturally runs multiple instances on every Windows system, handles network communications, and is rarely investigated by security tools. The injected beacon communicates over HTTPS to 198.51.100.78:443 using the legitimate process's network stack, making the traffic appear as normal HTTPS from a Windows system. The compromise was detected when a scheduled endpoint audit using Volatility (volatility -f memory.dump malfind --pid 4832) identified
+    the injected code region in svchost.exe's virtual address space (RWX permissions at 0x000001A800000000), and network analysis showed HTTPS connections to 198.51.100.78 from a server that should have no direct internet access.
+  compromised_assets:
+  - APP-SRV-03 (10.10.40.23) — Windows Server 2022
+  - svchost.exe (PID 4832) — C2 beacon injected via reflective DLL
+  - Memory space (RWX region at 0x000001A800000000, 256 KB)
+  - Outbound HTTPS C2 channel to 198.51.100.78:443
+  - Full remote access for attacker via Cobalt Strike
+  detected_via: Volatility memory forensics (malfind plugin detecting RWX region in svchost.exe); anomalous outbound HTTPS from APP-SRV-03 to 198.51.100.78:443 (server should have no internet access); memory region with RWX permissions in svchost.exe
+  kill_chain:
+  - Local admin access obtained on APP-SRV-03
+  - Cobalt Strike beacon compiled as reflective DLL
+  - VirtualAllocEx allocates RWX memory in svchost.exe (PID 4832)
+  - CreateRemoteThread executes injected code
+  - Beacon communicates over HTTPS to 198.51.100.78:443
+  - Memory forensics detects injected region (Volatility malfind)
+  mitre_tactics:
+  - TA0002 — Execution
+  - TA0005 — Defense Evasion
+  - TA0011 — Command and Control
+phases:
+- id: process_injection_execution
+  phase_type: triage
+  title: Process Injection Execution
+  situation: The attacker has successfully injected a Cobalt Strike beacon (reflective DLL, 320 KB) into svchost.exe (PID 4832) on APP-SRV-03 (10.10.40.23) using CreateRemoteThread and VirtualAllocEx APIs. The injected code resides in a RWX (Read-Write-Execute) memory region at 0x000001A800000000 (256 KB). The beacon is now active and communicating with C2 server 198.51.100.78:443 over HTTPS. The server has no legitimate reason for outbound internet access. No DLL files were written to disk — the attack is entirely memory-resident.
+  prompt: How do you respond to the confirmed process injection?
+  guidance:
+    what: Establish what fired on APP-SRV-03, which accounts are involved, and how urgent the signal is.
+    action: How do you respond to the confirmed process injection?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Process Injection Execution. Asset in scope: APP-SRV-03.'
+  hints:
+  - Blocking the IP is correct but the attacker can rotate to new infrastructure.
+  - Memory scanning tools may not reliably remove injected code without crashing the process.
+  - Credential Guard protects credential material but does not detect or prevent process injection.
+  ideal_concepts:
+  - terminate injected
+  - injected svchost
+  - svchost exe
+  - exe process
+  - process isolate
+  - isolate app-srv-03
+  - app-srv-03 network
+  - network deploy
+  reference_answer: |-
+    Terminate the injected svchost.exe process, isolate APP-SRV-03 from the network, deploy EDR with API-level monitoring for CreateRemoteThread and VirtualAllocEx, implement network allowlisting to block unauthorized outbound HTTPS, and preserve the process memory dump for forensic analysis
+
+    Why: Terminating the process kills the active C2 beacon. Network isolation prevents lateral movement. EDR API monitoring detects future injection attempts. Network allowlisting blocks C2. Memory preservation supports forensics.
+  followup_good: The injected beacon uses svchost.exe's network stack to communicate over HTTPS to 198.51.100.78:443, blending with legitimate Windows Update traffic patterns. The C2 traffic uses a custom malleable C2 profile that mimics legitimate HTTPS request/response patterns including fake Content-Type headers, realistic response sizes, and domain fronting via cloudfront.net. Network analysis shows 247 HTTPS requests to 198.51.100.78 over the past 48 hours, with request sizes averaging 1.2 KB and response sizes averaging 4.8 KB. The traffic is encrypted with TLS 1.3 and appears as normal HTTPS from a Windows system.
+  followup_weak: |-
+    Terminating the process kills the active C2 beacon.
+
+    The injected beacon uses svchost.exe's network stack to communicate over HTTPS to 198.51.100.78:443, blending with legitimate Windows Update traffic patterns. The C2 traffic uses a custom malleable C2 profile that mimics legitimate HTTPS request/response patterns including fake Content-Type headers, realistic response sizes, and domain fronting via cloudfront.net. Network analysis shows 247 HTTPS requests to 198.51.100.78 over the past 48 hours, with request sizes averaging 1.2 KB and response sizes averaging 4.8 KB. The traffic is encrypted with TLS 1.3 and appears as normal HTTPS from a Windows system.
+  next: c2_communication_blending
+  mitre_tactic: TA0002 — Execution
+  mitre_technique: T1055.001 — Dynamic-link Library Injection
+- id: c2_communication_blending
+  phase_type: containment
+  title: C2 Communication Blending
+  situation: The injected beacon uses svchost.exe's network stack to communicate over HTTPS to 198.51.100.78:443, blending with legitimate Windows Update traffic patterns. The C2 traffic uses a custom malleable C2 profile that mimics legitimate HTTPS request/response patterns including fake Content-Type headers, realistic response sizes, and domain fronting via cloudfront.net. Network analysis shows 247 HTTPS requests to 198.51.100.78 over the past 48 hours, with request sizes averaging 1.2 KB and response sizes averaging 4.8 KB. The traffic is encrypted with TLS 1.3 and appears as normal HTTPS from a Windows system.
+  prompt: How do you detect and block the blended C2 communication?
+  guidance:
+    what: Decide how to stop the spread from APP-SRV-03 while preserving the evidence trail.
+    action: How do you detect and block the blended C2 communication?
+    why: Containment buys the time needed to investigate without letting the attacker expand.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: C2 Communication Blending. Asset in scope: APP-SRV-03.'
+  hints:
+  - NDR is valuable for detection but does not prevent the C2 communication.
+  - Proxy-based inspection is useful but domain fronting can bypass content inspection.
+  ideal_concepts:
+  - implement network
+  - network allowlisting
+  - allowlisting firewall
+  - firewall servers
+  - servers communicate
+  - communicate approved
+  - approved internal
+  - internal destinations
+  reference_answer: |-
+    Implement network allowlisting at the firewall so servers can only communicate with approved internal destinations (no direct internet access), deploy SSL/TLS inspection for encrypted traffic analysis, and create network behavioral baselines to detect anomalous HTTPS connections
+
+    Why: Network allowlisting is the strongest control — servers should never have direct internet access. SSL inspection reveals the true C2 traffic. Behavioral baselines detect anomalies.
+  followup_good: 'Volatility memory forensics on the captured memory dump from APP-SRV-03 reveals: (1) Injected RWX region in svchost.exe (PID 4832) at 0x000001A800000000, (2) MZ header found in injected memory (PE file loaded reflectively), (3) Network connections from svchost.exe to 198.51.100.78:443 (TLS 1.3), (4) Suspicious API calls: VirtualAllocEx, WriteProcessMemory, CreateRemoteThread in svchost.exe call stack, (5) YARA rule matches for Cobalt Strike beacon in the injected memory region. The attacker has been active on this system for approximately 72 hours and may have performed additional actions before the injection.'
+  followup_weak: |-
+    Network allowlisting is the strongest control — servers should never have direct internet access.
+
+    Volatility memory forensics on the captured memory dump from APP-SRV-03 reveals: (1) Injected RWX region in svchost.exe (PID 4832) at 0x000001A800000000, (2) MZ header found in injected memory (PE file loaded reflectively), (3) Network connections from svchost.exe to 198.51.100.78:443 (TLS 1.3), (4) Suspicious API calls: VirtualAllocEx, WriteProcessMemory, CreateRemoteThread in svchost.exe call stack, (5) YARA rule matches for Cobalt Strike beacon in the injected memory region. The attacker has been active on this system for approximately 72 hours and may have performed additional actions before the injection.
+  next: memory_forensics_detection_remediation
+  mitre_tactic: TA0011 — Command and Control
+  mitre_technique: T1071.001 — Web Protocols
+- id: memory_forensics_detection_remediation
+  phase_type: eradication
+  title: Memory Forensics Detection & Remediation
+  situation: 'Volatility memory forensics on the captured memory dump from APP-SRV-03 reveals: (1) Injected RWX region in svchost.exe (PID 4832) at 0x000001A800000000, (2) MZ header found in injected memory (PE file loaded reflectively), (3) Network connections from svchost.exe to 198.51.100.78:443 (TLS 1.3), (4) Suspicious API calls: VirtualAllocEx, WriteProcessMemory, CreateRemoteThread in svchost.exe call stack, (5) YARA rule matches for Cobalt Strike beacon in the injected memory region. The attacker has been active on this system for approximately 72 hours and may have performed additional actions before the injection.'
+  prompt: How do you complete the detection and remediation?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: How do you complete the detection and remediation?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Memory Forensics Detection & Remediation. Asset in scope: APP-SRV-03.'
+  hints:
+  - Process termination is correct but Windows updates do not address process injection.
+  - MDE with ASR rules is excellent for prevention but should be combined with network isolation and system rebuild for complete remediation.
+  - Periodic forensics is useful but insufficient for ongoing protection.
+  ideal_concepts:
+  - schedule automated
+  - automated memory
+  - memory forensics
+  - forensics scans
+  - scans endpoints
+  - endpoints comparing
+  - comparing against
+  - against known-good
+  reference_answer: |-
+    Schedule automated memory forensics scans on all endpoints comparing against known-good baselines, deploy EDR with process injection detection (API hooking, memory permission analysis), block 198.51.100.78 at the perimeter, audit all processes on APP-SRV-03 for additional injected code, and rebuild the system from clean media to ensure complete remediation
+
+    Why: Automated memory scanning provides ongoing detection. EDR with injection analysis catches future attempts. IP blocking stops C2. Full system audit identifies all compromise. Rebuild ensures complete cleanup.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the C2 Beacon Injected into Legitimate svchost.exe Process incident. An attacker gained local administrator access to APP-SRV-03 (10.10.40.23, Windows Server 2022) and injected a Cobalt Strike beacon into a legitimate svchost.exe process (PID 4832) using CreateRemoteThread and VirtualAllocEx APIs to allocate memory in the target process, write the shellcode payload, and create a remote thread to execute it. The injection technique uses classic DLL injection with a reflective DLL loader that loads the beacon entirely from memory without writing any DLL files to di...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the C2 Beacon Injected into Legitimate svchost.exe Process incident. An attacker gained local administrator access to APP-SRV-03 (10.10.40.23, Windows Server 2022) and injected a Cobalt Strike beacon into a legitimate svchost.exe process (PID 4832) using CreateRemoteThread and VirtualAllocEx APIs to allocate memory in the target process, write the shellcode payload, and create a remote thread to execute it. The injection technique uses classic DLL injection with a reflective DLL loader that loads the beacon entirely from memory without writing any DLL files to di...
+  mitre_tactic: TA0005 — Defense Evasion
+  mitre_technique: T1055 — Process Injection
+  next: recovery_and_validation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. APP-SRV-03 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return APP-SRV-03 to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return APP-SRV-03 to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: APP-SRV-03.'
+  hints:
+  - Which backup or rebuild image is known-good for APP-SRV-03, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore APP-SRV-03 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_review
+  next_weak: ''
+  mitre_tactic: TA0005 — Defense Evasion
+  mitre_technique: T1055 — Process Injection
+  role_prompts: {}
+- id: post_incident_review
+  phase_type: lessons
+  title: Post-Incident Review & Hardening
+  situation: Service has been restored and validated. Leadership wants a concise after-action review covering the root cause of C2 Beacon Injected into Legitimate svchost.exe Process, the detection gap that let the attacker operate, and the control changes that will prevent a repeat. Findings must have owners and dates.
+  prompt: What must change so an incident like C2 Beacon Injected into Legitimate svchost.exe Process is detected earlier and cannot recur?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What must change so an incident like C2 Beacon Injected into Legitimate svchost.exe Process is detected earlier and cannot recur?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Review & Hardening. Asset in scope: APP-SRV-03.'
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  - Who owns each improvement, and when will it be verified?
+  ideal_concepts:
+  - root cause
+  - detection gap
+  - control improvement
+  - owner and date
+  - runbook update
+  - training
+  reference_answer: |-
+    Document the root cause of C2 Beacon Injected into Legitimate svchost.exe Process, identify the detection gap that let the attacker operate, and assign owners and dates to concrete control changes. Update detections, runbooks, and training, track the actions to completion, and report the outcome to leadership.
+
+    Why: Without durable changes, the same root cause will produce the same incident again.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated improvements, and ties them back to specific detections and controls. Leadership receives a tracked action plan.
+  followup_weak: The review retells the timeline but leaves the root cause and detection gap vague. Without owners, dates, and verification, the same incident will recur.
+  next: ''
+  next_weak: ''
+  mitre_tactic: TA0005 — Defense Evasion
+  mitre_technique: T1055 — Process Injection
+  role_prompts: {}

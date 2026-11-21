@@ -1,0 +1,245 @@
+id: supply_chain_firmware_implant
+name: Supply Chain Firmware Implant
+category: Advanced Threats
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Server Firmware Backdoor — Compromised BMC Firmware Update. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Server Firmware Backdoor — Compromised BMC Firmware Update. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Server Firmware Backdoor — Compromised BMC Firmware Update. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Server Firmware Backdoor — Compromised BMC Firmware Update incident. During a routine firmware compliance audit, the infrastructure security team discovered that 84 Dell PowerEdge servers in production cluster PROD-CLUSTER-07 are running BMC firmware version 2.15.3, but the organization''s approved firmware baseline is 2.15.1. Investigation revealed that the firmware update was distributed through a compromised internal update server (update-srv-internal.corp) which received the payload from an attacker-controlled mirror after a DNS poisoning attack redirected the upstream update source. The malicious BMC firmware contains a persistent implant that survives OS reinstallation and disk replacement. It establishes a covert channel over IPMI protocol, provides out-of-band shell access to the host OS, and has been active for 6 weeks. The implant exfiltrates memory contents including encryption keys and database credentials at regular intervals. Business
+  impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: Server Firmware Backdoor — Compromised BMC Firmware Update
+  opening: During a routine firmware compliance audit, the infrastructure security team discovered that 84 Dell PowerEdge servers in production cluster PROD-CLUSTER-07 are running BMC firmware version 2.15.3, but the organization's approved firmware baseline is 2.15.1. Investigation revealed that the firmware update was distributed through a compromised internal update server (update-srv-internal.corp) which received the…
+  summary: During a routine firmware compliance audit, the infrastructure security team discovered that 84 Dell PowerEdge servers in production cluster PROD-CLUSTER-07 are running BMC firmware version 2.15.3, but the organization's approved firmware baseline is 2.15.1. Investigation revealed that the firmware update was distributed through a compromised internal update server (update-srv-internal.corp) which received the payload from an attacker-controlled mirror after a DNS poisoning attack redirected the upstream update source. The malicious BMC firmware contains a persistent implant that survives OS reinstallation and disk replacement. It establishes a covert channel over IPMI protocol, provides out-of-band shell access to the host OS, and has been active for 6 weeks. The implant exfiltrates memory contents including encryption keys and database credentials at regular intervals.
+  compromised_assets:
+  - 84 Dell PowerEdge servers (BMC firmware compromised)
+  - update-srv-internal.corp (DNS-poisoned update server)
+  - IPMI covert channel (attacker-controlled endpoint)
+  detected_via: Firmware compliance audit — version mismatch detection
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Persistence
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Persistence
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: 84 production servers have compromised BMC firmware that survives disk replacement. The implant communicates over IPMI (port 623/UDP) to an external endpoint at 203.0.113.xx. The BMC firmware has out-of-band access to host memory, disk, and network. All database credentials and encryption keys processed on these servers should be considered compromised.
+  prompt: What is your first containment action?
+  guidance:
+    what: Establish what fired on 84 Dell PowerEdge servers, which accounts are involved, and how urgent the signal is.
+    action: What is your first containment action?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: 84 Dell PowerEdge servers.'
+  hints:
+  - The BMC firmware is persistent but the network containment stops exfiltration first.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - ipmi traffic
+  - traffic port
+  - port udp
+  - udp outbound
+  - outbound servers
+  - servers isolate
+  - isolate compromised
+  - compromised update
+  reference_answer: |-
+    Block IPMI traffic (port 623/UDP) outbound on all servers, isolate the compromised update server, and begin rotating all credentials and keys that transited the 84 servers
+
+    Why: Stops the C2 channel immediately, isolates the supply chain entry point, and begins credential rotation for the most critical impact (stolen keys/credentials).
+  followup_good: 'The SOC team has isolated the update server and is analyzing the malicious BMC firmware binary. Reverse engineering reveals: (1) the implant hooks the BMC''s IPMI handler to provide a hidden ''admin'' shell, (2) it periodically dumps host OS memory via DMA, (3) it exfiltrates data in IPMI packets disguised as legitimate SOL (serial-over-LAN) traffic, (4) it contains a kill switch triggered by a specific IPMI command. The firmware update server''s DNS cache shows the poisoning redirected the update URL from dell.com to 198.51.100.xx for 3 days.'
+  followup_weak: |-
+    Stops the C2 channel immediately, isolates the supply chain entry point, and begins credential rotation for the most critical impact (stolen keys/credentials).
+
+    The SOC team has isolated the update server and is analyzing the malicious BMC firmware binary. Reverse engineering reveals: (1) the implant hooks the BMC's IPMI handler to provide a hidden 'admin' shell, (2) it periodically dumps host OS memory via DMA, (3) it exfiltrates data in IPMI packets disguised as legitimate SOL (serial-over-LAN) traffic, (4) it contains a kill switch triggered by a specific IPMI command. The firmware update server's DNS cache shows the poisoning redirected the update URL from dell.com to 198.51.100.xx for 3 days.
+  next: forensic_firmware_analysis_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1195.001 Compromise Software Dependencies and Development Tools
+- id: forensic_firmware_analysis_phase_2
+  phase_type: analysis
+  title: Forensic Firmware Analysis — Phase 2
+  situation: 'The SOC team has isolated the update server and is analyzing the malicious BMC firmware binary. Reverse engineering reveals: (1) the implant hooks the BMC''s IPMI handler to provide a hidden ''admin'' shell, (2) it periodically dumps host OS memory via DMA, (3) it exfiltrates data in IPMI packets disguised as legitimate SOL (serial-over-LAN) traffic, (4) it contains a kill switch triggered by a specific IPMI command. The firmware update server''s DNS cache shows the poisoning redirected the update URL from dell.com to 198.51.100.xx for 3 days.'
+  prompt: How do you analyze the firmware implant's capabilities and scope?
+  guidance:
+    what: Test the initial theory against telemetry from 84 Dell PowerEdge servers before committing to a response.
+    action: How do you analyze the firmware implant's capabilities and scope?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Forensic Firmware Analysis — Phase 2. Asset in scope: 84 Dell PowerEdge servers.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - extract implant
+  - implant isolated
+  - isolated analysis
+  - analysis station
+  - station identify
+  - identify memory
+  - memory regions
+  - regions accesses
+  reference_answer: |-
+    Extract the implant on an isolated analysis station, identify all memory regions it accesses, decode the IPMI exfiltration protocol, and build network signatures to detect historical exfiltration traffic in PCAP archives
+
+    Why: Full reverse engineering reveals the exact scope of data accessed, enables historical traffic analysis, and produces detection signatures for the covert channel.
+  followup_good: Firmware analysis confirms the implant dumps host memory via DMA, which means every database credential, TLS private key, and encryption key processed on these 84 servers for the past 6 weeks is compromised. The servers host the primary PostgreSQL database cluster, the internal PKI CA, and 3 certificate-issuing services. The attacker may have forged certificates or decrypted archived traffic.
+  followup_weak: |-
+    Full reverse engineering reveals the exact scope of data accessed, enables historical traffic analysis, and produces detection signatures for the covert channel.
+
+    Firmware analysis confirms the implant dumps host memory via DMA, which means every database credential, TLS private key, and encryption key processed on these 84 servers for the past 6 weeks is compromised. The servers host the primary PostgreSQL database cluster, the internal PKI CA, and 3 certificate-issuing services. The attacker may have forged certificates or decrypted archived traffic.
+  next: credential_key_rotation_phase_3
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: credential_key_rotation_phase_3
+  phase_type: containment
+  title: Credential & Key Rotation — Phase 3
+  situation: Firmware analysis confirms the implant dumps host memory via DMA, which means every database credential, TLS private key, and encryption key processed on these 84 servers for the past 6 weeks is compromised. The servers host the primary PostgreSQL database cluster, the internal PKI CA, and 3 certificate-issuing services. The attacker may have forged certificates or decrypted archived traffic.
+  prompt: How do you handle the credential and key compromise?
+  guidance:
+    what: 'Balance speed against disruption: what must be isolated now, and what can wait for scoping?'
+    action: How do you handle the credential and key compromise?
+    why: Containment buys the time needed to investigate without letting the attacker expand.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Credential & Key Rotation — Phase 3. Asset in scope: 84 Dell PowerEdge servers.'
+  hints:
+  - The attacker may still have the exfiltrated keys.
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - revoke reissue
+  - reissue tls
+  - tls certificates
+  - certificates issued
+  - issued internal
+  - internal rotate
+  - database credentials
+  - credentials regenerate
+  reference_answer: |-
+    Revoke and reissue all TLS certificates issued by the internal CA, rotate all database credentials, regenerate the internal CA key pair, force-revoke all CRL entries, and rotate all application-level encryption keys
+
+    Why: DMA-based memory access compromises everything in RAM — certificates, keys, and credentials must all be rotated. The internal CA is particularly critical since it could be used to forge trusted certificates.
+  followup_good: All credentials and keys have been rotated. The 84 servers need clean BMC firmware. Dell has provided verified firmware v2.15.4 with secure boot validation. The update server has been rebuilt. You need to remediate all 84 servers and prevent recurrence.
+  followup_weak: |-
+    DMA-based memory access compromises everything in RAM — certificates, keys, and credentials must all be rotated.
+
+    All credentials and keys have been rotated. The 84 servers need clean BMC firmware. Dell has provided verified firmware v2.15.4 with secure boot validation. The update server has been rebuilt. You need to remediate all 84 servers and prevent recurrence.
+  next: firmware_remediation_supply_chain_hardening_phase_4
+  mitre_tactic: Credential Access
+  mitre_technique: 'T1552.006 Unsecured Credentials: Keys'
+- id: firmware_remediation_supply_chain_hardening_phase_4
+  phase_type: eradication
+  title: Firmware Remediation & Supply Chain Hardening — Phase 4
+  situation: All credentials and keys have been rotated. The 84 servers need clean BMC firmware. Dell has provided verified firmware v2.15.4 with secure boot validation. The update server has been rebuilt. You need to remediate all 84 servers and prevent recurrence.
+  prompt: What is your firmware remediation and prevention plan?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: What is your firmware remediation and prevention plan?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Firmware Remediation & Supply Chain Hardening — Phase 4. Asset in scope: 84 Dell PowerEdge servers.'
+  hints:
+  - The update server was rebuilt but the DNS poisoning vulnerability may still exist.
+  - The new hardware would still need firmware verification.
+  ideal_concepts:
+  - flash verified
+  - verified firmware
+  - firmware servers
+  - servers dell
+  - dell idrac
+  - idrac secure
+  - secure firmware
+  - firmware update
+  reference_answer: |-
+    Flash verified firmware to all 84 servers via Dell's iDRAC secure firmware update with cryptographic verification, implement BMC firmware hash verification in the compliance audit, deploy DNSSEC to prevent future poisoning of the update server, and establish firmware bill-of-materials tracking
+
+    Why: Secure firmware update with crypto verification + DNSSEC + firmware BOM tracking addresses both the immediate remediation and the root cause (DNS poisoning of the update supply chain).
+  followup_good: Firmware remediation is complete. The incident exposed gaps in firmware supply chain security, DNS integrity for internal infrastructure, and the lack of BMC network segmentation. The attacker maintained 6-week access via a covert channel that blended with legitimate IPMI traffic.
+  followup_weak: |-
+    Secure firmware update with crypto verification + DNSSEC + firmware BOM tracking addresses both the immediate remediation and the root cause (DNS poisoning of the update supply chain).
+
+    Firmware remediation is complete. The incident exposed gaps in firmware supply chain security, DNS integrity for internal infrastructure, and the lack of BMC network segmentation. The attacker maintained 6-week access via a covert channel that blended with legitimate IPMI traffic.
+  next: recovery_and_validation
+  mitre_tactic: Persistence
+  mitre_technique: T1542 Pre-OS Boot
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. 84 Dell PowerEdge servers is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return 84 Dell PowerEdge servers to production?
+  guidance:
+    what: 'Define what ''clean'' means for 84 Dell PowerEdge servers: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return 84 Dell PowerEdge servers to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: 84 Dell PowerEdge servers.'
+  hints:
+  - Which backup or rebuild image is known-good for 84 Dell PowerEdge servers, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore 84 Dell PowerEdge servers from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_hardening_phase_5
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1027 Obfuscated Files or Information
+  role_prompts: {}
+- id: post_incident_hardening_phase_5
+  phase_type: lessons
+  title: Post-Incident Hardening — Phase 5
+  situation: Firmware remediation is complete. The incident exposed gaps in firmware supply chain security, DNS integrity for internal infrastructure, and the lack of BMC network segmentation. The attacker maintained 6-week access via a covert channel that blended with legitimate IPMI traffic.
+  prompt: What long-term hardening measures do you implement?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on 84 Dell PowerEdge servers.
+    action: What long-term hardening measures do you implement?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Hardening — Phase 5. Asset in scope: 84 Dell PowerEdge servers.'
+  hints:
+  - Addresses detection but not prevention (segmentation) or the DNS poisoning root cause.
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - implement bmc
+  - bmc network
+  - network segmentation
+  - segmentation dedicated
+  - dedicated management
+  - management vlan
+  - vlan deploy
+  - deploy ipmi
+  reference_answer: |-
+    Implement BMC network segmentation (dedicated management VLAN), deploy IPMI traffic anomaly detection, establish firmware supply chain verification with signed updates and hash pinning, deploy DNSSEC for internal domains, and add BMC firmware integrity checks to the monthly compliance scan
+
+    Why: Network segmentation limits BMC access, anomaly detection catches covert channels, supply chain verification prevents firmware tampering, and DNSSEC prevents poisoning.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Server Firmware Backdoor — Compromised BMC Firmware Update incident. During a routine firmware compliance audit, the infrastructure security team discovered that 84 Dell PowerEdge servers in production cluster PROD-CLUSTER-07 are running BMC firmware version 2.15.3, but the organization's approved firmware baseline is 2.15.1. Investigation revealed that the firmware update was distributed through a compromised internal update server (update-srv-internal.corp) which received the payload from an attacker-controlled mirror after a DNS poisoning attack redirected the...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Server Firmware Backdoor — Compromised BMC Firmware Update incident. During a routine firmware compliance audit, the infrastructure security team discovered that 84 Dell PowerEdge servers in production cluster PROD-CLUSTER-07 are running BMC firmware version 2.15.3, but the organization's approved firmware baseline is 2.15.1. Investigation revealed that the firmware update was distributed through a compromised internal update server (update-srv-internal.corp) which received the payload from an attacker-controlled mirror after a DNS poisoning attack redirected the...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1027 Obfuscated Files or Information

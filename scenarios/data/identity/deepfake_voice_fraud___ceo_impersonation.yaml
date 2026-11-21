@@ -1,0 +1,242 @@
+id: deepfake_voice_fraud___ceo_impersonation
+name: Deepfake Voice Fraud — CEO Impersonation
+category: Identity & Access
+format_version: 2
+difficulty: Expert
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Deepfake Voice Attack — $450K Unauthorized Wire Transfer. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Deepfake Voice Attack — $450K Unauthorized Wire Transfer. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Deepfake Voice Attack — $450K Unauthorized Wire Transfer. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Deepfake Voice Attack — $450K Unauthorized Wire Transfer incident. At 15:20 on Friday, the VP of Finance (Lisa Wong) received a phone call from someone sounding exactly like the CEO (Mark Thompson). The voice matched the CEO''s tone, accent, speech patterns, and even referenced a recent board meeting detail. The caller said: ''Lisa, I''m at the airport and can''t use email. I need you to wire $450K to this account for the Quantum acquisition closing — the lawyers are waiting.'' Lisa recognized the voice and authorized the wire. The CEO was actually in a board meeting and had no knowledge of the transfer until Monday morning. The fraud was discovered at 09:00 Monday. The $450K was transferred to an account at a Swiss bank and has been moved through 3 shell companies. Analysis of the voice call (recorded by the company''s compliance phone system) reveals the voice was generated using a deepfake AI model trained on 45 minutes of the CEO''s public speeches
+  and earnings calls. The attacker also had knowledge of the board meeting agenda (likely from a compromised email or LinkedIn OSINT). Business impact: account takeover could enable lateral movement and privilege abuse across the directory, so identity trust must be rebuilt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess notification duties for any account or directory data accessed.'
+incident:
+  title: Deepfake Voice Attack — $450K Unauthorized Wire Transfer
+  opening: At 15:20 on Friday, the VP of Finance (Lisa Wong) received a phone call from someone sounding exactly like the CEO (Mark Thompson). The voice matched the CEO's tone, accent, speech patterns, and even referenced a recent board meeting detail.
+  summary: 'At 15:20 on Friday, the VP of Finance (Lisa Wong) received a phone call from someone sounding exactly like the CEO (Mark Thompson). The voice matched the CEO''s tone, accent, speech patterns, and even referenced a recent board meeting detail. The caller said: ''Lisa, I''m at the airport and can''t use email. I need you to wire $450K to this account for the Quantum acquisition closing — the lawyers are waiting.'' Lisa recognized the voice and authorized the wire. The CEO was actually in a board meeting and had no knowledge of the transfer until Monday morning. The fraud was discovered at 09:00 Monday. The $450K was transferred to an account at a Swiss bank and has been moved through 3 shell companies. Analysis of the voice call (recorded by the company''s compliance phone system) reveals the voice was generated using a deepfake AI model trained on 45 minutes of the CEO''s public speeches and earnings calls. The attacker also had knowledge of the board meeting agenda (likely from
+    a compromised email or LinkedIn OSINT).'
+  compromised_assets:
+  - $450,000 transferred
+  - CEO's voice identity (deepfaked)
+  - Lisa Wong (VP Finance) trust
+  detected_via: Real CEO reported no knowledge of transfer during Monday morning review
+  kill_chain:
+  - Recon
+  - Resource Development
+  - Voice Synthesis
+  - Impersonation
+  - Fraud
+  mitre_tactics:
+  - Initial Access
+  - Impact
+  - Collection
+phases:
+- id: fund_recovery_phase_1
+  phase_type: triage
+  title: Fund Recovery — Phase 1
+  situation: $450K was transferred to a Swiss bank account on Friday afternoon. The funds have been moved through 3 shell companies. Monday morning — the fraud was just discovered. The Swiss bank's fraud department needs to be contacted immediately.
+  prompt: What is your FIRST priority action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on $450,000 transferred, its severity, and the affected accounts.'
+    action: What is your FIRST priority action?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Fund Recovery — Phase 1. Asset in scope: $450,000 transferred.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - contact bank
+  - bank immediately
+  - immediately initiate
+  - initiate international
+  - international wire
+  - wire recall
+  - recall notify
+  - swiss bank
+  reference_answer: |-
+    Contact your bank immediately to initiate international wire recall; notify the Swiss bank's fraud department; engage legal counsel for international asset recovery; file with law enforcement (FBI IC3 and local field office)
+
+    Why: International fund recovery requires simultaneous action: your bank, the receiving bank, legal channels, and law enforcement.
+  followup_good: The compliance phone system recorded the 4-minute call. Audio analysis shows the voice is a high-quality deepfake — 97% voice match to the CEO's public speeches. The attacker used the CEO's 2023 earnings call, 2024 shareholder meeting, and 3 podcast appearances as training data. The deepfake even included natural speech patterns (the CEO's habit of saying 'look' at the start of sentences). The call came from a VoIP number registered to a disposable account.
+  followup_weak: |-
+    International fund recovery requires simultaneous action: your bank, the receiving bank, legal channels, and law enforcement.
+
+    The compliance phone system recorded the 4-minute call. Audio analysis shows the voice is a high-quality deepfake — 97% voice match to the CEO's public speeches. The attacker used the CEO's 2023 earnings call, 2024 shareholder meeting, and 3 podcast appearances as training data. The deepfake even included natural speech patterns (the CEO's habit of saying 'look' at the start of sentences). The call came from a VoIP number registered to a disposable account.
+  next: voice_deepfake_analysis_phase_2
+  mitre_tactic: Impact
+  mitre_technique: T1657 Financial Theft
+- id: voice_deepfake_analysis_phase_2
+  phase_type: analysis
+  title: Voice Deepfake Analysis — Phase 2
+  situation: The compliance phone system recorded the 4-minute call. Audio analysis shows the voice is a high-quality deepfake — 97% voice match to the CEO's public speeches. The attacker used the CEO's 2023 earnings call, 2024 shareholder meeting, and 3 podcast appearances as training data. The deepfake even included natural speech patterns (the CEO's habit of saying 'look' at the start of sentences). The call came from a VoIP number registered to a disposable account.
+  prompt: How do you analyze and respond to the deepfake voice attack?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on $450,000 transferred.
+    action: How do you analyze and respond to the deepfake voice attack?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Voice Deepfake Analysis — Phase 2. Asset in scope: $450,000 transferred.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - preserve recorded
+  - recorded call
+  - evidence engage
+  - engage forensic
+  - forensic audio
+  - audio analysis
+  - analysis firm
+  - firm document
+  reference_answer: |-
+    Preserve the recorded call as evidence; engage a forensic audio analysis firm to document the deepfake; catalog all public sources the attacker could have used to train the model (earnings calls, podcasts, interviews); notify the CEO about voice identity theft
+
+    Why: Evidence preservation, forensic documentation, and understanding the attack vector (public voice data) are essential.
+  followup_good: Lisa Wong approved a $450K wire transfer based solely on a phone call. The company has no out-of-band verification requirement for wire transfers. The attacker exploited this gap perfectly — they knew the CEO's voice would be trusted.
+  followup_weak: |-
+    Evidence preservation, forensic documentation, and understanding the attack vector (public voice data) are essential.
+
+    Lisa Wong approved a $450K wire transfer based solely on a phone call. The company has no out-of-band verification requirement for wire transfers. The attacker exploited this gap perfectly — they knew the CEO's voice would be trusted.
+  next: verification_protocol_phase_3
+  mitre_tactic: Collection
+  mitre_technique: T1565 Data Manipulation
+- id: verification_protocol_phase_3
+  phase_type: containment
+  title: Verification Protocol — Phase 3
+  situation: Lisa Wong approved a $450K wire transfer based solely on a phone call. The company has no out-of-band verification requirement for wire transfers. The attacker exploited this gap perfectly — they knew the CEO's voice would be trusted.
+  prompt: How do you implement verification controls to prevent deepfake voice fraud?
+  guidance:
+    what: 'Balance speed against disruption: what must be isolated now, and what can wait for scoping?'
+    action: How do you implement verification controls to prevent deepfake voice fraud?
+    why: Stopping the spread is urgent, but destroying evidence makes the incident impossible to close.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Verification Protocol — Phase 3. Asset in scope: $450,000 transferred.'
+  hints:
+  - Consider the affected accounts and their privilege level.
+  - Preserve evidence before disrupting anything.
+  ideal_concepts:
+  - implement multi-person
+  - multi-person authorization
+  - authorization transfers
+  - transfers require
+  - require out-of-band
+  - out-of-band verification
+  - verification in-person
+  - in-person video
+  reference_answer: |-
+    1) Implement multi-person authorization for transfers over $50K. 2) Require out-of-band verification (in-person or video call to a known device). 3) Establish a code word system for urgent financial requests. 4) Train executives to never authorize transfers by voice alone.
+
+    Why: Multi-layered: authorization threshold, out-of-band verification, code words, and executive training. Voice alone is never sufficient.
+  followup_good: The CEO's public speeches were used to train the deepfake model. The CEO gives frequent public talks, earnings calls, and podcast appearances. All of these are publicly available and were used as training data.
+  followup_weak: |-
+    Multi-layered: authorization threshold, out-of-band verification, code words, and executive training.
+
+    The CEO's public speeches were used to train the deepfake model. The CEO gives frequent public talks, earnings calls, and podcast appearances. All of these are publicly available and were used as training data.
+  next: executive_voice_protection_phase_4
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1078 Valid Accounts
+- id: executive_voice_protection_phase_4
+  phase_type: eradication
+  title: Executive Voice Protection — Phase 4
+  situation: The CEO's public speeches were used to train the deepfake model. The CEO gives frequent public talks, earnings calls, and podcast appearances. All of these are publicly available and were used as training data.
+  prompt: How do you protect executive voice identities going forward?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: How do you protect executive voice identities going forward?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Executive Voice Protection — Phase 4. Asset in scope: $450,000 transferred.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - implement voice
+  - voice authentication
+  - authentication financial
+  - financial requests
+  - requests limit
+  - limit public
+  - public recordings
+  - recordings executives
+  reference_answer: |-
+    Implement voice authentication for financial requests; limit public recordings of executives where possible; register voice biometrics for key executives; develop an internal deepfake detection capability
+
+    Why: Voice authentication, controlled public exposure, and detection capabilities create multiple protection layers.
+  followup_good: Law enforcement has been engaged. The FBI IC3 report has been filed. The Swiss bank is cooperating but the shell companies make recovery difficult. The incident needs to be documented for the board and regulators.
+  followup_weak: |-
+    Voice authentication, controlled public exposure, and detection capabilities create multiple protection layers.
+
+    Law enforcement has been engaged. The FBI IC3 report has been filed. The Swiss bank is cooperating but the shell companies make recovery difficult. The incident needs to be documented for the board and regulators.
+  next: recovery_and_validation
+  mitre_tactic: Impact
+  mitre_technique: T1565 Data Manipulation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. $450,000 transferred is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return $450,000 transferred to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return $450,000 transferred to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: $450,000 transferred.'
+  hints:
+  - Which backup or rebuild image is known-good for $450,000 transferred, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore $450,000 transferred from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: incident_reporting_legal_phase_5
+  next_weak: ''
+  mitre_tactic: Impact
+  mitre_technique: T1657 Financial Theft
+  role_prompts: {}
+- id: incident_reporting_legal_phase_5
+  phase_type: lessons
+  title: Incident Reporting & Legal — Phase 5
+  situation: Law enforcement has been engaged. The FBI IC3 report has been filed. The Swiss bank is cooperating but the shell companies make recovery difficult. The incident needs to be documented for the board and regulators.
+  prompt: What should the incident report include?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What should the incident report include?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Incident Reporting & Legal — Phase 5. Asset in scope: $450,000 transferred.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - full timeline
+  - timeline reconnaissance
+  - reconnaissance deepfake
+  - deepfake creation
+  - creation call
+  - wire discovery
+  - discovery technical
+  - technical analysis
+  reference_answer: |-
+    1) Full timeline (reconnaissance → deepfake creation → call → wire → discovery). 2) Technical analysis of the deepfake (training data sources, quality metrics). 3) Financial impact ($450K + investigation costs). 4) Root cause (no out-of-band verification). 5) Recommendations (verification protocol, voice protection, executive training). 6) Regulatory obligations (if any).
+
+    Why: A comprehensive report enables board understanding, regulatory compliance, and implementation of preventive measures.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Deepfake Voice Attack — $450K Unauthorized Wire Transfer incident. At 15:20 on Friday, the VP of Finance (Lisa Wong) received a phone call from someone sounding exactly like the CEO (Mark Thompson). The voice matched the CEO's tone, accent, speech patterns, and even referenced a recent board meeting detail. The caller said: 'Lisa, I'm at the airport and can't use email. I need you to wire $450K to this account for the Quantum acquisition closing — the lawyers are waiting.' Lisa recognized the voice and authorized the wire. The CEO was actually in a board meetin...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Deepfake Voice Attack — $450K Unauthorized Wire Transfer incident. At 15:20 on Friday, the VP of Finance (Lisa Wong) received a phone call from someone sounding exactly like the CEO (Mark Thompson). The voice matched the CEO's tone, accent, speech patterns, and even referenced a recent board meeting detail. The caller said: 'Lisa, I'm at the airport and can't use email. I need you to wire $450K to this account for the Quantum acquisition closing — the lawyers are waiting.' Lisa recognized the voice and authorized the wire. The CEO was actually in a board meetin...
+  mitre_tactic: Impact
+  mitre_technique: T1657 Financial Theft

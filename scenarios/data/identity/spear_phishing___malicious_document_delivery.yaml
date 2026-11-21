@@ -1,0 +1,210 @@
+id: spear_phishing___malicious_document_delivery
+name: Spear Phishing — Malicious Document Delivery
+category: Identity & Access
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Spear Phishing — Weaponized PDF Delivered via Spoofed Industry Report. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Spear Phishing — Weaponized PDF Delivered via Spoofed Industry Report. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Spear Phishing — Weaponized PDF Delivered via Spoofed Industry Report. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Spear Phishing — Weaponized PDF Delivered via Spoofed Industry Report incident. At 10:15 on Monday, 5 employees in the Business Development department received an email from ''research@industry-insights[.]com'' with the subject ''2024 Market Analysis — Confidential Pre-Release''. The email was carefully crafted: it referenced a recent industry conference the recipients attended, mentioned the recipient''s company by name, and included a PDF attachment labeled ''Market_Analysis_2024_PreRelease.pdf''. The PDF contained an embedded JavaScript that exploited a known Adobe Acrobat vulnerability (CVE-2024-XXXX) to execute a PowerShell downloader. Of the 5 recipients, 2 opened the PDF on Windows workstations. 1 employee (Karen Mitchell) had an unpatched Acrobat version and was fully compromised. The PowerShell payload downloaded a RatPack RAT that established persistence via a scheduled task, keylogged for 2 hours, and exfiltrated browser saved passwords
+  (including corporate SSO credentials) to an encrypted C2 channel. The SOC detected the beacon at 13:45 when the C2 IP was added to the threat intelligence blocklist. Business impact: account takeover could enable lateral movement and privilege abuse across the directory, so identity trust must be rebuilt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess notification duties for any account or directory data accessed.'
+incident:
+  title: Spear Phishing — Weaponized PDF Delivered via Spoofed Industry Report
+  opening: 'At 10:15 on Monday, 5 employees in the Business Development department received an email from ''research@industry-insights[.]com'' with the subject ''2024 Market Analysis — Confidential Pre-Release''. The email was carefully crafted: it referenced a recent industry conference the recipients attended, mentioned the recipient''s company by name, and included a PDF attachment labeled ''Market_Analysis_2024_PreRelease.pdf''.'
+  summary: 'At 10:15 on Monday, 5 employees in the Business Development department received an email from ''research@industry-insights[.]com'' with the subject ''2024 Market Analysis — Confidential Pre-Release''. The email was carefully crafted: it referenced a recent industry conference the recipients attended, mentioned the recipient''s company by name, and included a PDF attachment labeled ''Market_Analysis_2024_PreRelease.pdf''. The PDF contained an embedded JavaScript that exploited a known Adobe Acrobat vulnerability (CVE-2024-XXXX) to execute a PowerShell downloader. Of the 5 recipients, 2 opened the PDF on Windows workstations. 1 employee (Karen Mitchell) had an unpatched Acrobat version and was fully compromised. The PowerShell payload downloaded a RatPack RAT that established persistence via a scheduled task, keylogged for 2 hours, and exfiltrated browser saved passwords (including corporate SSO credentials) to an encrypted C2 channel. The SOC detected the beacon at 13:45 when
+    the C2 IP was added to the threat intelligence blocklist.'
+  compromised_assets:
+  - Karen Mitchell's workstation (fully compromised)
+  - Corporate SSO credentials (browser-saved)
+  - Keylogger data (2 hours of keystrokes)
+  detected_via: C2 IP matched threat intelligence blocklist
+  kill_chain:
+  - Recon
+  - Resource Development
+  - Delivery
+  - Exploitation
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Credential Access
+  - Collection
+phases:
+- id: host_containment_phase_1
+  phase_type: triage
+  title: Host Containment — Phase 1
+  situation: Karen Mitchell's workstation has a RatPack RAT with keylogger active. The RAT has been running for 2 hours and has exfiltrated browser-saved passwords including corporate SSO credentials. 2 hours of keystrokes have been captured.
+  prompt: What is your FIRST priority action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on Karen Mitchell''s workstation, its severity, and the affected accounts.'
+    action: What is your FIRST priority action?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Host Containment — Phase 1. Asset in scope: Karen Mitchell''s workstation.'
+  hints:
+  - EDR may detect but removal can be unreliable with rootkit-capable RATs.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - isolate karen
+  - karen workstation
+  - workstation immediately
+  - immediately revoke
+  - revoke her
+  - her sso
+  - sso session
+  - session tokens
+  reference_answer: |-
+    Isolate Karen's workstation immediately; revoke her SSO session tokens; force password reset for all accounts she accessed during the 2-hour window; block the C2 IP; preserve RAM for forensic imaging
+
+    Why: Isolate, revoke tokens, rotate credentials, and preserve evidence. The keylogger means any typed credentials are compromised.
+  followup_good: 'The RAT captured 2 hours of keystrokes and exfiltrated browser-saved passwords. Analysis of the exfiltrated data (from the C2 server, obtained via threat intel partner) shows: corporate SSO password, VPN credentials, personal email password, 3 banking website passwords, and chat messages typed during the 2-hour window.'
+  followup_weak: |-
+    Isolate, revoke tokens, rotate credentials, and preserve evidence.
+
+    The RAT captured 2 hours of keystrokes and exfiltrated browser-saved passwords. Analysis of the exfiltrated data (from the C2 server, obtained via threat intel partner) shows: corporate SSO password, VPN credentials, personal email password, 3 banking website passwords, and chat messages typed during the 2-hour window.
+  next: credential_impact_assessment_phase_2
+  mitre_tactic: Execution
+  mitre_technique: 'T1204.002 User Execution: Malicious File'
+- id: credential_impact_assessment_phase_2
+  phase_type: analysis
+  title: Credential Impact Assessment — Phase 2
+  situation: 'The RAT captured 2 hours of keystrokes and exfiltrated browser-saved passwords. Analysis of the exfiltrated data (from the C2 server, obtained via threat intel partner) shows: corporate SSO password, VPN credentials, personal email password, 3 banking website passwords, and chat messages typed during the 2-hour window.'
+  prompt: How do you assess and respond to the credential exposure?
+  guidance:
+    what: Test the initial theory against telemetry from Karen Mitchell's workstation before committing to a response.
+    action: How do you assess and respond to the credential exposure?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Credential Impact Assessment — Phase 2. Asset in scope: Karen Mitchell''s workstation.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - immediate password
+  - password reset
+  - exposed accounts
+  - accounts sso
+  - sso vpn
+  - vpn personal
+  - personal email
+  - email banking
+  reference_answer: |-
+    Force immediate password reset for all exposed accounts (SSO, VPN, personal email, banking); advise Karen to change banking passwords directly; notify banking institutions; disable SSO session and reissue tokens; implement browser password storage policy (ban saving passwords in browsers)
+
+    Why: Comprehensive credential rotation plus policy change to prevent browser-stored password theft.
+  followup_good: The exploit succeeded because Karen was running Adobe Acrobat 2023.006 (unpatched). The current version is 2024.002. The phishing email bypassed the email gateway because the PDF was not flagged (the JavaScript was obfuscated). The sender domain industry-insights[.]com was registered 1 week ago.
+  followup_weak: |-
+    Comprehensive credential rotation plus policy change to prevent browser-stored password theft.
+
+    The exploit succeeded because Karen was running Adobe Acrobat 2023.006 (unpatched). The current version is 2024.002. The phishing email bypassed the email gateway because the PDF was not flagged (the JavaScript was obfuscated). The sender domain industry-insights[.]com was registered 1 week ago.
+  next: patch_email_security_phase_3
+  mitre_tactic: Credential Access
+  mitre_technique: T1555 Credentials from Password Stores
+- id: patch_email_security_phase_3
+  phase_type: eradication
+  title: Patch & Email Security — Phase 3
+  situation: The exploit succeeded because Karen was running Adobe Acrobat 2023.006 (unpatched). The current version is 2024.002. The phishing email bypassed the email gateway because the PDF was not flagged (the JavaScript was obfuscated). The sender domain industry-insights[.]com was registered 1 week ago.
+  prompt: How do you prevent similar attacks?
+  guidance:
+    what: Find every foothold the attacker left on Karen Mitchell's workstation, including persistence and stolen credentials.
+    action: How do you prevent similar attacks?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Patch & Email Security — Phase 3. Asset in scope: Karen Mitchell''s workstation.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - deploy emergency
+  - emergency patch
+  - patch adobe
+  - adobe acrobat
+  - acrobat across
+  - across endpoints
+  - endpoints configure
+  - configure acrobat
+  reference_answer: |-
+    Deploy emergency patch for Adobe Acrobat across all endpoints; configure Acrobat to block JavaScript execution by default; implement email sandboxing for PDF attachments; register for domain monitoring on look-alike industry domains
+
+    Why: Patch deployment, JavaScript blocking, email sandboxing, and domain monitoring address all stages of the attack chain.
+  followup_good: The C2 IP has been blocked. The RatPack RAT binary has been submitted to VirusTotal and matches 3 other campaigns targeting the financial and energy sectors. The attacker's infrastructure (industry-insights[.]com, C2 server) appears to be part of a broader campaign.
+  followup_weak: |-
+    Patch deployment, JavaScript blocking, email sandboxing, and domain monitoring address all stages of the attack chain.
+
+    The C2 IP has been blocked. The RatPack RAT binary has been submitted to VirusTotal and matches 3 other campaigns targeting the financial and energy sectors. The attacker's infrastructure (industry-insights[.]com, C2 server) appears to be part of a broader campaign.
+  next: recovery_and_validation
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1027 Obfuscated Files or Information
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Karen Mitchell's workstation is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Karen Mitchell's workstation to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return Karen Mitchell's workstation to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Karen Mitchell''s workstation.'
+  hints:
+  - Which backup or rebuild image is known-good for Karen Mitchell's workstation, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Karen Mitchell's workstation from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: threat_intelligence_hunting_phase_4
+  next_weak: ''
+  mitre_tactic: Discovery
+  mitre_technique: T1046 Network Service Discovery
+  role_prompts: {}
+- id: threat_intelligence_hunting_phase_4
+  phase_type: lessons
+  title: Threat Intelligence & Hunting — Phase 4
+  situation: The C2 IP has been blocked. The RatPack RAT binary has been submitted to VirusTotal and matches 3 other campaigns targeting the financial and energy sectors. The attacker's infrastructure (industry-insights[.]com, C2 server) appears to be part of a broader campaign.
+  prompt: What threat intelligence actions do you take?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What threat intelligence actions do you take?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Threat Intelligence & Hunting — Phase 4. Asset in scope: Karen Mitchell''s workstation.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - download full
+  - full virustotal
+  - virustotal report
+  - report pivot
+  - pivot identify
+  - identify infrastructure
+  - infrastructure share
+  - share iocs
+  reference_answer: |-
+    Download the full VirusTotal report; pivot on the C2 IP to identify other infrastructure; share IOCs with sector ISAC; hunt for the RAT hash across all endpoints; check if other employees received emails from the same sender domain; review proxy logs for any other connections to the attacker's infrastructure
+
+    Why: Full threat intel pivot and enterprise hunting ensures you find any other compromised systems from this campaign.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Spear Phishing — Weaponized PDF Delivered via Spoofed Industry Report incident. At 10:15 on Monday, 5 employees in the Business Development department received an email from 'research@industry-insights[.]com' with the subject '2024 Market Analysis — Confidential Pre-Release'. The email was carefully crafted: it referenced a recent industry conference the recipients attended, mentioned the recipient's company by name, and included a PDF attachment labeled 'Market_Analysis_2024_PreRelease.pdf'. The PDF contained an embedded JavaScript that exploited a known Adobe Acrobat vuln...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Spear Phishing — Weaponized PDF Delivered via Spoofed Industry Report incident. At 10:15 on Monday, 5 employees in the Business Development department received an email from 'research@industry-insights[.]com' with the subject '2024 Market Analysis — Confidential Pre-Release'. The email was carefully crafted: it referenced a recent industry conference the recipients attended, mentioned the recipient's company by name, and included a PDF attachment labeled 'Market_Analysis_2024_PreRelease.pdf'. The PDF contained an embedded JavaScript that exploited a known Adobe Acrobat vuln...
+  mitre_tactic: Discovery
+  mitre_technique: T1046 Network Service Discovery

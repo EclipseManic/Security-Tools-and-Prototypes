@@ -1,0 +1,212 @@
+id: dependency_confusion___typosquatting
+name: Dependency Confusion / Typosquatting
+category: Advanced Threats
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Dependency Confusion / Typosquatting — Package Manager Attack. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Dependency Confusion / Typosquatting — Package Manager Attack. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Dependency Confusion / Typosquatting — Package Manager Attack. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Dependency Confusion / Typosquatting — Package Manager Attack incident. The development security team detected that a Python package ''requests-prod'' (internal package used for production API calls) was published to PyPI with version 9.9.9, which is higher than the internal version 2.1.3. The package appeared on PyPI 5 days ago. Analysis revealed the PyPI package contained the same module names as the internal package but included a hidden payload that exfiltrated environment variables (including API keys, database credentials, and cloud access tokens) to an external server. The package was downloaded by CI/CD pipelines in 12 microservices that auto-resolve dependencies from PyPI before checking internal repositories. The CI/CD pipelines ran in the production Kubernetes cluster. Environment variables from the production namespace were exfiltrated, including: AWS access keys for the production account, database connection strings for 3 PostgreSQL
+  clusters, and API keys for 8 external services. Business impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: Dependency Confusion / Typosquatting — Package Manager Attack
+  opening: The development security team detected that a Python package 'requests-prod' (internal package used for production API calls) was published to PyPI with version 9.9.9, which is higher than the internal version 2.1.3. The package appeared on PyPI 5 days ago.
+  summary: 'The development security team detected that a Python package ''requests-prod'' (internal package used for production API calls) was published to PyPI with version 9.9.9, which is higher than the internal version 2.1.3. The package appeared on PyPI 5 days ago. Analysis revealed the PyPI package contained the same module names as the internal package but included a hidden payload that exfiltrated environment variables (including API keys, database credentials, and cloud access tokens) to an external server. The package was downloaded by CI/CD pipelines in 12 microservices that auto-resolve dependencies from PyPI before checking internal repositories. The CI/CD pipelines ran in the production Kubernetes cluster. Environment variables from the production namespace were exfiltrated, including: AWS access keys for the production account, database connection strings for 3 PostgreSQL clusters, and API keys for 8 external services.'
+  compromised_assets:
+  - PyPI package 'requests-prod' (typosquatted)
+  - 12 microservices in production Kubernetes cluster
+  - AWS production access keys
+  - 3 PostgreSQL database connection strings
+  - 8 external service API keys
+  detected_via: Package registry monitoring — internal package published externally with higher version
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: A typosquatted package has been exfiltrating production credentials for 5 days. 12 microservices in production may have executed the malicious package. AWS keys, database credentials, and API keys are compromised. The CI/CD pipelines auto-resolve from PyPI. The attacker may have already used the exfiltrated credentials.
+  prompt: What is your FIRST containment action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on PyPI package ''requests-prod'', its severity, and the affected accounts.'
+    action: What is your FIRST containment action?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: PyPI package ''requests-prod''.'
+  hints:
+  - Credential rotation and CI/CD configuration fix can be done without shutting down services.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - immediately rotate
+  - aws keys
+  - keys database
+  - database credentials
+  - credentials api
+  - api keys
+  - keys affected
+  - affected services
+  reference_answer: |-
+    Immediately rotate all AWS keys, database credentials, and API keys for the affected services, block the exfiltration endpoint at the network level, update CI/CD pipeline configuration to only resolve from internal package repositories, and quarantine the 12 affected microservices
+
+    Why: Credential rotation stops ongoing exploitation, network blocking stops exfiltration, CI/CD fix prevents future感染, and quarantine limits blast radius of compromised services.
+  followup_good: The malicious package has been identified and the exfiltration endpoint blocked. Credentials are being rotated. You need to determine what was exfiltrated, which services were affected, and whether the attacker used the stolen credentials. The malicious package's source code needs analysis to understand the full payload.
+  followup_weak: |-
+    Credential rotation stops ongoing exploitation, network blocking stops exfiltration, CI/CD fix prevents future感染, and quarantine limits blast radius of compromised services.
+
+    The malicious package has been identified and the exfiltration endpoint blocked. Credentials are being rotated. You need to determine what was exfiltrated, which services were affected, and whether the attacker used the stolen credentials. The malicious package's source code needs analysis to understand the full payload.
+  next: evidence_collection_phase_2
+  mitre_tactic: Execution
+  mitre_technique: T1059.006 Python
+- id: evidence_collection_phase_2
+  phase_type: analysis
+  title: Evidence Collection — Phase 2
+  situation: The malicious package has been identified and the exfiltration endpoint blocked. Credentials are being rotated. You need to determine what was exfiltrated, which services were affected, and whether the attacker used the stolen credentials. The malicious package's source code needs analysis to understand the full payload.
+  prompt: How do you collect evidence from this package supply chain attack?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on PyPI package 'requests-prod'.
+    action: How do you collect evidence from this package supply chain attack?
+    why: Acting on an unverified scope either misses the attacker or over-contains the business.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Evidence Collection — Phase 2. Asset in scope: PyPI package ''requests-prod''.'
+  hints:
+  - Important for broader scope but secondary to the immediate evidence collection for this specific attack.
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - analyze malicious
+  - malicious pypi
+  - pypi package
+  - package source
+  - source code
+  - code payload
+  - payload pull
+  - logs microservices
+  reference_answer: |-
+    Analyze the malicious PyPI package source code and payload, pull CI/CD logs for all 12 microservices showing package installation events, audit AWS CloudTrail for unauthorized API calls using the compromised keys, check database logs for unauthorized access, and analyze network logs for exfiltration traffic patterns
+
+    Why: Multi-source evidence: package analysis (payload), CI/CloudTrail/DB logs (scope and usage), and network analysis (exfiltration methods).
+  followup_good: 'Package analysis reveals the payload exfiltrated all environment variables matching patterns: AWS_*, DB_*, API_*, TOKEN_*, and SECRET_*. AWS CloudTrail shows the compromised keys were used to access 3 S3 buckets containing customer data, launch 2 EC2 instances for cryptocurrency mining, and create 4 new IAM users. Database logs show the connection strings were used to query customer records (150,000 rows accessed). The attacker''s infrastructure was traced to a bulletproof hosting provider.'
+  followup_weak: |-
+    Multi-source evidence: package analysis (payload), CI/CloudTrail/DB logs (scope and usage), and network analysis (exfiltration methods).
+
+    Package analysis reveals the payload exfiltrated all environment variables matching patterns: AWS_*, DB_*, API_*, TOKEN_*, and SECRET_*. AWS CloudTrail shows the compromised keys were used to access 3 S3 buckets containing customer data, launch 2 EC2 instances for cryptocurrency mining, and create 4 new IAM users. Database logs show the connection strings were used to query customer records (150,000 rows accessed). The attacker's infrastructure was traced to a bulletproof hosting provider.
+  next: scope_assessment_phase_3
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1070.004 File Deletion
+- id: scope_assessment_phase_3
+  phase_type: eradication
+  title: Scope Assessment — Phase 3
+  situation: 'Package analysis reveals the payload exfiltrated all environment variables matching patterns: AWS_*, DB_*, API_*, TOKEN_*, and SECRET_*. AWS CloudTrail shows the compromised keys were used to access 3 S3 buckets containing customer data, launch 2 EC2 instances for cryptocurrency mining, and create 4 new IAM users. Database logs show the connection strings were used to query customer records (150,000 rows accessed). The attacker''s infrastructure was traced to a bulletproof hosting provider.'
+  prompt: How do you assess the full impact?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: How do you assess the full impact?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Scope Assessment — Phase 3. Asset in scope: PyPI package ''requests-prod''.'
+  hints:
+  - Mining is a resource cost but the customer data exposure and IAM compromise are more impactful from a security and regulatory perspective.
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - assess customer
+  - customer data
+  - data exposure
+  - exposure records
+  - records determine
+  - determine regulatory
+  - regulatory implications
+  - implications gdpr
+  reference_answer: |-
+    Assess customer data exposure (150,000 records), determine regulatory implications (GDPR, CCPA), inventory cryptocurrency mining costs and resource impact, identify the 4 unauthorized IAM users and all actions they performed, and evaluate the attacker's lateral movement possibilities with the stolen credentials
+
+    Why: Full impact: data breach (customer records), regulatory (GDPR/CCPA), resource abuse (mining costs), IAM compromise (persistence), and lateral movement (further exposure).
+  followup_good: 'The investigation reveals: 150,000 customer records were accessed (names, emails, phone numbers), $12,000 in cloud compute costs from mining, 4 backdoor IAM users created, and the attacker''s access spanned 3 AWS accounts. The CI/CD pipelines were configured to resolve dependencies from PyPI first, then internal repos. Internal package names were not registered on public registries. The company uses 847 internal Python packages.'
+  followup_weak: |-
+    Full impact: data breach (customer records), regulatory (GDPR/CCPA), resource abuse (mining costs), IAM compromise (persistence), and lateral movement (further exposure).
+
+    The investigation reveals: 150,000 customer records were accessed (names, emails, phone numbers), $12,000 in cloud compute costs from mining, 4 backdoor IAM users created, and the attacker's access spanned 3 AWS accounts. The CI/CD pipelines were configured to resolve dependencies from PyPI first, then internal repos. Internal package names were not registered on public registries. The company uses 847 internal Python packages.
+  next: recovery_and_validation
+  mitre_tactic: Impact
+  mitre_technique: T1496 Resource Hijacking
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. PyPI package 'requests-prod' is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return PyPI package 'requests-prod' to production?
+  guidance:
+    what: 'Define what ''clean'' means for PyPI package ''requests-prod'': trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return PyPI package 'requests-prod' to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: PyPI package ''requests-prod''.'
+  hints:
+  - Which backup or rebuild image is known-good for PyPI package 'requests-prod', and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore PyPI package 'requests-prod' from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: eradication_prevention_phase_4
+  next_weak: ''
+  mitre_tactic: Persistence
+  mitre_technique: T1098 Account Manipulation
+  role_prompts: {}
+- id: eradication_prevention_phase_4
+  phase_type: lessons
+  title: Eradication & Prevention — Phase 4
+  situation: 'The investigation reveals: 150,000 customer records were accessed (names, emails, phone numbers), $12,000 in cloud compute costs from mining, 4 backdoor IAM users created, and the attacker''s access spanned 3 AWS accounts. The CI/CD pipelines were configured to resolve dependencies from PyPI first, then internal repos. Internal package names were not registered on public registries. The company uses 847 internal Python packages.'
+  prompt: What prevention measures do you implement?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What prevention measures do you implement?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Eradication & Prevention — Phase 4. Asset in scope: PyPI package ''requests-prod''.'
+  hints:
+  - One layer but doesn't address package name reservation, hash verification, or secrets management.
+  - Detects secrets in env vars but doesn't prevent typosquatting or implement the other necessary controls.
+  ideal_concepts:
+  - register internal
+  - internal package
+  - package names
+  - names pypi
+  - pypi reserved
+  - reserved private
+  - private implement
+  - implement package
+  reference_answer: |-
+    Register all 847 internal package names on PyPI as reserved (private), implement package index prioritization (internal-first resolution), deploy dependency pinning with hash verification, implement package scanning in CI/CD pipelines, deploy AWS SCP to restrict cross-account access, and implement environment variable injection via secrets manager instead of CI/CD variables
+
+    Why: Comprehensive prevention: name reservation (stops typosquatting), index prioritization (internal-first), hash verification (integrity), package scanning (detection), SCP (access control), and secrets management (eliminates env var exposure).
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Dependency Confusion / Typosquatting — Package Manager Attack incident. The development security team detected that a Python package 'requests-prod' (internal package used for production API calls) was published to PyPI with version 9.9.9, which is higher than the internal version 2.1.3. The package appeared on PyPI 5 days ago. Analysis revealed the PyPI package contained the same module names as the internal package but included a hidden payload that exfiltrated environment variables (including API keys, database credentials, and cloud access tokens) to an external...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Dependency Confusion / Typosquatting — Package Manager Attack incident. The development security team detected that a Python package 'requests-prod' (internal package used for production API calls) was published to PyPI with version 9.9.9, which is higher than the internal version 2.1.3. The package appeared on PyPI 5 days ago. Analysis revealed the PyPI package contained the same module names as the internal package but included a hidden payload that exfiltrated environment variables (including API keys, database credentials, and cloud access tokens) to an external...
+  mitre_tactic: Persistence
+  mitre_technique: T1098 Account Manipulation

@@ -1,0 +1,210 @@
+id: kubernetes_rbac_bypass_-_cluster_admin_impersonation
+name: Kubernetes RBAC Bypass - Cluster Admin Impersonation
+category: Cloud
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Kubernetes RBAC Bypass — Cluster Admin Impersonation. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Kubernetes RBAC Bypass — Cluster Admin Impersonation. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Kubernetes RBAC Bypass — Cluster Admin Impersonation. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Kubernetes RBAC Bypass — Cluster Admin Impersonation incident. At 16:22 UTC, the Kubernetes audit logs detected an unusual sequence: the service account sa-monitoring in namespace ''observability'' successfully impersonated cluster-admin and: (1) listed all secrets across all namespaces, (2) created a new service account sa-backdoor in kube-system, (3) bound sa-backdoor to the cluster-admin ClusterRoleBinding, and (4) used the new SA to exec into a pod running the production database. The attack was possible because the sa-monitoring SA had ''impersonate'' permissions on the cluster-admin ClusterRole due to an overly broad ClusterRole that was accidentally created during a Helm chart update 3 weeks ago. The attacker exploited this to escalate privileges. The exec into the database pod suggests data exfiltration may be in progress. Business impact: cloud-hosted data and service availability are at risk, and provider notification plus key rotation
+  may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy and cloud counsel should assess notification duties and contractual reporting obligations.'
+incident:
+  title: Kubernetes RBAC Bypass — Cluster Admin Impersonation
+  opening: 'At 16:22 UTC, the Kubernetes audit logs detected an unusual sequence: the service account sa-monitoring in namespace ''observability'' successfully impersonated cluster-admin and: (1) listed all secrets across all namespaces, (2) created a new service account sa-backdoor in kube-system, (3) bound sa-backdoor to the cluster-admin ClusterRoleBinding, and (4) used the new SA to exec into a pod running the production…'
+  summary: 'At 16:22 UTC, the Kubernetes audit logs detected an unusual sequence: the service account sa-monitoring in namespace ''observability'' successfully impersonated cluster-admin and: (1) listed all secrets across all namespaces, (2) created a new service account sa-backdoor in kube-system, (3) bound sa-backdoor to the cluster-admin ClusterRoleBinding, and (4) used the new SA to exec into a pod running the production database. The attack was possible because the sa-monitoring SA had ''impersonate'' permissions on the cluster-admin ClusterRole due to an overly broad ClusterRole that was accidentally created during a Helm chart update 3 weeks ago. The attacker exploited this to escalate privileges. The exec into the database pod suggests data exfiltration may be in progress.'
+  compromised_assets:
+  - 'Cluster: prod-cluster (k8s-context: prod-admin)'
+  - 'Service account: sa-monitoring (namespace: observability)'
+  - 'Service account: sa-backdoor (namespace: kube-system)'
+  - 'Database pod: postgres-primary-0 (namespace: production)'
+  - 'RBAC: ClusterRoleBinding cluster-admin (new binding)'
+  detected_via: Kubernetes audit log — impersonate + create ClusterRoleBinding alert
+  kill_chain:
+  - Initial Access (Overly permissive RBAC)
+  - Privilege Escalation (Impersonation → cluster-admin)
+  - Persistence (New SA with cluster-admin binding)
+  - Lateral Movement (Exec into database pod)
+  mitre_tactics:
+  - Privilege Escalation
+  - Persistence
+  - Lateral Movement
+phases:
+- id: immediate_containment_revoke_impersonation_and_backdoor
+  phase_type: triage
+  title: Immediate Containment — Revoke Impersonation and Backdoor
+  situation: The attacker has cluster-admin access via impersonation and has created a backdoor SA with its own cluster-admin binding. The database pod may be actively exfiltrating data. You need to contain the incident while preserving the audit trail.
+  prompt: What is your next action?
+  guidance:
+    what: 'Frame the decision for ''Immediate Containment — Revoke Impersonation and Backdoor'': the asset at risk, the evidence available, and the time pressure.'
+    action: What is your next action?
+    why: 'Every later decision depends on an accurate picture of Cluster: prod-cluster and the accounts involved.'
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Revoke Impersonation and Backdoor. Asset in scope: Cluster: prod-cluster.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - cluster-admin binding
+  - binding sa-backdoor
+  - sa-backdoor revoke
+  - revoke sa-backdown
+  - sa-backdown token
+  - token remove
+  - impersonation permissions
+  - permissions sa-monitoring
+  reference_answer: |-
+    Remove the cluster-admin binding from sa-backdoor, revoke sa-backdown's token, remove impersonation permissions from sa-monitoring, and exec into the database pod to check for active exfiltration connections
+
+    Why: Targeted containment: removing the backdoor binding stops persistence, revoking the token invalidates active sessions, removing impersonation closes the privilege escalation vector, and checking the DB pod assesses data exposure.
+  followup_good: The audit logs show sa-monitoring was granted 'impersonate' on cluster-admin via a ClusterRole 'monitoring-broad-access' created by Helm chart update 3 weeks ago. You need to understand how this was introduced and whether other roles have similar issues.
+  followup_weak: |-
+    Targeted containment: removing the backdoor binding stops persistence, revoking the token invalidates active sessions, removing impersonation closes the privilege escalation vector, and checking the DB pod assesses data exposure.
+
+    The audit logs show sa-monitoring was granted 'impersonate' on cluster-admin via a ClusterRole 'monitoring-broad-access' created by Helm chart update 3 weeks ago. You need to understand how this was introduced and whether other roles have similar issues.
+  next: rbac_audit_how_did_this_happen
+  mitre_tactic: Privilege Escalation
+  mitre_technique: 'T1078.001 — Valid Accounts: Default Accounts'
+- id: rbac_audit_how_did_this_happen
+  phase_type: analysis
+  title: RBAC Audit — How Did This Happen?
+  situation: The audit logs show sa-monitoring was granted 'impersonate' on cluster-admin via a ClusterRole 'monitoring-broad-access' created by Helm chart update 3 weeks ago. You need to understand how this was introduced and whether other roles have similar issues.
+  prompt: What is your next action?
+  guidance:
+    what: 'Determine what the evidence says about scope, access, and privilege on Cluster: prod-cluster.'
+    action: What is your next action?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: RBAC Audit — How Did This Happen?. Asset in scope: Cluster: prod-cluster.'
+  hints:
+  - A systematic audit identifies actual misconfigurations without disrupting the cluster.
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - review helm
+  - helm chart
+  - chart diff
+  - diff identify
+  - identify change
+  - change audit
+  - audit clusterroles
+  - clusterroles impersonate
+  reference_answer: |-
+    Review the Helm chart diff to identify the change, audit all ClusterRoles for impersonate/bind/create permissions, check all service accounts for dangerous bindings, and verify no other backdoors were created
+
+    Why: Comprehensive RBAC audit: understanding the specific change prevents recurrence, auditing similar roles catches analogous issues, checking SA bindings reveals the full attack surface, and checking for additional backdoors ensures complete containment.
+  followup_good: 'The attacker exec''d into postgres-primary-0. Database query logs show SELECT queries on tables: customers (PII), orders (financial), and api_keys (credentials). The queries ran for 12 minutes before containment. You need to assess what data was accessed.'
+  followup_weak: |-
+    Comprehensive RBAC audit: understanding the specific change prevents recurrence, auditing similar roles catches analogous issues, checking SA bindings reveals the full attack surface, and checking for additional backdoors ensures complete containment.
+
+    The attacker exec'd into postgres-primary-0. Database query logs show SELECT queries on tables: customers (PII), orders (financial), and api_keys (credentials). The queries ran for 12 minutes before containment. You need to assess what data was accessed.
+  next: data_exposure_database_pod_compromise
+  mitre_tactic: Discovery
+  mitre_technique: T1610 — Deploy Container
+- id: data_exposure_database_pod_compromise
+  phase_type: eradication
+  title: Data Exposure — Database Pod Compromise
+  situation: 'The attacker exec''d into postgres-primary-0. Database query logs show SELECT queries on tables: customers (PII), orders (financial), and api_keys (credentials). The queries ran for 12 minutes before containment. You need to assess what data was accessed.'
+  prompt: What is your next action?
+  guidance:
+    what: 'Find every foothold the attacker left on Cluster: prod-cluster, including persistence and stolen credentials.'
+    action: What is your next action?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Data Exposure — Database Pod Compromise. Asset in scope: Cluster: prod-cluster.'
+  hints:
+  - Premature full-notification is inefficient.
+  - Network logs show data volume but not content.
+  ideal_concepts:
+  - review database
+  - database audit
+  - audit logs
+  - logs exact
+  - exact queries
+  - queries rows
+  - rows returned
+  - returned check
+  reference_answer: |-
+    Review database audit logs for exact queries and rows returned, check network egress logs from the pod for data exfiltration, and cross-reference with the 12-minute window to determine total data volume
+
+    Why: Database audit logs provide row-level visibility into what was accessed. Network logs confirm whether data left the cluster. Combined, they provide a precise exposure assessment.
+  followup_good: The root cause is an overly permissive ClusterRole created via Helm. You need to implement controls that prevent RBAC misconfigurations and detect future escalation attempts.
+  followup_weak: |-
+    Database audit logs provide row-level visibility into what was accessed.
+
+    The root cause is an overly permissive ClusterRole created via Helm. You need to implement controls that prevent RBAC misconfigurations and detect future escalation attempts.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1005 — Data from Local System
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: 'Containment is holding and the attacker''s active access has been removed. Cluster: prod-cluster is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.'
+  prompt: 'What must be true before you return Cluster: prod-cluster to production?'
+  guidance:
+    what: 'Define what ''clean'' means for Cluster: prod-cluster: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: 'What must be true before you return Cluster: prod-cluster to production?'
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Cluster: prod-cluster.'
+  hints:
+  - 'Which backup or rebuild image is known-good for Cluster: prod-cluster, and when was it validated?'
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Cluster: prod-cluster from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: kubernetes_hardening_prevent_rbac_escalation
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1550 — Use Alternate Authentication Material
+  role_prompts: {}
+- id: kubernetes_hardening_prevent_rbac_escalation
+  phase_type: lessons
+  title: Kubernetes Hardening — Prevent RBAC Escalation
+  situation: The root cause is an overly permissive ClusterRole created via Helm. You need to implement controls that prevent RBAC misconfigurations and detect future escalation attempts.
+  prompt: What is your next action?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What is your next action?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Kubernetes Hardening — Prevent RBAC Escalation. Asset in scope: Cluster: prod-cluster.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - implement opa
+  - opa gatekeeper
+  - gatekeeper policies
+  - policies block
+  - clusterroles impersonate
+  - impersonate bind
+  - bind create
+  - permissions enable
+  reference_answer: |-
+    Implement OPA/Gatekeeper policies to block ClusterRoles with impersonate/bind/create permissions, enable Kubernetes audit logging with real-time alerting, deploy kubectl-who-can for RBAC visibility, and enforce admission controllers on Helm deployments
+
+    Why: Defense-in-depth: OPA prevents dangerous RBAC at deploy time, audit logging detects live attacks, kubectl-who-can provides visibility, and admission controllers gate all cluster changes.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Kubernetes RBAC Bypass — Cluster Admin Impersonation incident. At 16:22 UTC, the Kubernetes audit logs detected an unusual sequence: the service account sa-monitoring in namespace 'observability' successfully impersonated cluster-admin and: (1) listed all secrets across all namespaces, (2) created a new service account sa-backdoor in kube-system, (3) bound sa-backdoor to the cluster-admin ClusterRoleBinding, and (4) used the new SA to exec into a pod running the production database. The attack was possible because the sa-monitoring SA had 'impersonate' perm...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Kubernetes RBAC Bypass — Cluster Admin Impersonation incident. At 16:22 UTC, the Kubernetes audit logs detected an unusual sequence: the service account sa-monitoring in namespace 'observability' successfully impersonated cluster-admin and: (1) listed all secrets across all namespaces, (2) created a new service account sa-backdoor in kube-system, (3) bound sa-backdoor to the cluster-admin ClusterRoleBinding, and (4) used the new SA to exec into a pod running the production database. The attack was possible because the sa-monitoring SA had 'impersonate' perm...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1550 — Use Alternate Authentication Material

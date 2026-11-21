@@ -1,0 +1,207 @@
+id: pretexting_attack___fake_vendor_invoice_fraud
+name: Pretexting Attack — Fake Vendor Invoice Fraud
+category: Identity & Access
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Pretexting — Vendor Impersonation Causing $187K Fraudulent Payment. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Pretexting — Vendor Impersonation Causing $187K Fraudulent Payment. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Pretexting — Vendor Impersonation Causing $187K Fraudulent Payment. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Pretexting — Vendor Impersonation Causing $187K Fraudulent Payment incident. At 10:30 on Wednesday, the Accounts Payable team received a phone call from someone claiming to be David Liu from Apex Cloud Services (a legitimate vendor). The caller knew the vendor''s account number, recent invoice numbers, and the name of the AP clerk who normally handles Apex invoices — all obtained from LinkedIn and a previous data breach at Apex. The caller said Apex was changing bank accounts and needed to update payment details. The AP clerk updated the bank details without requiring secondary verification (none existed). Three invoices totaling $187,000 were paid to the new account on Thursday. On Friday, the real Apex Cloud Services called about overdue payments. The fraud was discovered at 14:20 on Friday. The receiving bank account (opened 5 days ago at a online-only bank) has already been drained — the funds were moved through a cryptocurrency exchange within
+  2 hours of receipt. Business impact: account takeover could enable lateral movement and privilege abuse across the directory, so identity trust must be rebuilt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess notification duties for any account or directory data accessed.'
+incident:
+  title: Pretexting — Vendor Impersonation Causing $187K Fraudulent Payment
+  opening: At 10:30 on Wednesday, the Accounts Payable team received a phone call from someone claiming to be David Liu from Apex Cloud Services (a legitimate vendor). The caller knew the vendor's account number, recent invoice numbers, and the name of the AP clerk who normally handles Apex invoices — all obtained from LinkedIn and a previous data breach at Apex.
+  summary: At 10:30 on Wednesday, the Accounts Payable team received a phone call from someone claiming to be David Liu from Apex Cloud Services (a legitimate vendor). The caller knew the vendor's account number, recent invoice numbers, and the name of the AP clerk who normally handles Apex invoices — all obtained from LinkedIn and a previous data breach at Apex. The caller said Apex was changing bank accounts and needed to update payment details. The AP clerk updated the bank details without requiring secondary verification (none existed). Three invoices totaling $187,000 were paid to the new account on Thursday. On Friday, the real Apex Cloud Services called about overdue payments. The fraud was discovered at 14:20 on Friday. The receiving bank account (opened 5 days ago at a online-only bank) has already been drained — the funds were moved through a cryptocurrency exchange within 2 hours of receipt.
+  compromised_assets:
+  - $187,000 transferred
+  - Vendor payment database (attacker had account details)
+  - AP clerk trust relationship
+  detected_via: Real vendor called about overdue payments; AP discovered fraudulent bank details
+  kill_chain:
+  - Recon
+  - Pretext
+  - Elicit
+  - Modify
+  - Fraud
+  mitre_tactics:
+  - Initial Access
+  - Collection
+  - Impact
+phases:
+- id: financial_recovery_phase_1
+  phase_type: triage
+  title: Financial Recovery — Phase 1
+  situation: $187,000 was transferred to a fraudulent bank account on Thursday. The funds have been moved through a cryptocurrency exchange and are likely unrecoverable. The real Apex Cloud Services is awaiting payment. Multiple invoices need to be re-issued.
+  prompt: What is your FIRST priority action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on $187,000 transferred, its severity, and the affected accounts.'
+    action: What is your FIRST priority action?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Financial Recovery — Phase 1. Asset in scope: $187,000 transferred.'
+  hints:
+  - Pay the real vendor, but first ensure you have proper verification to prevent this from happening again.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - contact bank
+  - bank initiate
+  - initiate fraud
+  - fraud claim
+  - claim wire
+  - wire recall
+  - recall notify
+  - apex cloud
+  reference_answer: |-
+    Contact your bank to initiate a fraud claim and wire recall; notify Apex Cloud Services immediately; freeze the fraudulent account if possible; document everything for law enforcement
+
+    Why: Bank fraud claims and wire recalls have time windows — every hour reduces recovery chances. Parallel notifications to vendor and bank.
+  followup_good: 'Investigation reveals the attacker knew: Apex''s vendor account number, the AP clerk''s name, three recent invoice numbers, and the AP department''s direct phone number. LinkedIn shows the AP clerk''s profile lists ''Accounts Payable Specialist at [Company]'' and Apex Cloud Services'' employee David Liu is publicly listed. A data breach at Apex 6 months ago exposed vendor billing data.'
+  followup_weak: |-
+    Bank fraud claims and wire recalls have time windows — every hour reduces recovery chances.
+
+    Investigation reveals the attacker knew: Apex's vendor account number, the AP clerk's name, three recent invoice numbers, and the AP department's direct phone number. LinkedIn shows the AP clerk's profile lists 'Accounts Payable Specialist at [Company]' and Apex Cloud Services' employee David Liu is publicly listed. A data breach at Apex 6 months ago exposed vendor billing data.
+  next: pretext_analysis_phase_2
+  mitre_tactic: Impact
+  mitre_technique: T1657 Financial Theft
+- id: pretext_analysis_phase_2
+  phase_type: analysis
+  title: Pretext Analysis — Phase 2
+  situation: 'Investigation reveals the attacker knew: Apex''s vendor account number, the AP clerk''s name, three recent invoice numbers, and the AP department''s direct phone number. LinkedIn shows the AP clerk''s profile lists ''Accounts Payable Specialist at [Company]'' and Apex Cloud Services'' employee David Liu is publicly listed. A data breach at Apex 6 months ago exposed vendor billing data.'
+  prompt: How did the attacker gather the intelligence used in the pretext?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on $187,000 transferred.
+    action: How did the attacker gather the intelligence used in the pretext?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Pretext Analysis — Phase 2. Asset in scope: $187,000 transferred.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - linkedin osint
+  - osint clerk
+  - clerk apex
+  - apex employees
+  - employees apex
+  - apex data
+  - data breach
+  - breach public
+  reference_answer: |-
+    1) LinkedIn OSINT on the AP clerk and Apex employees. 2) Apex data breach (public records). 3) Possibly the company website for AP contact info. 4) Social engineering Apex employees for internal details.
+
+    Why: Mapping the full OSINT chain explains how the attacker had specific details and prevents future exposure.
+  followup_good: 'The root cause is clear: the AP clerk changed bank details based solely on a phone call with no verification. There was no out-of-band confirmation process for payment detail changes. The company has 200+ vendors and processes 1,500 invoices per month.'
+  followup_weak: |-
+    Mapping the full OSINT chain explains how the attacker had specific details and prevents future exposure.
+
+    The root cause is clear: the AP clerk changed bank details based solely on a phone call with no verification. There was no out-of-band confirmation process for payment detail changes. The company has 200+ vendors and processes 1,500 invoices per month.
+  next: vendor_verification_controls_phase_3
+  mitre_tactic: Collection
+  mitre_technique: T1593 Search Open Websites/Domains
+- id: vendor_verification_controls_phase_3
+  phase_type: eradication
+  title: Vendor Verification Controls — Phase 3
+  situation: 'The root cause is clear: the AP clerk changed bank details based solely on a phone call with no verification. There was no out-of-band confirmation process for payment detail changes. The company has 200+ vendors and processes 1,500 invoices per month.'
+  prompt: How do you prevent vendor impersonation fraud going forward?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: How do you prevent vendor impersonation fraud going forward?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Vendor Verification Controls — Phase 3. Asset in scope: $187,000 transferred.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - implement dual-authorization
+  - dual-authorization bank
+  - bank detail
+  - detail changes
+  - changes require
+  - require out-of-band
+  - out-of-band verification
+  - verification callback
+  reference_answer: |-
+    Implement dual-authorization for all bank detail changes; require out-of-band verification (callback to known vendor number) before modifying payment details; add a 48-hour cooling period for bank changes
+
+    Why: Three-layer defense: dual authorization (prevents single-point compromise), out-of-band verification (breaks the pretext), and cooling period (time to catch fraud).
+  followup_good: The AP clerk's LinkedIn profile exposed their role and employer. Apex's data breach exposed vendor billing details. Your company website lists the AP department phone number publicly. The attacker used these three data sources to build a convincing pretext.
+  followup_weak: |-
+    Three-layer defense: dual authorization (prevents single-point compromise), out-of-band verification (breaks the pretext), and cooling period (time to catch fraud).
+
+    The AP clerk's LinkedIn profile exposed their role and employer. Apex's data breach exposed vendor billing details. Your company website lists the AP department phone number publicly. The attacker used these three data sources to build a convincing pretext.
+  next: recovery_and_validation
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1078 Valid Accounts
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. $187,000 transferred is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return $187,000 transferred to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return $187,000 transferred to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: $187,000 transferred.'
+  hints:
+  - Which backup or rebuild image is known-good for $187,000 transferred, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore $187,000 transferred from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: osint_exposure_audit_phase_4
+  next_weak: ''
+  mitre_tactic: Discovery
+  mitre_technique: T1593 Search Open Websites/Domains
+  role_prompts: {}
+- id: osint_exposure_audit_phase_4
+  phase_type: lessons
+  title: OSINT Exposure Audit — Phase 4
+  situation: The AP clerk's LinkedIn profile exposed their role and employer. Apex's data breach exposed vendor billing details. Your company website lists the AP department phone number publicly. The attacker used these three data sources to build a convincing pretext.
+  prompt: What steps do you take to reduce OSINT exposure?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on $187,000 transferred.
+    action: What steps do you take to reduce OSINT exposure?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: OSINT Exposure Audit — Phase 4. Asset in scope: $187,000 transferred.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - audit employee
+  - employee social
+  - social media
+  - media profiles
+  - profiles business-sensitive
+  - business-sensitive information
+  - information remove
+  - department direct
+  reference_answer: |-
+    Audit employee social media profiles for business-sensitive information; remove AP department direct number from public website; implement OSINT awareness training; register for data breach monitoring for your company and key vendors
+
+    Why: Reduces the OSINT surface: what attackers can learn from public sources that would enable social engineering.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Pretexting — Vendor Impersonation Causing $187K Fraudulent Payment incident. At 10:30 on Wednesday, the Accounts Payable team received a phone call from someone claiming to be David Liu from Apex Cloud Services (a legitimate vendor). The caller knew the vendor's account number, recent invoice numbers, and the name of the AP clerk who normally handles Apex invoices — all obtained from LinkedIn and a previous data breach at Apex. The caller said Apex was changing bank accounts and needed to update payment details. The AP clerk updated the bank details without requiring sec...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Pretexting — Vendor Impersonation Causing $187K Fraudulent Payment incident. At 10:30 on Wednesday, the Accounts Payable team received a phone call from someone claiming to be David Liu from Apex Cloud Services (a legitimate vendor). The caller knew the vendor's account number, recent invoice numbers, and the name of the AP clerk who normally handles Apex invoices — all obtained from LinkedIn and a previous data breach at Apex. The caller said Apex was changing bank accounts and needed to update payment details. The AP clerk updated the bank details without requiring sec...
+  mitre_tactic: Discovery
+  mitre_technique: T1593 Search Open Websites/Domains

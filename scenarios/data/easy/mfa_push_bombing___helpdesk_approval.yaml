@@ -1,0 +1,163 @@
+id: mfa_push_bombing___helpdesk_approval
+name: MFA Push Bombing — Helpdesk Approval
+category: Identity & Access
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: 'You are the Tier-1 SOC analyst on shift. Azure AD alert: repeated MFA denials followed by approval from a new device. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond Helpdesk technician account.'
+  incident_manager: You are the Incident Manager coordinating the response to MFA Fatigue Attack Against Helpdesk Technician. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for MFA Fatigue Attack Against Helpdesk Technician. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for MFA Fatigue Attack Against Helpdesk Technician. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the MFA Fatigue Attack Against Helpdesk Technician incident. The attacker had the technician''s password from a phishing page and used repeated pushes to wear them down. The approved session registered a new device and accessed the ticketing system. Business impact: The attacker may have used the helpdesk account to reset another user''s password and establish persistence. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: MFA Fatigue Attack Against Helpdesk Technician
+  opening: A helpdesk technician received 20 MFA push notifications in five minutes and approved the last one to stop the noise. An hour later, the account signed in from an unrecognized device.
+  summary: The attacker had the technician's password from a phishing page and used repeated pushes to wear them down. The approved session registered a new device and accessed the ticketing system.
+  compromised_assets:
+  - Helpdesk technician account
+  - Ticketing system
+  - MFA authenticator
+  detected_via: 'Azure AD alert: repeated MFA denials followed by approval from a new device.'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: mfa_push_bombing___helpdesk_approval_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: 'A helpdesk technician received 20 MFA push notifications in five minutes and approved the last one to stop the noise. An hour later, the account signed in from an unrecognized device. Azure AD alert: repeated MFA denials followed by approval from a new device.'
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for Helpdesk technician account.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - source ip
+  - device
+  - time window
+  - actions after approval
+  - sign-in logs
+  - password resets
+  reference_answer: Identify the source IP, device, time window, and actions taken after approval; preserve sign-in and ticketing logs, and check which accounts the technician reset.
+  followup_good: Triage confirms the activity is real. Sign-in logs show 20 denied pushes, one approval, and a new device registration from 45.155.xx.xx. The ticketing system audit log shows a password reset for a privileged account.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. Sign-in logs show 20 denied pushes, one approval, and a new device registration from 45.155.xx.xx. The ticketing system audit log shows a password reset for a privileged account.
+  next: mfa_push_bombing___helpdesk_approval_phase_2
+  mitre_tactic: Credential Access
+  mitre_technique: T1621 Multi-Factor Authentication Request Generation
+- id: mfa_push_bombing___helpdesk_approval_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. Sign-in logs show 20 denied pushes, one approval, and a new device registration from 45.155.xx.xx. The ticketing system audit log shows a password reset for a privileged account.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - revoke sessions
+  - reset password
+  - remove device
+  - block ip
+  - refresh tokens
+  reference_answer: Revoke the technician's sessions and refresh tokens, reset the password, remove the new device, and block the source IP.
+  followup_good: 'Containment is in place. Password reuse and MFA fatigue: the attacker had a valid password and the user approved a push without matching the sign-in context.'
+  followup_weak: The activity continues while the team debates. The attacker may have used the helpdesk account to reset another user's password and establish persistence.
+  next: mfa_push_bombing___helpdesk_approval_phase_3
+  mitre_tactic: Initial Access
+  mitre_technique: T1078 Valid Accounts
+- id: mfa_push_bombing___helpdesk_approval_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: 'Containment is holding. Password reuse and MFA fatigue: the attacker had a valid password and the user approved a push without matching the sign-in context.'
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - revert password resets
+  - mailbox rules
+  - oauth grants
+  - mfa re-registration
+  - trusted device
+  reference_answer: Revert unauthorized password resets, audit mailbox rules and OAuth grants, and require re-registration of MFA on a trusted device.
+  followup_good: Restore the technician's access with number matching and conditional access, and monitor both accounts for 72 hours.
+  followup_weak: The visible symptom is gone, but the root cause remains. The attacker may have used the helpdesk account to reset another user's password and establish persistence.
+  next: mfa_push_bombing___helpdesk_approval_phase_4
+  mitre_tactic: Persistence
+  mitre_technique: T1556 Modify Authentication Process
+- id: mfa_push_bombing___helpdesk_approval_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Restore the technician's access with number matching and conditional access, and monitor both accounts for 72 hours.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - number matching
+  - conditional access
+  - monitor accounts
+  - verify resets
+  - validate access
+  reference_answer: Restore the technician's access with number matching and conditional access, confirm the reset accounts are secure, and monitor both accounts for 72 hours.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: mfa_push_bombing___helpdesk_approval_phase_5
+  mitre_tactic: Credential Access
+  mitre_technique: T1110.004 Credential Stuffing
+- id: mfa_push_bombing___helpdesk_approval_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for MFA Push Bombing — Helpdesk Approval.
+  prompt: What must change so MFA Push Bombing — Helpdesk Approval is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - number matching
+  - rate limit pushes
+  - push fatigue training
+  - denial alert
+  - phishing-resistant mfa
+  reference_answer: Enable number matching or phishing-resistant MFA, rate-limit pushes, train helpdesk on push fatigue, and alert on repeated denials.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Persistence
+  mitre_technique: T1098 Account Manipulation

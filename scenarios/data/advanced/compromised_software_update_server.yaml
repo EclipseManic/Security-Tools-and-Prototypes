@@ -1,0 +1,215 @@
+id: compromised_software_update_server
+name: Compromised Software Update Server
+category: Advanced Threats
+format_version: 2
+difficulty: Critical
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Compromised Software Update Server — Supply Chain Injection. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Compromised Software Update Server — Supply Chain Injection. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Compromised Software Update Server — Supply Chain Injection. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Compromised Software Update Server — Supply Chain Injection incident. At 08:15 UTC, the endpoint detection and response (EDR) platform triggered an alert on 234 workstations simultaneously: a signed binary ''update_helper.exe'' from the company''s internal software distribution server (10.10.1.50) was detected executing a reverse shell payload. The binary was signed with the company''s legitimate code-signing certificate. Investigation revealed that the software distribution server was compromised 72 hours ago through a stolen VPN credential belonging to a system administrator. The attacker replaced the legitimate update package with a trojanized version that included a C2 callback mechanism. The compromised update was pushed to all 234 workstations during the nightly maintenance window. The attacker has been inside the network for 72 hours through the reverse shell connections. Network forensics show the attacker has performed Active Directory
+  enumeration, accessed a file share containing source code, and established persistence via a scheduled task. The company has 800 total endpoints. Business impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: Compromised Software Update Server — Supply Chain Injection
+  opening: 'At 08:15 UTC, the endpoint detection and response (EDR) platform triggered an alert on 234 workstations simultaneously: a signed binary ''update_helper.exe'' from the company''s internal software distribution server (10.10.1.50) was detected executing a reverse shell payload. The binary was signed with the company''s legitimate code-signing certificate.'
+  summary: 'At 08:15 UTC, the endpoint detection and response (EDR) platform triggered an alert on 234 workstations simultaneously: a signed binary ''update_helper.exe'' from the company''s internal software distribution server (10.10.1.50) was detected executing a reverse shell payload. The binary was signed with the company''s legitimate code-signing certificate. Investigation revealed that the software distribution server was compromised 72 hours ago through a stolen VPN credential belonging to a system administrator. The attacker replaced the legitimate update package with a trojanized version that included a C2 callback mechanism. The compromised update was pushed to all 234 workstations during the nightly maintenance window. The attacker has been inside the network for 72 hours through the reverse shell connections. Network forensics show the attacker has performed Active Directory enumeration, accessed a file share containing source code, and established persistence via a scheduled
+    task. The company has 800 total endpoints.'
+  compromised_assets:
+  - Software Distribution Server 10.10.1.50
+  - 234 compromised workstations
+  - Company code-signing certificate
+  - Source code repository (partial access)
+  - Active Directory (enumerated)
+  detected_via: EDR alert — reverse shell payload in signed binary
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Persistence
+  - Discovery
+  - Collection
+  - Lateral Movement
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Persistence
+  - Discovery
+  - Collection
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: 234 workstations are running a trojanized binary with active reverse shell connections. The attacker has been inside for 72 hours and has AD knowledge. The software distribution server is the source of the compromised update. 486 additional workstations have NOT yet received the update but may receive it in the next maintenance cycle.
+  prompt: What is your FIRST containment action?
+  guidance:
+    what: 'Frame the decision for ''Immediate Containment — Phase 1'': the asset at risk, the evidence available, and the time pressure.'
+    action: What is your FIRST containment action?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: Software Distribution Server 10.10.1.50.'
+  hints:
+  - Stops the source but EDR kill commands can't be pushed if the server is offline.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - immediately isolate
+  - isolate software
+  - software distribution
+  - distribution server
+  - server network
+  - network push
+  - edr kill
+  - command terminate
+  reference_answer: |-
+    Immediately isolate the software distribution server from the network, push an EDR kill command to terminate update_helper.exe on all 234 affected workstations, block all C2 IP addresses at the perimeter firewall, and disable the compromised admin account
+
+    Why: Multi-targeted containment: server isolation stops the source, EDR kill stops active C2, firewall blocks communication, and account disablement prevents attacker re-entry.
+  followup_good: The software distribution server is isolated. EDR kill commands have been sent. The attacker's 72-hour access window needs to be investigated. The compromised update binary is signed with the company's legitimate certificate which may also be compromised. The attacker performed AD enumeration and accessed source code. Need to preserve evidence from the server, endpoints, and network.
+  followup_weak: |-
+    Multi-targeted containment: server isolation stops the source, EDR kill stops active C2, firewall blocks communication, and account disablement prevents attacker re-entry.
+
+    The software distribution server is isolated. EDR kill commands have been sent. The attacker's 72-hour access window needs to be investigated. The compromised update binary is signed with the company's legitimate certificate which may also be compromised. The attacker performed AD enumeration and accessed source code. Need to preserve evidence from the server, endpoints, and network.
+  next: evidence_preservation_phase_2
+  mitre_tactic: Execution
+  mitre_technique: T1559.001 Component Object Model
+- id: evidence_preservation_phase_2
+  phase_type: analysis
+  title: Evidence Preservation — Phase 2
+  situation: The software distribution server is isolated. EDR kill commands have been sent. The attacker's 72-hour access window needs to be investigated. The compromised update binary is signed with the company's legitimate certificate which may also be compromised. The attacker performed AD enumeration and accessed source code. Need to preserve evidence from the server, endpoints, and network.
+  prompt: How do you preserve evidence across the supply chain attack?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on Software Distribution Server 10.10.1.50.
+    action: How do you preserve evidence across the supply chain attack?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Evidence Preservation — Phase 2. Asset in scope: Software Distribution Server 10.10.1.50.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - image software
+  - software distribution
+  - distribution server
+  - server disk
+  - disk pull
+  - edr telemetry
+  - telemetry endpoints
+  - endpoints hour
+  reference_answer: |-
+    Image the software distribution server's disk, pull EDR telemetry from all 234 endpoints for the 72-hour window, export network flow data for C2 communications, preserve the signed binary for certificate analysis, and dump AD logs for enumeration activity
+
+    Why: Comprehensive evidence: server forensics (attack source), endpoint telemetry (scope), network data (C2 protocols), certificate analysis (key compromise), and AD logs (discovery activity).
+  followup_good: 'Server forensics reveal: the attacker used the stolen VPN credential to access the server, replaced 3 update packages (not just one), and added a persistence mechanism via a modified scheduled task. The attacker enumerated 45 AD groups and downloaded 847 files from the source code repository. The code-signing certificate''s private key was exported from the server''s certificate store. The attacker may have signed additional malicious binaries. 486 workstations that haven''t received the update may have other compromised packages queued.'
+  followup_weak: |-
+    Comprehensive evidence: server forensics (attack source), endpoint telemetry (scope), network data (C2 protocols), certificate analysis (key compromise), and AD logs (discovery activity).
+
+    Server forensics reveal: the attacker used the stolen VPN credential to access the server, replaced 3 update packages (not just one), and added a persistence mechanism via a modified scheduled task. The attacker enumerated 45 AD groups and downloaded 847 files from the source code repository. The code-signing certificate's private key was exported from the server's certificate store. The attacker may have signed additional malicious binaries. 486 workstations that haven't received the update may have other compromised packages queued.
+  next: scope_assessment_phase_3
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1070.004 File Deletion
+- id: scope_assessment_phase_3
+  phase_type: eradication
+  title: Scope Assessment — Phase 3
+  situation: 'Server forensics reveal: the attacker used the stolen VPN credential to access the server, replaced 3 update packages (not just one), and added a persistence mechanism via a modified scheduled task. The attacker enumerated 45 AD groups and downloaded 847 files from the source code repository. The code-signing certificate''s private key was exported from the server''s certificate store. The attacker may have signed additional malicious binaries. 486 workstations that haven''t received the update may have other compromised packages queued.'
+  prompt: How do you determine the full scope of the supply chain compromise?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: How do you determine the full scope of the supply chain compromise?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Scope Assessment — Phase 3. Asset in scope: Software Distribution Server 10.10.1.50.'
+  hints:
+  - They haven't received the update yet but may have it queued.
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - audit replaced
+  - replaced update
+  - update packages
+  - packages additional
+  - additional payloads
+  - payloads scan
+  - scan non-affected
+  - non-affected workstations
+  reference_answer: |-
+    Audit all 3 replaced update packages for additional payloads, scan all 486 non-affected workstations for queued malicious updates, enumerate all systems that used the code-signing certificate in the past 72 hours, check if the certificate private key was used to sign other binaries, and assess source code exposure for intellectual property theft
+
+    Why: Full scope: additional packages (3 total), pending updates (486 workstations), certificate abuse (signing detection), key compromise (other signed binaries), and IP theft (source code).
+  followup_good: 'Full investigation reveals: 3 update packages were trojanized (total 312 affected endpoints), the code-signing certificate was used to sign 7 additional malicious binaries deployed to 15 high-value targets, 847 source code files were exfiltrated (including unreleased product source), and the attacker established persistence on 4 domain controllers. The stolen VPN credential was from a sysadmin who reused their password across personal and work accounts.'
+  followup_weak: |-
+    Full scope: additional packages (3 total), pending updates (486 workstations), certificate abuse (signing detection), key compromise (other signed binaries), and IP theft (source code).
+
+    Full investigation reveals: 3 update packages were trojanized (total 312 affected endpoints), the code-signing certificate was used to sign 7 additional malicious binaries deployed to 15 high-value targets, 847 source code files were exfiltrated (including unreleased product source), and the attacker established persistence on 4 domain controllers. The stolen VPN credential was from a sysadmin who reused their password across personal and work accounts.
+  next: recovery_and_validation
+  mitre_tactic: Discovery
+  mitre_technique: T1087.002 Domain Account
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Software Distribution Server 10.10.1.50 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Software Distribution Server 10.10.1.50 to production?
+  guidance:
+    what: 'Define what ''clean'' means for Software Distribution Server 10.10.1.50: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return Software Distribution Server 10.10.1.50 to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Software Distribution Server 10.10.1.50.'
+  hints:
+  - Which backup or rebuild image is known-good for Software Distribution Server 10.10.1.50, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Software Distribution Server 10.10.1.50 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: eradication_supply_chain_hardening_phase_4
+  next_weak: ''
+  mitre_tactic: Persistence
+  mitre_technique: T1556 Modify Authentication Process
+  role_prompts: {}
+- id: eradication_supply_chain_hardening_phase_4
+  phase_type: lessons
+  title: Eradication & Supply Chain Hardening — Phase 4
+  situation: 'Full investigation reveals: 3 update packages were trojanized (total 312 affected endpoints), the code-signing certificate was used to sign 7 additional malicious binaries deployed to 15 high-value targets, 847 source code files were exfiltrated (including unreleased product source), and the attacker established persistence on 4 domain controllers. The stolen VPN credential was from a sysadmin who reused their password across personal and work accounts.'
+  prompt: What comprehensive supply chain security improvements do you implement?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What comprehensive supply chain security improvements do you implement?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Eradication & Supply Chain Hardening — Phase 4. Asset in scope: Software Distribution Server 10.10.1.50.'
+  hints:
+  - 'Addresses specific compromise but not the systemic issues: no update verification, no PAM, no MFA, no segmentation.'
+  - One layer but doesn't address update integrity, certificate security, or network segmentation needed for supply chain security.
+  ideal_concepts:
+  - revoke reissue
+  - reissue code-signing
+  - code-signing certificate
+  - certificate implement
+  - implement hardware
+  - hardware security
+  - security module
+  - module hsm
+  reference_answer: |-
+    Revoke and reissue the code-signing certificate, implement hardware security module (HSM) for certificate storage, deploy update package integrity verification (hash + signature), implement privileged access management (PAM) for all admin accounts, enable MFA for all administrative access, deploy network segmentation for software distribution infrastructure, and establish a software supply chain security program with SBOM requirements
+
+    Why: Defense-in-depth: certificate security (HSM), update integrity (verification), access control (PAM, MFA), network segmentation, and supply chain program (SBOM, vendor management).
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Compromised Software Update Server — Supply Chain Injection incident. At 08:15 UTC, the endpoint detection and response (EDR) platform triggered an alert on 234 workstations simultaneously: a signed binary 'update_helper.exe' from the company's internal software distribution server (10.10.1.50) was detected executing a reverse shell payload. The binary was signed with the company's legitimate code-signing certificate. Investigation revealed that the software distribution server was compromised 72 hours ago through a stolen VPN credential belonging to a system admi...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Compromised Software Update Server — Supply Chain Injection incident. At 08:15 UTC, the endpoint detection and response (EDR) platform triggered an alert on 234 workstations simultaneously: a signed binary 'update_helper.exe' from the company's internal software distribution server (10.10.1.50) was detected executing a reverse shell payload. The binary was signed with the company's legitimate code-signing certificate. Investigation revealed that the software distribution server was compromised 72 hours ago through a stolen VPN credential belonging to a system admi...
+  mitre_tactic: Persistence
+  mitre_technique: T1556 Modify Authentication Process

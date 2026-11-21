@@ -1,0 +1,163 @@
+id: model_api_key___frontend_bundle
+name: Model API Key — Frontend Bundle
+category: AI & ML
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Billing anomaly plus secret-scanning alert. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond Public frontend bundle.
+  incident_manager: You are the Incident Manager coordinating the response to Model API Key Shipped in Public Frontend Bundle. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Model API Key Shipped in Public Frontend Bundle. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Model API Key Shipped in Public Frontend Bundle. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Model API Key Shipped in Public Frontend Bundle incident. The key is active and has generated $600 in usage this week, mostly from a single IP. The demo is on a public marketing subdomain. Business impact: Anyone can use the company''s AI quota, and the key could access fine-tuned models or data. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Model API Key Shipped in Public Frontend Bundle
+  opening: A developer embedded a model API key in a public frontend bundle to power an in-browser demo. The key has a monthly spend limit of $5,000 and is visible to anyone who views the page source.
+  summary: The key is active and has generated $600 in usage this week, mostly from a single IP. The demo is on a public marketing subdomain.
+  compromised_assets:
+  - Public frontend bundle
+  - Model API key
+  - AI provider account
+  detected_via: Billing anomaly plus secret-scanning alert.
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: model_api_key___frontend_bundle_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: A developer embedded a model API key in a public frontend bundle to power an in-browser demo. The key has a monthly spend limit of $5,000 and is visible to anyone who views the page source. Billing anomaly plus secret-scanning alert.
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for Public frontend bundle.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - api key
+  - permissions
+  - spend
+  - source ips
+  - bundle
+  - billing logs
+  reference_answer: Confirm the key, its permissions, spend, and source IPs; preserve the bundle and billing logs.
+  followup_good: Triage confirms the activity is real. The key appears in the JavaScript bundle. Usage logs show calls from an IP that is not the company's. The key has no domain or IP restrictions.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. The key appears in the JavaScript bundle. Usage logs show calls from an IP that is not the company's. The key has no domain or IP restrictions.
+  next: model_api_key___frontend_bundle_phase_2
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: model_api_key___frontend_bundle_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. The key appears in the JavaScript bundle. Usage logs show calls from an IP that is not the company's. The key has no domain or IP restrictions.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - revoke key
+  - server-side key
+  - block ip
+  - frontend bundle
+  - provider
+  reference_answer: Revoke the key, deploy a new key server-side, and block the abusive IP.
+  followup_good: Containment is in place. A server-side secret was shipped to the browser, and the provider key lacks usage restrictions.
+  followup_weak: The activity continues while the team debates. Anyone can use the company's AI quota, and the key could access fine-tuned models or data.
+  next: model_api_key___frontend_bundle_phase_3
+  mitre_tactic: Persistence
+  mitre_technique: T1556 Modify Authentication Process
+- id: model_api_key___frontend_bundle_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. A server-side secret was shipped to the browser, and the provider key lacks usage restrictions.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - backend proxy
+  - rate limits
+  - per-user auth
+  - other secrets
+  - scan
+  reference_answer: Move model calls behind a backend proxy, add rate limits and per-user authentication, and scan for other exposed secrets.
+  followup_good: Validate the demo through the proxy, monitor spend, and confirm the old key fails.
+  followup_weak: The visible symptom is gone, but the root cause remains. Anyone can use the company's AI quota, and the key could access fine-tuned models or data.
+  next: model_api_key___frontend_bundle_phase_4
+  mitre_tactic: Execution
+  mitre_technique: T1059 Command and Scripting Interpreter
+- id: model_api_key___frontend_bundle_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Validate the demo through the proxy, monitor spend, and confirm the old key fails.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - validate demo
+  - monitor spend
+  - old key fails
+  - proxy
+  - usage
+  reference_answer: Validate the demo through the backend proxy, monitor spend and usage, and confirm the revoked key can no longer authenticate.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: model_api_key___frontend_bundle_phase_5
+  mitre_tactic: Data Manipulation
+  mitre_technique: T1565.001 Stored Data Manipulation
+- id: model_api_key___frontend_bundle_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Model API Key — Frontend Bundle.
+  prompt: What must change so Model API Key — Frontend Bundle is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - secret scanning
+  - no model keys in frontend
+  - spend alerts
+  - backend proxy
+  - key rotation
+  reference_answer: Add secret scanning to frontend builds, never ship model keys to browsers, and set provider spend alerts.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System

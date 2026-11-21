@@ -1,0 +1,208 @@
+id: aws_s3_bucket_misconfiguration_-_public_data_leak
+name: AWS S3 Bucket Misconfiguration - Public Data Leak
+category: Cloud
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to S3 Bucket Misconfiguration — Public Data Leak. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for S3 Bucket Misconfiguration — Public Data Leak. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for S3 Bucket Misconfiguration — Public Data Leak. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the S3 Bucket Misconfiguration — Public Data Leak incident. On Tuesday at 14:32 UTC, the AWS CloudTrail logs flagged an unusual pattern: an anonymous GET request from IP 103.224.182.251 successfully downloaded 847 objects from the s3://corp-customer-backups bucket. Follow-up investigation revealed the bucket policy was modified on Sunday at 03:17 UTC via the root account — a console login from a previously unseen IP range (AS 209349 — VPN provider). The bucket was set to public-read, exposing PII for 12,000+ customers including names, SSNs, and credit card last-fours. AWS Macie alerts triggered the investigation, but the data exfiltration window was approximately 48 hours. The attacker used the S3 list-objects and get-object APIs. No IAM keys were found to be leaked, suggesting the root credentials may have been compromised via a phishing attack on the cloud admin. Business impact: cloud-hosted data and service availability are at risk, and provider
+  notification plus key rotation may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy and cloud counsel should assess notification duties and contractual reporting obligations.'
+incident:
+  title: S3 Bucket Misconfiguration — Public Data Leak
+  opening: 'On Tuesday at 14:32 UTC, the AWS CloudTrail logs flagged an unusual pattern: an anonymous GET request from IP 103.224.182.251 successfully downloaded 847 objects from the s3://corp-customer-backups bucket. Follow-up investigation revealed the bucket policy was modified on Sunday at 03:17 UTC via the root account — a console login from a previously unseen IP range (AS 209349 — VPN provider).'
+  summary: 'On Tuesday at 14:32 UTC, the AWS CloudTrail logs flagged an unusual pattern: an anonymous GET request from IP 103.224.182.251 successfully downloaded 847 objects from the s3://corp-customer-backups bucket. Follow-up investigation revealed the bucket policy was modified on Sunday at 03:17 UTC via the root account — a console login from a previously unseen IP range (AS 209349 — VPN provider). The bucket was set to public-read, exposing PII for 12,000+ customers including names, SSNs, and credit card last-fours. AWS Macie alerts triggered the investigation, but the data exfiltration window was approximately 48 hours. The attacker used the S3 list-objects and get-object APIs. No IAM keys were found to be leaked, suggesting the root credentials may have been compromised via a phishing attack on the cloud admin.'
+  compromised_assets:
+  - s3://corp-customer-backups (12,400 customer records)
+  - Root AWS account (compromised console session)
+  - CloudTrail (logs partially cleared for 3-hour window)
+  detected_via: AWS Macie alert on PII in publicly accessible bucket
+  kill_chain:
+  - Initial Access (Phishing)
+  - Credential Access (Root account compromise)
+  - Collection (S3 list/get)
+  - Exfiltration (Public download)
+  mitre_tactics:
+  - Initial Access
+  - Credential Access
+  - Collection
+  - Exfiltration
+phases:
+- id: alert_triage_anonymous_s3_access_detected
+  phase_type: triage
+  title: Alert Triage — Anonymous S3 Access Detected
+  situation: 'AWS Macie has raised a HIGH severity alert: the bucket s3://corp-customer-backups is now publicly accessible and 847 objects have been downloaded by an anonymous IP. You need to determine the scope and begin containment.'
+  prompt: What is your next action?
+  guidance:
+    what: 'Frame the decision for ''Alert Triage — Anonymous S3 Access Detected'': the asset at risk, the evidence available, and the time pressure.'
+    action: What is your next action?
+    why: Every later decision depends on an accurate picture of s3://corp-customer-backups and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Alert Triage — Anonymous S3 Access Detected. Asset in scope: s3://corp-customer-backups.'
+  hints:
+  - Containment (revoking access) is sufficient without data destruction.
+  - Waiting for approval while data continues to leak is negligent in an active incident.
+  ideal_concepts:
+  - immediately disable
+  - bucket public-read
+  - public-read policy
+  - policy rotate
+  - iam credentials
+  - credentials account
+  reference_answer: |-
+    Immediately disable the bucket's public-read policy and rotate all IAM credentials in the account
+
+    Why: Immediate containment: revoking public access stops further exfiltration, and rotating credentials prevents re-use of compromised keys. Both are independent and should happen in parallel.
+  followup_good: CloudTrail shows a root account console login at 03:17 UTC from IP 185.220.101.42 (AS 209349 — a commercial VPN provider). The MFA token used was an SMS-based OTP. The login originated from a user-agent string consistent with Chrome on Windows. The cloud admin reports they received a convincing AWS 'security alert' email the day before. You need to determine the root cause vector.
+  followup_weak: |-
+    Immediate containment: revoking public access stops further exfiltration, and rotating credentials prevents re-use of compromised keys.
+
+    CloudTrail shows a root account console login at 03:17 UTC from IP 185.220.101.42 (AS 209349 — a commercial VPN provider). The MFA token used was an SMS-based OTP. The login originated from a user-agent string consistent with Chrome on Windows. The cloud admin reports they received a convincing AWS 'security alert' email the day before. You need to determine the root cause vector.
+  next: root_cause_analysis_how_were_credentials_compromised
+  mitre_tactic: Initial Access
+  mitre_technique: T1566 — Phishing (suspected root cause)
+- id: root_cause_analysis_how_were_credentials_compromised
+  phase_type: analysis
+  title: Root Cause Analysis — How Were Credentials Compromised?
+  situation: CloudTrail shows a root account console login at 03:17 UTC from IP 185.220.101.42 (AS 209349 — a commercial VPN provider). The MFA token used was an SMS-based OTP. The login originated from a user-agent string consistent with Chrome on Windows. The cloud admin reports they received a convincing AWS 'security alert' email the day before. You need to determine the root cause vector.
+  prompt: What is your next action?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on s3://corp-customer-backups.
+    action: What is your next action?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Root Cause Analysis — How Were Credentials Compromised?. Asset in scope: s3://corp-customer-backups.'
+  hints:
+  - Disabling SMS MFA is a good hardening step but assumes phishing without evidence.
+  - Ignoring the email and SMS channels misses the root cause.
+  ideal_concepts:
+  - admin email
+  - email phishing
+  - phishing indicators
+  - indicators review
+  - review sms
+  - sms delivery
+  - delivery logs
+  - logs sim-swapping
+  reference_answer: |-
+    Check the admin's email for phishing indicators, review SMS delivery logs for SIM-swapping, and audit root account activity for the past 30 days
+
+    Why: Comprehensive root cause analysis: email inspection confirms the phishing vector, SMS logs check for SIM-swap (a common MFA bypass), and 30-day audit reveals the full scope of compromise.
+  followup_good: 'Forensic analysis confirms 847 objects were downloaded, containing PII for 12,400 customers (names, SSNs, credit card last-fours). The bucket policy was set to public-read for 48 hours. Under GDPR and CCPA, you have 72 hours to notify authorities. Legal and compliance teams are asking: what was the full blast radius?'
+  followup_weak: |-
+    Comprehensive root cause analysis: email inspection confirms the phishing vector, SMS logs check for SIM-swap (a common MFA bypass), and 30-day audit reveals the full scope of compromise.
+
+    Forensic analysis confirms 847 objects were downloaded, containing PII for 12,400 customers (names, SSNs, credit card last-fours). The bucket policy was set to public-read for 48 hours. Under GDPR and CCPA, you have 72 hours to notify authorities. Legal and compliance teams are asking: what was the full blast radius?
+  next: data_breach_assessment_scope_and_notification
+  mitre_tactic: Credential Access
+  mitre_technique: T1589.002 — Email Addresses (reconnaissance), T1566.001 — Spearphishing Link
+- id: data_breach_assessment_scope_and_notification
+  phase_type: eradication
+  title: Data Breach Assessment — Scope and Notification
+  situation: 'Forensic analysis confirms 847 objects were downloaded, containing PII for 12,400 customers (names, SSNs, credit card last-fours). The bucket policy was set to public-read for 48 hours. Under GDPR and CCPA, you have 72 hours to notify authorities. Legal and compliance teams are asking: what was the full blast radius?'
+  prompt: What is your next action?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: What is your next action?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Data Breach Assessment — Scope and Notification. Asset in scope: s3://corp-customer-backups.'
+  hints:
+  - The bucket contained 12,400 records but the attacker could have accessed more during the window.
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - compile full
+  - full inventory
+  - inventory downloaded
+  - downloaded objects
+  - objects cross-reference
+  - cross-reference customer
+  - customer database
+  - database identify
+  reference_answer: |-
+    Compile a full inventory of downloaded objects, cross-reference with customer database to identify affected individuals, and prepare breach notification per GDPR/CCPA requirements
+
+    Why: A complete breach inventory is required for regulatory compliance and customer notification. Cross-referencing with the customer DB ensures accurate scoping.
+  followup_good: 'The incident is contained. The root cause was confirmed as spearphishing leading to root account compromise via SMS OTP. You need to implement controls to prevent recurrence. The CISO wants a hardening plan that addresses: credential hygiene, bucket policy governance, and MFA improvements.'
+  followup_weak: |-
+    A complete breach inventory is required for regulatory compliance and customer notification.
+
+    The incident is contained. The root cause was confirmed as spearphishing leading to root account compromise via SMS OTP. You need to implement controls to prevent recurrence. The CISO wants a hardening plan that addresses: credential hygiene, bucket policy governance, and MFA improvements.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1005 — Data from Local System, T1530 — Data from Cloud Storage
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. s3://corp-customer-backups is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return s3://corp-customer-backups to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return s3://corp-customer-backups to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: s3://corp-customer-backups.'
+  hints:
+  - Which backup or rebuild image is known-good for s3://corp-customer-backups, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore s3://corp-customer-backups from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_hardening_preventing_recurrence
+  next_weak: ''
+  mitre_tactic: Recovery
+  mitre_technique: 'T1562.008 — Impair Defenses: Disable or Modify Cloud Logs'
+  role_prompts: {}
+- id: post_incident_hardening_preventing_recurrence
+  phase_type: lessons
+  title: Post-Incident Hardening — Preventing Recurrence
+  situation: 'The incident is contained. The root cause was confirmed as spearphishing leading to root account compromise via SMS OTP. You need to implement controls to prevent recurrence. The CISO wants a hardening plan that addresses: credential hygiene, bucket policy governance, and MFA improvements.'
+  prompt: What is your next action?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What is your next action?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Hardening — Preventing Recurrence. Asset in scope: s3://corp-customer-backups.'
+  hints:
+  - Without hardening, the new account will have the same vulnerabilities.
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - implement bucket
+  - bucket policies
+  - policies scp
+  - scp deny
+  - deny public
+  - public access
+  - access enforce
+  - enforce hardware
+  reference_answer: |-
+    Implement S3 bucket policies via SCP to deny public access, enforce hardware MFA for root, enable CloudTrail log file validation, and deploy AWS Config rules for continuous bucket auditing
+
+    Why: Defense-in-depth: SCP-level public access denial prevents future misconfigurations, hardware MFA eliminates SIM-swap risk, log validation prevents tampering, and Config rules provide continuous compliance monitoring.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the S3 Bucket Misconfiguration — Public Data Leak incident. On Tuesday at 14:32 UTC, the AWS CloudTrail logs flagged an unusual pattern: an anonymous GET request from IP 103.224.182.251 successfully downloaded 847 objects from the s3://corp-customer-backups bucket. Follow-up investigation revealed the bucket policy was modified on Sunday at 03:17 UTC via the root account — a console login from a previously unseen IP range (AS 209349 — VPN provider). The bucket was set to public-read, exposing PII for 12,000+ customers including names, SSNs, and credit ca...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the S3 Bucket Misconfiguration — Public Data Leak incident. On Tuesday at 14:32 UTC, the AWS CloudTrail logs flagged an unusual pattern: an anonymous GET request from IP 103.224.182.251 successfully downloaded 847 objects from the s3://corp-customer-backups bucket. Follow-up investigation revealed the bucket policy was modified on Sunday at 03:17 UTC via the root account — a console login from a previously unseen IP range (AS 209349 — VPN provider). The bucket was set to public-read, exposing PII for 12,000+ customers including names, SSNs, and credit ca...
+  mitre_tactic: Recovery
+  mitre_technique: 'T1562.008 — Impair Defenses: Disable or Modify Cloud Logs'

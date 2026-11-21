@@ -1,0 +1,163 @@
+id: former_employee___active_vpn
+name: Former Employee — Active VPN Account
+category: Identity & Access
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Quarterly access review plus VPN sign-in alert. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond Former developer account.
+  incident_manager: You are the Incident Manager coordinating the response to Offboarded Developer Retains VPN and Source-Code Access. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Offboarded Developer Retains VPN and Source-Code Access. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Offboarded Developer Retains VPN and Source-Code Access. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Offboarded Developer Retains VPN and Source-Code Access incident. The former employee''s manager forgot to submit the offboarding ticket. The account accessed source code repositories but no production systems. Business impact: Source code and internal documentation may have been taken, and the account remains a valid entry point. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Offboarded Developer Retains VPN and Source-Code Access
+  opening: A routine access review found that a developer who left six weeks ago still had an active VPN account and a valid MFA token. The account signed in twice last week from a residential IP.
+  summary: The former employee's manager forgot to submit the offboarding ticket. The account accessed source code repositories but no production systems.
+  compromised_assets:
+  - Former developer account
+  - VPN
+  - Source code repositories
+  detected_via: Quarterly access review plus VPN sign-in alert.
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: former_employee___active_vpn_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: A routine access review found that a developer who left six weeks ago still had an active VPN account and a valid MFA token. The account signed in twice last week from a residential IP. Quarterly access review plus VPN sign-in alert.
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for Former developer account.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - employment status
+  - recent sign-ins
+  - resources accessed
+  - mfa devices
+  - vpn logs
+  - git audit
+  reference_answer: Confirm employment status with HR, list the account's recent sign-ins, resources accessed, and MFA devices; preserve VPN and Git logs before disabling anything.
+  followup_good: Triage confirms the activity is real. VPN logs show two logins from a residential ISP in the same city, each lasting under 20 minutes. Git audit logs show repository clones. HR confirms the employee left six weeks ago.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. VPN logs show two logins from a residential ISP in the same city, each lasting under 20 minutes. Git audit logs show repository clones. HR confirms the employee left six weeks ago.
+  next: former_employee___active_vpn_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1078 Valid Accounts
+- id: former_employee___active_vpn_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. VPN logs show two logins from a residential ISP in the same city, each lasting under 20 minutes. Git audit logs show repository clones. HR confirms the employee left six weeks ago.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - disable account
+  - revoke sessions
+  - revoke mfa
+  - block ip
+  - vpn
+  reference_answer: Disable the account, revoke VPN sessions and MFA devices, and block the source IP if activity is ongoing.
+  followup_good: 'Containment is in place. Offboarding was incomplete: the manager did not raise the ticket and the account was not tied to an HR termination event.'
+  followup_weak: The activity continues while the team debates. Source code and internal documentation may have been taken, and the account remains a valid entry point.
+  next: former_employee___active_vpn_phase_3
+  mitre_tactic: Persistence
+  mitre_technique: T1098 Account Manipulation
+- id: former_employee___active_vpn_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: 'Containment is holding. Offboarding was incomplete: the manager did not raise the ticket and the account was not tied to an HR termination event.'
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - collect laptop
+  - review repositories
+  - mailbox forwarding
+  - oauth grants
+  - badges
+  reference_answer: Collect the company laptop and badges, review downloaded repositories, and check for mailbox forwarding or personal OAuth grants.
+  followup_good: Close the account permanently, remove group memberships and licenses, and confirm no shared credentials remain.
+  followup_weak: The visible symptom is gone, but the root cause remains. Source code and internal documentation may have been taken, and the account remains a valid entry point.
+  next: former_employee___active_vpn_phase_4
+  mitre_tactic: Initial Access
+  mitre_technique: T1133 External Remote Services
+- id: former_employee___active_vpn_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Close the account permanently, remove group memberships and licenses, and confirm no shared credentials remain.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - close account
+  - remove groups
+  - remove licenses
+  - shared credentials
+  - validate offboarding
+  reference_answer: Close the account permanently, remove all group memberships and licenses, confirm the laptop is returned, and verify no shared credentials remain active.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: former_employee___active_vpn_phase_5
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: former_employee___active_vpn_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Former Employee — Active VPN Account.
+  prompt: What must change so Former Employee — Active VPN Account is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - automate offboarding
+  - hr termination event
+  - manager attestation
+  - access review
+  - privileged access
+  reference_answer: Automate offboarding from HR termination events, require manager attestation, and run monthly privileged-access reviews.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Exfiltration
+  mitre_technique: T1567 Exfiltration Over Web Service

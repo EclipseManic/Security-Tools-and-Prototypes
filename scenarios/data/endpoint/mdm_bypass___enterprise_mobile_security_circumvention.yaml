@@ -1,0 +1,246 @@
+id: mdm_bypass___enterprise_mobile_security_circumvention
+name: MDM Bypass — Enterprise Mobile Security Circumvention
+category: Endpoint
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to MDM Enrollment Bypass Enables Undetected Corporate Data Theft. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for MDM Enrollment Bypass Enables Undetected Corporate Data Theft. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for MDM Enrollment Bypass Enables Undetected Corporate Data Theft. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the MDM Enrollment Bypass Enables Undetected Corporate Data Theft incident. Your organization manages 3,400 corporate Android devices through Microsoft Intune MDM. At 16:00, the DLP system flagged a large data transfer from a device registered as ''Sales Tablet #247'' — a Samsung Galaxy Tab S9. Investigation reveals that this device is NOT a legitimate corporate device. An attacker in the Sales department (Marcus Webb, Sales Rep, terminated 3 weeks ago but his badge access was not revoked) used his physical access to the sales floor to: 1) obtain a corporate-owned tablet from the storage closet, 2) factory reset it and re-enroll it in Intune using stolen credentials (Marcus''s old account was not properly deprovisioned), 3) bypass the Intune compliance policy by exploiting a race condition in the device check-in process — the device was marked as compliant before the compliance policies fully applied, 4) use the compliant status to access the corporate
+  file share via the Intune-managed Outlook app, and 5) exfiltrate 4.2 GB of sales pipeline data including customer contracts and pricing. The DLP alert triggered on the outbound transfer. Marcus''s account was still active in Azure AD 3 weeks after termination. Business impact: endpoint availability and integrity are at risk, and affected hosts may need reimaging before normal work resumes. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed.'
+incident:
+  title: MDM Enrollment Bypass Enables Undetected Corporate Data Theft
+  opening: 'Your organization manages 3,400 corporate Android devices through Microsoft Intune MDM. At 16:00, the DLP system flagged a large data transfer from a device registered as ''Sales Tablet #247'' — a Samsung Galaxy Tab S9.'
+  summary: 'Your organization manages 3,400 corporate Android devices through Microsoft Intune MDM. At 16:00, the DLP system flagged a large data transfer from a device registered as ''Sales Tablet #247'' — a Samsung Galaxy Tab S9. Investigation reveals that this device is NOT a legitimate corporate device. An attacker in the Sales department (Marcus Webb, Sales Rep, terminated 3 weeks ago but his badge access was not revoked) used his physical access to the sales floor to: 1) obtain a corporate-owned tablet from the storage closet, 2) factory reset it and re-enroll it in Intune using stolen credentials (Marcus''s old account was not properly deprovisioned), 3) bypass the Intune compliance policy by exploiting a race condition in the device check-in process — the device was marked as compliant before the compliance policies fully applied, 4) use the compliant status to access the corporate file share via the Intune-managed Outlook app, and 5) exfiltrate 4.2 GB of sales pipeline data including
+    customer contracts and pricing. The DLP alert triggered on the outbound transfer. Marcus''s account was still active in Azure AD 3 weeks after termination.'
+  compromised_assets:
+  - Intune MDM enrollment (rogue device)
+  - Marcus Webb's Azure AD account (not deprovisioned)
+  - Corporate file share (4.2 GB sales pipeline data exfiltrated)
+  - Physical storage closet (unsecured device inventory)
+  detected_via: 'DLP alert: large data transfer from unrecognized device'
+  kill_chain:
+  - Initial Access
+  - Persistence
+  - Privilege Escalation
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Persistence
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: A rogue device is enrolled in your MDM and has accessed corporate data. Marcus Webb's Azure AD account is still active 3 weeks after termination. The rogue device has 4.2 GB of sales data. There may be other deprovisioning failures.
+  prompt: What do you do RIGHT NOW?
+  guidance:
+    what: Establish what fired on Intune MDM enrollment, which accounts are involved, and how urgent the signal is.
+    action: What do you do RIGHT NOW?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: Intune MDM enrollment.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - remotely wipe
+  - wipe rogue
+  - rogue device
+  - device intune
+  - intune immediately
+  - immediately disable
+  - marcus webb
+  - webb account
+  reference_answer: |-
+    Remotely wipe the rogue device via Intune, immediately disable Marcus Webb's account and audit all terminated employees for active accounts, audit the Intune device inventory for other unauthorized enrollments, and lock the sales floor storage closet
+
+    Why: Kills the rogue device (wipe), closes the credential gap (disable + audit), checks for other threats (inventory audit), and secures physical access (lock closet).
+  followup_good: Marcus's account was not deprovisioned when he was terminated 3 weeks ago. The HR system (Workday) shows he was terminated on June 1. Azure AD still has his account active with a last sign-in of yesterday. The Intune enrollment for his original device was not removed. The DLP system shows his account accessed the file share on 12 occasions after termination.
+  followup_weak: |-
+    Kills the rogue device (wipe), closes the credential gap (disable + audit), checks for other threats (inventory audit), and secures physical access (lock closet).
+
+    Marcus's account was not deprovisioned when he was terminated 3 weeks ago. The HR system (Workday) shows he was terminated on June 1. Azure AD still has his account active with a last sign-in of yesterday. The Intune enrollment for his original device was not removed. The DLP system shows his account accessed the file share on 12 occasions after termination.
+  next: deprovisioning_audit_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1078 Valid Accounts
+- id: deprovisioning_audit_phase_2
+  phase_type: analysis
+  title: Deprovisioning Audit — Phase 2
+  situation: Marcus's account was not deprovisioned when he was terminated 3 weeks ago. The HR system (Workday) shows he was terminated on June 1. Azure AD still has his account active with a last sign-in of yesterday. The Intune enrollment for his original device was not removed. The DLP system shows his account accessed the file share on 12 occasions after termination.
+  prompt: How do you conduct a thorough deprovisioning audit?
+  guidance:
+    what: Test the initial theory against telemetry from Intune MDM enrollment before committing to a response.
+    action: How do you conduct a thorough deprovisioning audit?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Deprovisioning Audit — Phase 2. Asset in scope: Intune MDM enrollment.'
+  hints:
+  - Other employees terminated months ago may still have active accounts.
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - cross-reference workday
+  - workday termination
+  - termination records
+  - records against
+  - against azure
+  - azure active
+  - active accounts
+  - accounts last
+  reference_answer: |-
+    Cross-reference Workday termination records against Azure AD active accounts for the last 12 months, audit Intune device inventory against HR active employee list, check for any forwarded email rules or delegated access from terminated accounts, and review badge access logs for terminated employees
+
+    Why: Comprehensive audit: finds all active accounts that should be disabled, identifies rogue devices, checks for persistence mechanisms (email forwarding), and identifies physical access gaps.
+  followup_good: 'The Intune compliance policy had a race condition: devices were marked compliant before compliance checks completed. The rogue device exploited this gap. Additionally, Intune enrollment did not require a certificate-based device identity — Marcus was able to enroll using just his username and password.'
+  followup_weak: |-
+    Comprehensive audit: finds all active accounts that should be disabled, identifies rogue devices, checks for persistence mechanisms (email forwarding), and identifies physical access gaps.
+
+    The Intune compliance policy had a race condition: devices were marked compliant before compliance checks completed. The rogue device exploited this gap. Additionally, Intune enrollment did not require a certificate-based device identity — Marcus was able to enroll using just his username and password.
+  next: mdm_policy_hardening_phase_3
+  mitre_tactic: Persistence
+  mitre_technique: T1136 Create Account
+- id: mdm_policy_hardening_phase_3
+  phase_type: containment
+  title: MDM Policy Hardening — Phase 3
+  situation: 'The Intune compliance policy had a race condition: devices were marked compliant before compliance checks completed. The rogue device exploited this gap. Additionally, Intune enrollment did not require a certificate-based device identity — Marcus was able to enroll using just his username and password.'
+  prompt: What MDM policy changes do you implement?
+  guidance:
+    what: 'Balance speed against disruption: what must be isolated now, and what can wait for scoping?'
+    action: What MDM policy changes do you implement?
+    why: The first containment action sets the blast radius for everything that follows.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: MDM Policy Hardening — Phase 3. Asset in scope: Intune MDM enrollment.'
+  hints:
+  - MFA on enrollment alone doesn't prevent enrollment with compromised but valid credentials.
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - implement azure
+  - azure device
+  - device registration
+  - registration requiring
+  - requiring certificate-based
+  - certificate-based enrollment
+  - enrollment scep
+  - scep ndes
+  reference_answer: |-
+    Implement Azure AD device registration requiring certificate-based enrollment ( SCEP/NDES ), fix the compliance check race condition by requiring compliance before granting access, enable device attestation (hardware identity), restrict enrollment to approved device models via hardware hash whitelist, and implement geofencing for enrollment (enrollment only from corporate network)
+
+    Why: Multi-layered MDM hardening: certificate enrollment prevents credential-only attacks, compliance timing fix closes the race condition, hardware attestation ensures device identity, model whitelist prevents unauthorized devices, geofencing limits enrollment location.
+  followup_good: Marcus obtained the tablet from a sales floor storage closet that was unlocked. The closet contained 8 corporate-owned tablets that were not being used. No one noticed Marcus taking a tablet. His badge access had not been revoked for 3 weeks after termination.
+  followup_weak: |-
+    Multi-layered MDM hardening: certificate enrollment prevents credential-only attacks, compliance timing fix closes the race condition, hardware attestation ensures device identity, model whitelist prevents unauthorized devices, geofencing limits enrollment location.
+
+    Marcus obtained the tablet from a sales floor storage closet that was unlocked. The closet contained 8 corporate-owned tablets that were not being used. No one noticed Marcus taking a tablet. His badge access had not been revoked for 3 weeks after termination.
+  next: physical_security_integration_phase_4
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1562 Impair Defenses
+- id: physical_security_integration_phase_4
+  phase_type: eradication
+  title: Physical Security Integration — Phase 4
+  situation: Marcus obtained the tablet from a sales floor storage closet that was unlocked. The closet contained 8 corporate-owned tablets that were not being used. No one noticed Marcus taking a tablet. His badge access had not been revoked for 3 weeks after termination.
+  prompt: How do you integrate physical security with IT security?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: How do you integrate physical security with IT security?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Physical Security Integration — Phase 4. Asset in scope: Intune MDM enrollment.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - implement automated
+  - automated badge
+  - badge deprovisioning
+  - deprovisioning tied
+  - tied termination
+  - termination system
+  - system add
+  - physical access
+  reference_answer: |-
+    Implement automated badge deprovisioning tied to HR termination system, add physical access audit for terminated employees, secure device storage with asset tracking (barcode scan), implement a device checkout/check-in system for spare equipment, and integrate badge access logs with the SOC SIEM
+
+    Why: Closes the physical security gap: automated badge revocation prevents delayed deprovisioning, asset tracking prevents unauthorized device removal, SIEM integration enables correlation of physical and cyber events.
+  followup_good: The root cause is that HR termination did not trigger IT deprovisioning. Workday has a termination event but no automation connected it to Azure AD account disabling, Intune device removal, badge access revocation, and license reclamation.
+  followup_weak: |-
+    Closes the physical security gap: automated badge revocation prevents delayed deprovisioning, asset tracking prevents unauthorized device removal, SIEM integration enables correlation of physical and cyber events.
+
+    The root cause is that HR termination did not trigger IT deprovisioning. Workday has a termination event but no automation connected it to Azure AD account disabling, Intune device removal, badge access revocation, and license reclamation.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Intune MDM enrollment is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Intune MDM enrollment to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return Intune MDM enrollment to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Intune MDM enrollment.'
+  hints:
+  - Which backup or rebuild image is known-good for Intune MDM enrollment, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Intune MDM enrollment from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: automated_offboarding_pipeline_phase_5
+  next_weak: ''
+  mitre_tactic: Exfiltration
+  mitre_technique: T1567 Exfiltration Over Web Service
+  role_prompts: {}
+- id: automated_offboarding_pipeline_phase_5
+  phase_type: lessons
+  title: Automated Offboarding Pipeline — Phase 5
+  situation: The root cause is that HR termination did not trigger IT deprovisioning. Workday has a termination event but no automation connected it to Azure AD account disabling, Intune device removal, badge access revocation, and license reclamation.
+  prompt: What automated offboarding pipeline do you build?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What automated offboarding pipeline do you build?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Automated Offboarding Pipeline — Phase 5. Asset in scope: Intune MDM enrollment.'
+  hints:
+  - Partial automation still leaves gaps (badge access, Intune devices, email forwarding).
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - build automated
+  - automated pipeline
+  - pipeline workday
+  - workday termination
+  - termination event
+  - event azure
+  - azure account
+  - account disable
+  reference_answer: |-
+    Build an automated pipeline: Workday termination event → Azure AD account disable (immediate) → all active sessions revoked → Intune device wipe triggered → badge access revoked → email forwarding rules removed → license reclaimed → manager notified → 30-day account archive → permanent deletion
+
+    Why: End-to-end automation eliminates human error: every termination automatically triggers all security actions within minutes, not weeks.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the MDM Enrollment Bypass Enables Undetected Corporate Data Theft incident. Your organization manages 3,400 corporate Android devices through Microsoft Intune MDM. At 16:00, the DLP system flagged a large data transfer from a device registered as 'Sales Tablet #247' — a Samsung Galaxy Tab S9. Investigation reveals that this device is NOT a legitimate corporate device. An attacker in the Sales department (Marcus Webb, Sales Rep, terminated 3 weeks ago but his badge access was not revoked) used his physical access to the sales floor to: 1) obtain a corporate-owned tablet ...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the MDM Enrollment Bypass Enables Undetected Corporate Data Theft incident. Your organization manages 3,400 corporate Android devices through Microsoft Intune MDM. At 16:00, the DLP system flagged a large data transfer from a device registered as 'Sales Tablet #247' — a Samsung Galaxy Tab S9. Investigation reveals that this device is NOT a legitimate corporate device. An attacker in the Sales department (Marcus Webb, Sales Rep, terminated 3 weeks ago but his badge access was not revoked) used his physical access to the sales floor to: 1) obtain a corporate-owned tablet ...
+  mitre_tactic: Exfiltration
+  mitre_technique: T1567 Exfiltration Over Web Service

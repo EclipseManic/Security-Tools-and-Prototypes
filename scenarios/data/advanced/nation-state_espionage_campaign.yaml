@@ -1,0 +1,249 @@
+id: nation-state_espionage_campaign
+name: Nation-State Espionage Campaign
+category: Advanced Threats
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Supply-Chain Compromise — Orion Build System Infiltration. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Supply-Chain Compromise — Orion Build System Infiltration. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Supply-Chain Compromise — Orion Build System Infiltration. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Supply-Chain Compromise — Orion Build System Infiltration incident. At 04:12 UTC, a FireEye Red Team tool detection alert fired on domain controller DC-PROD-03. The alert identified a process ''OrionImprovementBusinessLayer'' executing PowerShell with obfuscated arguments from the SolarWinds Orion service account. Further investigation reveals the binary sunburst.dll was injected into the legitimate SolarWinds.Orion.Core.BusinessLayer.dll on this server 14 days ago via a tampered update (v2020.2.1). The injected code established a C2 channel to avsvmcloud[.]com via DNS-over-HTTPS, then used the service account''s Kerberos ticket to enumerate 327 domain accounts, accessed email of 11 senior executives, and staged 12 GB of data in a temporary S3 bucket under attacker control. The attacker also created a backdoor account ''solar.service'' with Domain Admin privileges. Detection occurred only because FireEye''s own tools were being targeted. Business
+  impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: Supply-Chain Compromise — Orion Build System Infiltration
+  opening: At 04:12 UTC, a FireEye Red Team tool detection alert fired on domain controller DC-PROD-03. The alert identified a process 'OrionImprovementBusinessLayer' executing PowerShell with obfuscated arguments from the SolarWinds Orion service account.
+  summary: At 04:12 UTC, a FireEye Red Team tool detection alert fired on domain controller DC-PROD-03. The alert identified a process 'OrionImprovementBusinessLayer' executing PowerShell with obfuscated arguments from the SolarWinds Orion service account. Further investigation reveals the binary sunburst.dll was injected into the legitimate SolarWinds.Orion.Core.BusinessLayer.dll on this server 14 days ago via a tampered update (v2020.2.1). The injected code established a C2 channel to avsvmcloud[.]com via DNS-over-HTTPS, then used the service account's Kerberos ticket to enumerate 327 domain accounts, accessed email of 11 senior executives, and staged 12 GB of data in a temporary S3 bucket under attacker control. The attacker also created a backdoor account 'solar.service' with Domain Admin privileges. Detection occurred only because FireEye's own tools were being targeted.
+  compromised_assets:
+  - DC-PROD-03 (Primary Domain Controller)
+  - SolarWinds Orion server (ORION-APP-01)
+  - 11 executive mailboxes
+  - AWS S3 staging bucket (attacker-controlled)
+  detected_via: FireEye Red Team tool anomaly + anomalous PowerShell under Orion service account
+  kill_chain:
+  - Supply Chain Compromise
+  - Execution
+  - Persistence
+  - Privilege Escalation
+  - Credential Access
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Persistence
+  - Privilege Escalation
+  - Credential Access
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: The malicious Orion update has been running for 14 days. The attacker has Domain Admin, email access to 11 executives, and an S3 bucket staging area. The C2 channel is active right now — DNS queries to avsvmcloud[.]com are ongoing from DC-PROD-03 and at least 3 other Orion servers. You need to contain without tipping off the attacker.
+  prompt: What is your first containment action?
+  guidance:
+    what: 'Frame the decision for ''Immediate Containment — Phase 1'': the asset at risk, the evidence available, and the time pressure.'
+    action: What is your first containment action?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: DC-PROD-03.'
+  hints:
+  - Stops the malware but destroys volatile memory evidence and alerts the attacker.
+  - Premature — the attacker may have more than the 'solar.service' backdoor.
+  - Stages for evidence destruction on the S3 side but doesn't address the on-premise compromise.
+  ideal_concepts:
+  - isolate solarwinds
+  - solarwinds orion
+  - orion servers
+  - servers internet
+  - internet block
+  - avsvmcloud com
+  - com dns
+  - dns resolver
+  reference_answer: |-
+    Isolate all SolarWinds Orion servers from the internet, block avsvmcloud[.]com at the DNS resolver and firewall, but keep internal network access to avoid alerting the attacker
+
+    Why: Stops C2 while preserving internal forensic evidence. The attacker monitors for disruptions — a soft containment prevents premature evidence destruction.
+  followup_good: 'Soft containment is in place. Forensic memory analysis of DC-PROD-03 reveals the OrionImprovementBusinessLayer process performed Kerberoasting — it requested TGS tickets for 327 service accounts in 4 hours. The attacker used these to access email via Exchange impersonation (EWS API). You also find a second backdoor: a scheduled task named ''UpdateService'' on ORION-APP-01 that downloads and executes PowerShell from pastebin[.]com every 6 hours.'
+  followup_weak: |-
+    Stops C2 while preserving internal forensic evidence.
+
+    Soft containment is in place. Forensic memory analysis of DC-PROD-03 reveals the OrionImprovementBusinessLayer process performed Kerberoasting — it requested TGS tickets for 327 service accounts in 4 hours. The attacker used these to access email via Exchange impersonation (EWS API). You also find a second backdoor: a scheduled task named 'UpdateService' on ORION-APP-01 that downloads and executes PowerShell from pastebin[.]com every 6 hours.
+  next: scope_assessment_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1195.002 Compromise Software Supply Chain
+- id: scope_assessment_phase_2
+  phase_type: analysis
+  title: Scope Assessment — Phase 2
+  situation: 'Soft containment is in place. Forensic memory analysis of DC-PROD-03 reveals the OrionImprovementBusinessLayer process performed Kerberoasting — it requested TGS tickets for 327 service accounts in 4 hours. The attacker used these to access email via Exchange impersonation (EWS API). You also find a second backdoor: a scheduled task named ''UpdateService'' on ORION-APP-01 that downloads and executes PowerShell from pastebin[.]com every 6 hours.'
+  prompt: How do you determine the full scope of the compromise?
+  guidance:
+    what: Test the initial theory against telemetry from DC-PROD-03 before committing to a response.
+    action: How do you determine the full scope of the compromise?
+    why: Acting on an unverified scope either misses the attacker or over-contains the business.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Scope Assessment — Phase 2. Asset in scope: DC-PROD-03.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - audit kerberos
+  - kerberos tgs
+  - tgs requests
+  - requests past
+  - past days
+  - days correlate
+  - correlate exchange
+  - exchange ews
+  reference_answer: |-
+    Audit all Kerberos TGS requests from the past 14 days, correlate with Exchange EWS access logs to identify which mailboxes were accessed, and search for all scheduled tasks across domain-joined hosts
+
+    Why: Kerberos audit reveals which accounts were targeted, EWS logs show actual email access, and scheduled task enumeration finds additional persistence.
+  followup_good: Kerberos audit reveals the attacker targeted 47 high-value accounts including 11 executives, 3 cloud admins, and the backup service account. Exchange logs confirm the attacker used EWS to read 842 emails across these accounts, with search queries targeting terms like 'classified', 'budget', 'merger', and 'nuclear'. The attacker also created the 'solar.service' account with Domain Admin and added it to the Exchange Trusted Subsystem group.
+  followup_weak: |-
+    Kerberos audit reveals which accounts were targeted, EWS logs show actual email access, and scheduled task enumeration finds additional persistence.
+
+    Kerberos audit reveals the attacker targeted 47 high-value accounts including 11 executives, 3 cloud admins, and the backup service account. Exchange logs confirm the attacker used EWS to read 842 emails across these accounts, with search queries targeting terms like 'classified', 'budget', 'merger', and 'nuclear'. The attacker also created the 'solar.service' account with Domain Admin and added it to the Exchange Trusted Subsystem group.
+  next: credential_compromise_assessment_phase_3
+  mitre_tactic: Discovery
+  mitre_technique: T1087 Account Discovery
+- id: credential_compromise_assessment_phase_3
+  phase_type: containment
+  title: Credential Compromise Assessment — Phase 3
+  situation: Kerberos audit reveals the attacker targeted 47 high-value accounts including 11 executives, 3 cloud admins, and the backup service account. Exchange logs confirm the attacker used EWS to read 842 emails across these accounts, with search queries targeting terms like 'classified', 'budget', 'merger', and 'nuclear'. The attacker also created the 'solar.service' account with Domain Admin and added it to the Exchange Trusted Subsystem group.
+  prompt: How do you handle the credential compromise?
+  guidance:
+    what: Decide how to stop the spread from DC-PROD-03 while preserving the evidence trail.
+    action: How do you handle the credential compromise?
+    why: The first containment action sets the blast radius for everything that follows.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Credential Compromise Assessment — Phase 3. Asset in scope: DC-PROD-03.'
+  hints:
+  - Consider the affected accounts and their privilege level.
+  - Preserve evidence before disrupting anything.
+  ideal_concepts:
+  - targeted accounts
+  - accounts rotate
+  - service account
+  - account passwords
+  - passwords disable
+  - solar service
+  - service backdoor
+  - backdoor account
+  reference_answer: |-
+    Reset all 47 targeted accounts, rotate all service account passwords, disable the 'solar.service' backdoor account, revoke all Kerberos TGTs by forcing a KRB_TGT rotation, and rotate all NTLM hashes via script
+
+    Why: Full credential rotation with KRB_TGT reset (which clears all cached tickets) is the standard response for Kerberos-based APT compromise.
+  followup_good: All credentials have been rotated. The compromised Orion servers have been quarantined. Forensic analysis shows the attacker also modified Group Policy Objects (GPOs) to disable Windows Event Log collection on 14 servers and added a firewall rule allowing port 5985 (WinRM) from an external IP 198.51.100.xx. You need to fully eradicate and recover.
+  followup_weak: |-
+    Full credential rotation with KRB_TGT reset (which clears all cached tickets) is the standard response for Kerberos-based APT compromise.
+
+    All credentials have been rotated. The compromised Orion servers have been quarantined. Forensic analysis shows the attacker also modified Group Policy Objects (GPOs) to disable Windows Event Log collection on 14 servers and added a firewall rule allowing port 5985 (WinRM) from an external IP 198.51.100.xx. You need to fully eradicate and recover.
+  next: eradication_recovery_phase_4
+  mitre_tactic: Credential Access
+  mitre_technique: T1558 Steal or Forge Kerberos Tickets
+- id: eradication_recovery_phase_4
+  phase_type: eradication
+  title: Eradication & Recovery — Phase 4
+  situation: All credentials have been rotated. The compromised Orion servers have been quarantined. Forensic analysis shows the attacker also modified Group Policy Objects (GPOs) to disable Windows Event Log collection on 14 servers and added a firewall rule allowing port 5985 (WinRM) from an external IP 198.51.100.xx. You need to fully eradicate and recover.
+  prompt: What is your eradication and recovery plan?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: What is your eradication and recovery plan?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Eradication & Recovery — Phase 4. Asset in scope: DC-PROD-03.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - rebuild solarwinds
+  - solarwinds orion
+  - orion servers
+  - servers known-good
+  - known-good media
+  - media restore
+  - restore gpos
+  - gpos backup
+  reference_answer: |-
+    Rebuild all SolarWinds Orion servers from known-good media, restore GPOs from backup, remove the rogue firewall rule, re-enable event log collection on all 14 servers, deploy a clean Orion build, and verify no scheduled tasks or registry modifications persist on any domain-joined host
+
+    Why: Complete eradication addresses every known persistence mechanism. GPO restore + host rebuild ensures no residual compromise.
+  followup_good: 'Eradication is complete. The attack originated from a sophisticated nation-state actor (attribution indicators: infrastructure in Eastern Europe, TTPs match known groups). The attacker exfiltrated executive email, budget data, and classified project information. The supply chain attack vector may affect other organizations using SolarWinds Orion.'
+  followup_weak: |-
+    Complete eradication addresses every known persistence mechanism.
+
+    Eradication is complete. The attack originated from a sophisticated nation-state actor (attribution indicators: infrastructure in Eastern Europe, TTPs match known groups). The attacker exfiltrated executive email, budget data, and classified project information. The supply chain attack vector may affect other organizations using SolarWinds Orion.
+  next: recovery_and_validation
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1562.002 Disable Windows Event Logging
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. DC-PROD-03 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return DC-PROD-03 to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return DC-PROD-03 to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: DC-PROD-03.'
+  hints:
+  - Which backup or rebuild image is known-good for DC-PROD-03, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore DC-PROD-03 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: intelligence_sharing_post_incident_phase_5
+  next_weak: ''
+  mitre_tactic: Exfiltration
+  mitre_technique: T1048.002 Exfiltration Over Asymmetric Encrypted Non-C2 Protocol
+  role_prompts: {}
+- id: intelligence_sharing_post_incident_phase_5
+  phase_type: lessons
+  title: Intelligence Sharing & Post-Incident — Phase 5
+  situation: 'Eradication is complete. The attack originated from a sophisticated nation-state actor (attribution indicators: infrastructure in Eastern Europe, TTPs match known groups). The attacker exfiltrated executive email, budget data, and classified project information. The supply chain attack vector may affect other organizations using SolarWinds Orion.'
+  prompt: What external actions do you take?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What external actions do you take?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Intelligence Sharing & Post-Incident — Phase 5. Asset in scope: DC-PROD-03.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - report cisa
+  - cisa fbi
+  - fbi notify
+  - solarwinds compromised
+  - compromised build
+  - build share
+  - share iocs
+  - iocs industry
+  reference_answer: |-
+    Report to CISA/FBI, notify SolarWinds of the compromised build, share IOCs with industry ISACs, engage a specialized IR firm for full attribution analysis, and prepare regulatory breach notifications
+
+    Why: Nation-state supply chain attacks require federal notification, industry sharing, and legal/regulatory compliance. Isolation isn't enough.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Supply-Chain Compromise — Orion Build System Infiltration incident. At 04:12 UTC, a FireEye Red Team tool detection alert fired on domain controller DC-PROD-03. The alert identified a process 'OrionImprovementBusinessLayer' executing PowerShell with obfuscated arguments from the SolarWinds Orion service account. Further investigation reveals the binary sunburst.dll was injected into the legitimate SolarWinds.Orion.Core.BusinessLayer.dll on this server 14 days ago via a tampered update (v2020.2.1). The injected code established a C2 channel to avsvmcloud[.]com vi...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Supply-Chain Compromise — Orion Build System Infiltration incident. At 04:12 UTC, a FireEye Red Team tool detection alert fired on domain controller DC-PROD-03. The alert identified a process 'OrionImprovementBusinessLayer' executing PowerShell with obfuscated arguments from the SolarWinds Orion service account. Further investigation reveals the binary sunburst.dll was injected into the legitimate SolarWinds.Orion.Core.BusinessLayer.dll on this server 14 days ago via a tampered update (v2020.2.1). The injected code established a C2 channel to avsvmcloud[.]com vi...
+  mitre_tactic: Exfiltration
+  mitre_technique: T1048.002 Exfiltration Over Asymmetric Encrypted Non-C2 Protocol

@@ -1,0 +1,215 @@
+id: kernel_rootkit___deep_system_persistence
+name: Kernel Rootkit — Deep System Persistence
+category: Endpoint
+format_version: 2
+difficulty: Expert
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Kernel Rootkit Hiding Processes and Network Connections. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Kernel Rootkit Hiding Processes and Network Connections. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Kernel Rootkit Hiding Processes and Network Connections. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Kernel Rootkit Hiding Processes and Network Connections incident. An advanced attacker who gained root access on DB-SRV-02 (10.10.30.12, CentOS 7, kernel 3.10.0-1160.el7) deployed a custom kernel rootkit (DKOM — Direct Kernel Object Manipulation) that hooks the syscall table to hide processes, files, and network connections from all userland tools including ps, netstat, lsof, and top. The rootkit (rootkit.ko, 18 KB, compiled for kernel 3.10.0-1160.el7) modifies the task_struct linked list to remove malicious processes from /proc enumeration, hooks tcp4_seq_show and udp4_seq_show functions to filter C2 connections (port 443 to 198.51.100.67 and port 8443 to 198.51.100.68) from netstat output, and uses a hidden kernel thread (kthread_run: ''system_monitor'') for periodic C2 callback execution every 300 seconds. The rootkit also intercepts getdents64 to hide /root/.backdoor/ and its associated files (backdoor.sh, creds.db, config.json). Detection required
+  booting from a trusted external media (RHEL 9 live USB) and performing offline forensic analysis, which revealed the modified syscall table (address 0xffffffffa0500000), hidden processes consuming 3.2% CPU, and unauthorized network connections on ports 443 and 8443 to known C2 infrastructure. Business impact: endpoint availability and integrity are at risk, and affected hosts may need reimaging before normal work resumes. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed.'
+incident:
+  title: Kernel Rootkit Hiding Processes and Network Connections
+  opening: An advanced attacker who gained root access on DB-SRV-02 (10.10.30.12, CentOS 7, kernel 3.10.0-1160.el7) deployed a custom kernel rootkit (DKOM — Direct Kernel Object Manipulation) that hooks the syscall table to hide processes, files, and network connections from all userland tools including ps, netstat, lsof, and top. The rootkit (rootkit.ko, 18 KB, compiled for kernel 3.10.0-1160.el7) modifies the task_struct…
+  summary: 'An advanced attacker who gained root access on DB-SRV-02 (10.10.30.12, CentOS 7, kernel 3.10.0-1160.el7) deployed a custom kernel rootkit (DKOM — Direct Kernel Object Manipulation) that hooks the syscall table to hide processes, files, and network connections from all userland tools including ps, netstat, lsof, and top. The rootkit (rootkit.ko, 18 KB, compiled for kernel 3.10.0-1160.el7) modifies the task_struct linked list to remove malicious processes from /proc enumeration, hooks tcp4_seq_show and udp4_seq_show functions to filter C2 connections (port 443 to 198.51.100.67 and port 8443 to 198.51.100.68) from netstat output, and uses a hidden kernel thread (kthread_run: ''system_monitor'') for periodic C2 callback execution every 300 seconds. The rootkit also intercepts getdents64 to hide /root/.backdoor/ and its associated files (backdoor.sh, creds.db, config.json). Detection required booting from a trusted external media (RHEL 9 live USB) and performing offline forensic analysis,
+    which revealed the modified syscall table (address 0xffffffffa0500000), hidden processes consuming 3.2% CPU, and unauthorized network connections on ports 443 and 8443 to known C2 infrastructure.'
+  compromised_assets:
+  - DB-SRV-02 (10.10.30.12) — Linux kernel (syscall table modified)
+  - Process enumeration (all userland tools return false data)
+  - Network connection visibility (C2 connections hidden from netstat)
+  - File system (hidden directory /root/.backdoor/)
+  - Kernel thread (system_monitor) for C2 callbacks every 300 seconds
+  - Rootkit (rootkit.ko) survives reboot via /etc/modules load
+  detected_via: Offline forensic analysis from trusted boot media (RHEL 9 live USB); CPU usage anomaly (3.2% unexplained usage despite clean ps output); network traffic analysis (pcap) showing hidden connections to 198.51.100.67:443 and 198.51.100.68:8443
+  kill_chain:
+  - Root access obtained via privilege escalation exploit (prior compromise)
+  - Custom DKOM rootkit compiled and loaded (rootkit.ko, 18 KB)
+  - Syscall table hooked for process/file/network hiding
+  - Kernel thread spawned for C2 callbacks (every 300 seconds)
+  - All userland monitoring tools return false data
+  - Rootkit survives reboot via /etc/modules configuration
+  mitre_tactics:
+  - TA0003 — Persistence
+  - TA0005 — Defense Evasion
+  - TA0011 — Command and Control
+phases:
+- id: rootkit_detection_via_offline_forensics
+  phase_type: triage
+  title: Rootkit Detection via Offline Forensics
+  situation: 'The SOC team has booted DB-SRV-02 from a trusted RHEL 9 live USB and is performing offline forensic analysis. Initial findings: (1) Modified syscall table at address 0xffffffffa0500000 with hooks on getdents64, tcp4_seq_show, udp4_seq_show, and kill_process, (2) Hidden processes: ''backdoor_c2'' (PID 4872, consuming 3.2% CPU), ''data_dump'' (PID 4873), (3) Hidden files: /root/.backdoor/ containing backdoor.sh, creds.db, config.json, (4) Unauthorized kernel module: rootkit.ko loaded at boot via /etc/modules, (5) Network connections to 198.51.100.67:443 and 198.51.100.68:8443 (C2 infrastructure). The rootkit has been active since March 5 (module compilation timestamp in ELF header).'
+  prompt: How do you proceed with the rootkit investigation and removal?
+  guidance:
+    what: 'Frame the decision for ''Rootkit Detection via Offline Forensics'': the asset at risk, the evidence available, and the time pressure.'
+    action: How do you proceed with the rootkit investigation and removal?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Rootkit Detection via Offline Forensics. Asset in scope: DB-SRV-02.'
+  hints:
+  - Reinstalling the kernel does not address the backdoor files, hidden processes, or the attacker's root access.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - capture full
+  - full forensic
+  - forensic image
+  - image disk
+  - disk memory
+  - memory extract
+  - extract rootkit
+  - rootkit binary
+  reference_answer: |-
+    Capture a full forensic image of the disk and memory, extract the rootkit binary for analysis, document all hidden artifacts (processes, files, network connections, kernel hooks), block C2 IPs at the perimeter, and plan a complete system rebuild from known-good media
+
+    Why: Forensic imaging preserves evidence for investigation and potential legal action. Rootkit analysis reveals capabilities and IOCs. Documentation creates a complete picture. IP blocking stops C2. Rebuild ensures complete removal.
+  followup_good: 'Analysis of rootkit.ko reveals the following capabilities: (1) DKOM: modifies task_struct linked list to hide processes, (2) Syscall table hooking: intercepts getdents64 (file hiding), tcp4_seq_show (TCP connection hiding), udp4_seq_show (UDP hiding), kill_process (prevents kill of hidden processes), (3) Hidden kernel thread using kthread_run for C2 callbacks, (4) Network filtering: hides connections to ports 443 and 8443 on specific IPs (198.51.100.67, 198.51.100.68), (5) File hiding: intercepts getdents64 to hide /root/.backdoor/ directory, (6) Persistence: loaded via /etc/modules on boot, (7) Anti-analysis: checks for debugger presence and virtual machine artifacts. The rootkit was compiled from source found in /usr/src/backdoor/rootkit.c (attacker left source code on the system).'
+  followup_weak: |-
+    Forensic imaging preserves evidence for investigation and potential legal action.
+
+    Analysis of rootkit.ko reveals the following capabilities: (1) DKOM: modifies task_struct linked list to hide processes, (2) Syscall table hooking: intercepts getdents64 (file hiding), tcp4_seq_show (TCP connection hiding), udp4_seq_show (UDP hiding), kill_process (prevents kill of hidden processes), (3) Hidden kernel thread using kthread_run for C2 callbacks, (4) Network filtering: hides connections to ports 443 and 8443 on specific IPs (198.51.100.67, 198.51.100.68), (5) File hiding: intercepts getdents64 to hide /root/.backdoor/ directory, (6) Persistence: loaded via /etc/modules on boot, (7) Anti-analysis: checks for debugger presence and virtual machine artifacts. The rootkit was compiled from source found in /usr/src/backdoor/rootkit.c (attacker left source code on the system).
+  next: rootkit_mechanism_analysis
+  mitre_tactic: TA0005 — Defense Evasion
+  mitre_technique: T1014 — Rootkit
+- id: rootkit_mechanism_analysis
+  phase_type: containment
+  title: Rootkit Mechanism Analysis
+  situation: 'Analysis of rootkit.ko reveals the following capabilities: (1) DKOM: modifies task_struct linked list to hide processes, (2) Syscall table hooking: intercepts getdents64 (file hiding), tcp4_seq_show (TCP connection hiding), udp4_seq_show (UDP hiding), kill_process (prevents kill of hidden processes), (3) Hidden kernel thread using kthread_run for C2 callbacks, (4) Network filtering: hides connections to ports 443 and 8443 on specific IPs (198.51.100.67, 198.51.100.68), (5) File hiding: intercepts getdents64 to hide /root/.backdoor/ directory, (6) Persistence: loaded via /etc/modules on boot, (7) Anti-analysis: checks for debugger presence and virtual machine artifacts. The rootkit was compiled from source found in /usr/src/backdoor/rootkit.c (attacker left source code on the system).'
+  prompt: How do you leverage the rootkit analysis for broader threat intelligence?
+  guidance:
+    what: Decide how to stop the spread from DB-SRV-02 while preserving the evidence trail.
+    action: How do you leverage the rootkit analysis for broader threat intelligence?
+    why: The first containment action sets the blast radius for everything that follows.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Rootkit Mechanism Analysis. Asset in scope: DB-SRV-02.'
+  hints:
+  - Deleting the source code is part of cleanup but should be done after forensic preservation.
+  - Kernel updates are important but do not address the already-loaded rootkit or identify other compromised systems.
+  ideal_concepts:
+  - extract iocs
+  - iocs rootkit
+  - rootkit file
+  - file hashes
+  - hashes syscall
+  - syscall hook
+  - hook addresses
+  - addresses create
+  reference_answer: |-
+    Extract IOCs from the rootkit (C2 IPs, file hashes, syscall hook addresses), create detection rules for other systems (YARA for rootkit.ko, Sigma rules for module loading), scan all other servers for the same rootkit or similar DKOM techniques, and share IOCs with threat intelligence communities
+
+    Why: IOC extraction enables detection across the environment. YARA rules detect the rootkit binary. Sigma rules detect loading behavior. Scanning other servers identifies additional compromises. Sharing IOCs benefits the broader community.
+  followup_good: 'The investigation has confirmed that DB-SRV-02 is fully compromised with kernel-level persistence. The rootkit has been active since March 5 (20 days). The attacker has root access, hidden processes, hidden network connections, and hidden files. The system hosts a production PostgreSQL database (DB-PROD-02) containing customer data. No evidence of data exfiltration has been found yet, but the hidden network connections suggest ongoing C2 communication. The CISO requires a complete remediation plan including: system rebuild, credential rotation, environment-wide scanning, and hardening measures to prevent recurrence.'
+  followup_weak: |-
+    IOC extraction enables detection across the environment.
+
+    The investigation has confirmed that DB-SRV-02 is fully compromised with kernel-level persistence. The rootkit has been active since March 5 (20 days). The attacker has root access, hidden processes, hidden network connections, and hidden files. The system hosts a production PostgreSQL database (DB-PROD-02) containing customer data. No evidence of data exfiltration has been found yet, but the hidden network connections suggest ongoing C2 communication. The CISO requires a complete remediation plan including: system rebuild, credential rotation, environment-wide scanning, and hardening measures to prevent recurrence.
+  next: system_remediation_environment_hardening
+  mitre_tactic: TA0005 — Defense Evasion
+  mitre_technique: T1564 — Hide Artifacts
+- id: system_remediation_environment_hardening
+  phase_type: eradication
+  title: System Remediation & Environment Hardening
+  situation: 'The investigation has confirmed that DB-SRV-02 is fully compromised with kernel-level persistence. The rootkit has been active since March 5 (20 days). The attacker has root access, hidden processes, hidden network connections, and hidden files. The system hosts a production PostgreSQL database (DB-PROD-02) containing customer data. No evidence of data exfiltration has been found yet, but the hidden network connections suggest ongoing C2 communication. The CISO requires a complete remediation plan including: system rebuild, credential rotation, environment-wide scanning, and hardening measures to prevent recurrence.'
+  prompt: How do you execute the complete remediation?
+  guidance:
+    what: Find every foothold the attacker left on DB-SRV-02, including persistence and stolen credentials.
+    action: How do you execute the complete remediation?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: System Remediation & Environment Hardening. Asset in scope: DB-SRV-02.'
+  hints:
+  - Restoration from backup does not guarantee complete removal.
+  - Kernel patches address specific vulnerabilities but do not remove the loaded rootkit module or the hidden backdoor files.
+  - Memory forensics is valuable for detection but does not address the current compromise.
+  ideal_concepts:
+  - rebuild db-srv-02
+  - db-srv-02 known-good
+  - known-good installation
+  - installation media
+  - media backup
+  - backup backups
+  - backups contain
+  - contain rootkit
+  reference_answer: |-
+    Rebuild DB-SRV-02 from known-good installation media (not backup, as backups may contain rootkit), enable Secure Boot with module signing enforcement, implement kernel integrity monitoring (AIDE/Draeger), rotate all credentials used on or accessible from the compromised system, scan all servers for the rootkit IOCs, and implement runtime kernel protection (SELinux enforcing mode)
+
+    Why: Rebuild from clean media ensures complete rootkit removal. Secure Boot prevents unsigned module loading. Kernel monitoring detects future modifications. Credential rotation invalidates stolen secrets. Environment scanning identifies additional compromises. SELinux limits kernel-level actions.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Kernel Rootkit Hiding Processes and Network Connections incident. An advanced attacker who gained root access on DB-SRV-02 (10.10.30.12, CentOS 7, kernel 3.10.0-1160.el7) deployed a custom kernel rootkit (DKOM — Direct Kernel Object Manipulation) that hooks the syscall table to hide processes, files, and network connections from all userland tools including ps, netstat, lsof, and top. The rootkit (rootkit.ko, 18 KB, compiled for kernel 3.10.0-1160.el7) modifies the task_struct linked list to remove malicious processes from /proc enumeration, hooks tcp4_seq_sho...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Kernel Rootkit Hiding Processes and Network Connections incident. An advanced attacker who gained root access on DB-SRV-02 (10.10.30.12, CentOS 7, kernel 3.10.0-1160.el7) deployed a custom kernel rootkit (DKOM — Direct Kernel Object Manipulation) that hooks the syscall table to hide processes, files, and network connections from all userland tools including ps, netstat, lsof, and top. The rootkit (rootkit.ko, 18 KB, compiled for kernel 3.10.0-1160.el7) modifies the task_struct linked list to remove malicious processes from /proc enumeration, hooks tcp4_seq_sho...
+  mitre_tactic: TA0003 — Persistence
+  mitre_technique: T1547.006 — Kernel Modules and Extensions
+  next: recovery_and_validation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. DB-SRV-02 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return DB-SRV-02 to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return DB-SRV-02 to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: DB-SRV-02.'
+  hints:
+  - Which backup or rebuild image is known-good for DB-SRV-02, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore DB-SRV-02 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_review
+  next_weak: ''
+  mitre_tactic: TA0003 — Persistence
+  mitre_technique: T1547.006 — Kernel Modules and Extensions
+  role_prompts: {}
+- id: post_incident_review
+  phase_type: lessons
+  title: Post-Incident Review & Hardening
+  situation: Service has been restored and validated. Leadership wants a concise after-action review covering the root cause of Kernel Rootkit Hiding Processes and Network Connections, the detection gap that let the attacker operate, and the control changes that will prevent a repeat. Findings must have owners and dates.
+  prompt: What must change so an incident like Kernel Rootkit Hiding Processes and Network Connections is detected earlier and cannot recur?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What must change so an incident like Kernel Rootkit Hiding Processes and Network Connections is detected earlier and cannot recur?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Review & Hardening. Asset in scope: DB-SRV-02.'
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  - Who owns each improvement, and when will it be verified?
+  ideal_concepts:
+  - root cause
+  - detection gap
+  - control improvement
+  - owner and date
+  - runbook update
+  - training
+  reference_answer: |-
+    Document the root cause of Kernel Rootkit Hiding Processes and Network Connections, identify the detection gap that let the attacker operate, and assign owners and dates to concrete control changes. Update detections, runbooks, and training, track the actions to completion, and report the outcome to leadership.
+
+    Why: Without durable changes, the same root cause will produce the same incident again.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated improvements, and ties them back to specific detections and controls. Leadership receives a tracked action plan.
+  followup_weak: The review retells the timeline but leaves the root cause and detection gap vague. Without owners, dates, and verification, the same incident will recur.
+  next: ''
+  next_weak: ''
+  mitre_tactic: TA0003 — Persistence
+  mitre_technique: T1547.006 — Kernel Modules and Extensions
+  role_prompts: {}

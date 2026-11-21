@@ -1,0 +1,209 @@
+id: azure_active_directory_attack_-_consent_phishing
+name: Azure Active Directory Attack - Consent Phishing
+category: Cloud
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Azure AD Consent Phishing — OAuth App Attack. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Azure AD Consent Phishing — OAuth App Attack. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Azure AD Consent Phishing — OAuth App Attack. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Azure AD Consent Phishing — OAuth App Attack incident. At 09:15 UTC, the security team received an alert from Microsoft Defender for Cloud Apps: a new enterprise application ''ProjectSync Collaboration'' was granted admin-consented permissions by user jsmith@contoso.com. The app requested Mail.ReadWrite, Files.ReadWrite.All, User.Read.All, and Directory.ReadWrite.All — effectively full tenant access. Within 20 minutes, the app was used to: (1) enumerate all mailboxes via Microsoft Graph, (2) download 234 emails from 17 C-suite executives, and (3) create a new admin account (backdoor@contoso.com). The attack originated from a consent phishing link sent via Teams message from an external user ''michael.brown@partner-firm.com'' (a legitimate but compromised partner account). The link directed to a lookalike Azure AD consent page. Microsoft has since blocked the app, but the attacker already exfiltrated sensitive emails including M&A discussions and
+  board meeting minutes. Business impact: cloud-hosted data and service availability are at risk, and provider notification plus key rotation may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy and cloud counsel should assess notification duties and contractual reporting obligations.'
+incident:
+  title: Azure AD Consent Phishing — OAuth App Attack
+  opening: 'At 09:15 UTC, the security team received an alert from Microsoft Defender for Cloud Apps: a new enterprise application ''ProjectSync Collaboration'' was granted admin-consented permissions by user jsmith@contoso.com. The app requested Mail.ReadWrite, Files.ReadWrite.All, User.Read.All, and Directory.ReadWrite.All — effectively full tenant access.'
+  summary: 'At 09:15 UTC, the security team received an alert from Microsoft Defender for Cloud Apps: a new enterprise application ''ProjectSync Collaboration'' was granted admin-consented permissions by user jsmith@contoso.com. The app requested Mail.ReadWrite, Files.ReadWrite.All, User.Read.All, and Directory.ReadWrite.All — effectively full tenant access. Within 20 minutes, the app was used to: (1) enumerate all mailboxes via Microsoft Graph, (2) download 234 emails from 17 C-suite executives, and (3) create a new admin account (backdoor@contoso.com). The attack originated from a consent phishing link sent via Teams message from an external user ''michael.brown@partner-firm.com'' (a legitimate but compromised partner account). The link directed to a lookalike Azure AD consent page. Microsoft has since blocked the app, but the attacker already exfiltrated sensitive emails including M&A discussions and board meeting minutes.'
+  compromised_assets:
+  - Azure AD tenant (global admin privileges via OAuth app)
+  - 17 executive mailboxes (emails exfiltrated)
+  - 'New admin account: backdoor@contoso.com'
+  - 'External partner account: michael.brown@partner-firm.com'
+  detected_via: Microsoft Defender for Cloud Apps — OAuth app consent alert
+  kill_chain:
+  - Initial Access (Consent Phishing)
+  - Persistence (OAuth App + backdoor account)
+  - Collection (Mail + directory enumeration)
+  - Privilege Escalation (Admin consent + new admin)
+  mitre_tactics:
+  - Initial Access
+  - Persistence
+  - Collection
+  - Privilege Escalation
+phases:
+- id: immediate_containment_revoke_malicious_oauth_app
+  phase_type: triage
+  title: Immediate Containment — Revoke Malicious OAuth App
+  situation: The malicious OAuth app 'ProjectSync Collaboration' has full tenant access. You have identified the app ID and the backdoor admin account. Microsoft Defender shows active token usage in the last 5 minutes. What is your first containment action?
+  prompt: What is your next action?
+  guidance:
+    what: Establish what fired on Azure AD tenant, which accounts are involved, and how urgent the signal is.
+    action: What is your next action?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Revoke Malicious OAuth App. Asset in scope: Azure AD tenant.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - revoke oauth
+  - oauth app
+  - app tokens
+  - tokens disable
+  - app registration
+  - registration delete
+  - backdoor admin
+  - admin account
+  reference_answer: |-
+    Revoke all OAuth app tokens, disable the app registration, delete the backdoor admin account, and force password reset for the compromised user (jsmith@contoso.com)
+
+    Why: Full containment: revoking tokens invalidates active sessions, disabling the app prevents re-consent, deleting the backdoor removes persistent access, and resetting the compromised user's password eliminates the initial vector.
+  followup_good: The attacker had Mail.ReadWrite and Directory.ReadWrite for approximately 20 minutes. Graph API audit logs show 234 emails were accessed across 17 mailboxes. You need to determine exactly what was downloaded and identify the highest-sensitivity data.
+  followup_weak: |-
+    Full containment: revoking tokens invalidates active sessions, disabling the app prevents re-consent, deleting the backdoor removes persistent access, and resetting the compromised user's password eliminates the initial vector.
+
+    The attacker had Mail.ReadWrite and Directory.ReadWrite for approximately 20 minutes. Graph API audit logs show 234 emails were accessed across 17 mailboxes. You need to determine exactly what was downloaded and identify the highest-sensitivity data.
+  next: blast_radius_assess_data_exposure
+  mitre_tactic: Credential Access
+  mitre_technique: T1528 — Steal Application Access Token
+- id: blast_radius_assess_data_exposure
+  phase_type: analysis
+  title: Blast Radius — Assess Data Exposure
+  situation: The attacker had Mail.ReadWrite and Directory.ReadWrite for approximately 20 minutes. Graph API audit logs show 234 emails were accessed across 17 mailboxes. You need to determine exactly what was downloaded and identify the highest-sensitivity data.
+  prompt: What is your next action?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on Azure AD tenant.
+    action: What is your next action?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Blast Radius — Assess Data Exposure. Asset in scope: Azure AD tenant.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - export full
+  - full graph
+  - graph api
+  - api audit
+  - audit logs
+  - logs cross-reference
+  - cross-reference accessed
+  - accessed email
+  reference_answer: |-
+    Export full Graph API audit logs, cross-reference accessed email IDs with mailbox owners, flag emails containing keywords like 'M&A', 'confidential', 'board', and prepare a sensitivity report
+
+    Why: Systematic log analysis with keyword filtering ensures the highest-sensitivity data is identified first, enabling prioritized breach notification and legal review.
+  followup_good: The attack originated from a legitimate partner account (michael.brown@partner-firm.com). The partner's IT team reports they have no record of sending the Teams message. Your analysis of the message header shows it was sent via the partner's Microsoft 365 tenant. The partner may be a victim or a compromised pivot.
+  followup_weak: |-
+    Systematic log analysis with keyword filtering ensures the highest-sensitivity data is identified first, enabling prioritized breach notification and legal review.
+
+    The attack originated from a legitimate partner account (michael.brown@partner-firm.com). The partner's IT team reports they have no record of sending the Teams message. Your analysis of the message header shows it was sent via the partner's Microsoft 365 tenant. The partner may be a victim or a compromised pivot.
+  next: partner_account_compromise_third_party_investigation
+  mitre_tactic: Collection
+  mitre_technique: T1114 — Email Collection, T1087.002 — Domain Account Discovery
+- id: partner_account_compromise_third_party_investigation
+  phase_type: eradication
+  title: Partner Account Compromise — Third-Party Investigation
+  situation: The attack originated from a legitimate partner account (michael.brown@partner-firm.com). The partner's IT team reports they have no record of sending the Teams message. Your analysis of the message header shows it was sent via the partner's Microsoft 365 tenant. The partner may be a victim or a compromised pivot.
+  prompt: What is your next action?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: What is your next action?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Partner Account Compromise — Third-Party Investigation. Asset in scope: Azure AD tenant.'
+  hints:
+  - Blocking the domain is an overreaction — the partner is likely a victim too.
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - request partner
+  - partner audit
+  - audit logs
+  - logs compromised
+  - compromised account
+  - account check
+  - oauth apps
+  - apps consented
+  reference_answer: |-
+    Request the partner's audit logs for the compromised account, check for other OAuth apps they may have consented to, and notify their security team about the likely compromise
+
+    Why: The partner account may have been used against other tenants. Sharing IOCs and requesting their investigation helps contain the broader attack and may reveal additional compromised tenants.
+  followup_good: Post-incident review reveals that consent phishing is a growing threat. Users can currently consent to any OAuth app without admin approval. You need to implement controls to prevent recurrence while maintaining business productivity.
+  followup_weak: |-
+    The partner account may have been used against other tenants.
+
+    Post-incident review reveals that consent phishing is a growing threat. Users can currently consent to any OAuth app without admin approval. You need to implement controls to prevent recurrence while maintaining business productivity.
+  next: recovery_and_validation
+  mitre_tactic: Lateral Movement
+  mitre_technique: 'T1534 — Internal Spearphishing, T1078.004 — Valid Accounts: Cloud Accounts'
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Azure AD tenant is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Azure AD tenant to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return Azure AD tenant to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Azure AD tenant.'
+  hints:
+  - Which backup or rebuild image is known-good for Azure AD tenant, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Azure AD tenant from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: prevention_harden_against_consent_phishing
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1550 — Use Alternate Authentication Material
+  role_prompts: {}
+- id: prevention_harden_against_consent_phishing
+  phase_type: lessons
+  title: Prevention — Harden Against Consent Phishing
+  situation: Post-incident review reveals that consent phishing is a growing threat. Users can currently consent to any OAuth app without admin approval. You need to implement controls to prevent recurrence while maintaining business productivity.
+  prompt: What is your next action?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What is your next action?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Prevention — Harden Against Consent Phishing. Asset in scope: Azure AD tenant.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - admin consent
+  - consent workflow
+  - workflow configure
+  - configure app
+  - app consent
+  - consent policies
+  - policies restrict
+  - restrict high-privilege
+  reference_answer: |-
+    Enable admin consent workflow, configure app consent policies to restrict high-privilege permissions, deploy Microsoft Entra ID Protection for OAuth anomaly detection, and train users on consent phishing recognition
+
+    Why: Layered defense: admin consent workflow blocks unauthorized high-privilege apps, Entra ID Protection detects anomalous consent patterns, and user training addresses the social engineering vector.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Azure AD Consent Phishing — OAuth App Attack incident. At 09:15 UTC, the security team received an alert from Microsoft Defender for Cloud Apps: a new enterprise application 'ProjectSync Collaboration' was granted admin-consented permissions by user jsmith@contoso.com. The app requested Mail.ReadWrite, Files.ReadWrite.All, User.Read.All, and Directory.ReadWrite.All — effectively full tenant access. Within 20 minutes, the app was used to: (1) enumerate all mailboxes via Microsoft Graph, (2) download 234 emails from 17 C-suite executives, and (3) crea...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Azure AD Consent Phishing — OAuth App Attack incident. At 09:15 UTC, the security team received an alert from Microsoft Defender for Cloud Apps: a new enterprise application 'ProjectSync Collaboration' was granted admin-consented permissions by user jsmith@contoso.com. The app requested Mail.ReadWrite, Files.ReadWrite.All, User.Read.All, and Directory.ReadWrite.All — effectively full tenant access. Within 20 minutes, the app was used to: (1) enumerate all mailboxes via Microsoft Graph, (2) download 234 emails from 17 C-suite executives, and (3) crea...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1550 — Use Alternate Authentication Material

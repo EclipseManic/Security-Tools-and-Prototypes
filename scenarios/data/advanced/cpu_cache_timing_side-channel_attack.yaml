@@ -1,0 +1,246 @@
+id: cpu_cache_timing_side-channel_attack
+name: CPU Cache Timing Side-Channel Attack
+category: Advanced Threats
+format_version: 2
+difficulty: Expert
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Cache Timing Attack — Cross-VM Data Extraction in Cloud Environment. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Cache Timing Attack — Cross-VM Data Extraction in Cloud Environment. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Cache Timing Attack — Cross-VM Data Extraction in Cloud Environment. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Cache Timing Attack — Cross-VM Data Extraction in Cloud Environment incident. The cloud security team detected anomalous CPU cache behavior on hypervisor node HV-NODE-47 in the production cloud cluster. The monitoring system flagged excessive L3 cache contention from VM instance ''compute-analyst-039'' (customer: Meridian Corp). Forensic investigation reveals that compute-analyst-039 is co-located on the same physical CPU socket as VM ''prod-db-primary'' (customer: Solaris Financial). The attacker in compute-analyst-039 deployed a prime+probe side-channel attack that monitors L3 cache set access patterns to extract cryptographic keys from prod-db-primary. The attack uses Flush+Reload on shared memory pages and monitors memory access timing via the RDTSC instruction to infer cache line accesses. Over 72 hours, the attacker successfully extracted: (1) an AES-256 encryption key used for database encryption, (2) RSA-2048 private key used for TLS connections,
+  (3) session tokens from the database connection pool. The attacker used the extracted keys to decrypt production database traffic and access Solaris Financial''s customer records (4.7M accounts). Business impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: Cache Timing Attack — Cross-VM Data Extraction in Cloud Environment
+  opening: 'The cloud security team detected anomalous CPU cache behavior on hypervisor node HV-NODE-47 in the production cloud cluster. The monitoring system flagged excessive L3 cache contention from VM instance ''compute-analyst-039'' (customer: Meridian Corp).'
+  summary: 'The cloud security team detected anomalous CPU cache behavior on hypervisor node HV-NODE-47 in the production cloud cluster. The monitoring system flagged excessive L3 cache contention from VM instance ''compute-analyst-039'' (customer: Meridian Corp). Forensic investigation reveals that compute-analyst-039 is co-located on the same physical CPU socket as VM ''prod-db-primary'' (customer: Solaris Financial). The attacker in compute-analyst-039 deployed a prime+probe side-channel attack that monitors L3 cache set access patterns to extract cryptographic keys from prod-db-primary. The attack uses Flush+Reload on shared memory pages and monitors memory access timing via the RDTSC instruction to infer cache line accesses. Over 72 hours, the attacker successfully extracted: (1) an AES-256 encryption key used for database encryption, (2) RSA-2048 private key used for TLS connections, (3) session tokens from the database connection pool. The attacker used the extracted keys to decrypt
+    production database traffic and access Solaris Financial''s customer records (4.7M accounts).'
+  compromised_assets:
+  - compute-analyst-039 (attacker-controlled VM)
+  - prod-db-primary (victim VM — Solaris Financial)
+  - AES-256 database encryption key
+  - RSA-2048 TLS private key
+  - 4.7M customer financial records
+  detected_via: CPU cache contention anomaly monitoring + L3 cache miss rate spike detection
+  kill_chain:
+  - Execution
+  - Credential Access
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Execution
+  - Credential Access
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: A side-channel attack is actively extracting cryptographic keys from a co-located VM via CPU cache timing. The attacker's VM (compute-analyst-039) shares the same physical CPU socket as the victim (prod-db-primary). The attack uses L3 cache monitoring via RDTSC timing instructions. The attacker has already extracted the AES-256 database key and RSA-2048 TLS key. Standard network isolation does not stop a CPU side-channel attack.
+  prompt: What is your first containment action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on compute-analyst-039, its severity, and the affected accounts.'
+    action: What is your first containment action?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: compute-analyst-039.'
+  hints:
+  - Stops the attack but may destroy forensic evidence in the attacker's VM.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - live-migrate compute-analyst-039
+  - compute-analyst-039 physically
+  - physically different
+  - different cpu
+  - cpu socket
+  - socket different
+  - different numa
+  - numa node
+  reference_answer: |-
+    Live-migrate compute-analyst-039 to a physically different CPU socket (different NUMA node), disable hyperthreading on the socket hosting prod-db-primary, and enable cache partitioning (Intel CAT/AMD QoS) to prevent cross-VM cache contention
+
+    Why: Live migration moves the attacker to a different physical CPU, immediately stopping the cache timing attack. Disabling hyperthreading eliminates the SMT side-channel. Cache partitioning prevents future cross-VM cache contention.
+  followup_good: 'The attacker''s VM has been live-migrated. Forensic analysis of compute-analyst-039 reveals: (1) a custom side-channel framework called ''CacheWarp'' compiled from open-source research tools, (2) the framework implements Flush+Reload, Prime+Probe, and Evict+Time attacks targeting the AES T-table implementation, (3) the attacker used RDTSCP with calibration routines to achieve sub-nanosecond timing resolution, (4) the framework includes a key scheduler that correlates cache access patterns with AES key schedule operations to recover round keys, (5) extracted keys were exfiltrated via a covert DNS channel to keyval[.]xyz.'
+  followup_weak: |-
+    Live migration moves the attacker to a different physical CPU, immediately stopping the cache timing attack.
+
+    The attacker's VM has been live-migrated. Forensic analysis of compute-analyst-039 reveals: (1) a custom side-channel framework called 'CacheWarp' compiled from open-source research tools, (2) the framework implements Flush+Reload, Prime+Probe, and Evict+Time attacks targeting the AES T-table implementation, (3) the attacker used RDTSCP with calibration routines to achieve sub-nanosecond timing resolution, (4) the framework includes a key scheduler that correlates cache access patterns with AES key schedule operations to recover round keys, (5) extracted keys were exfiltrated via a covert DNS channel to keyval[.]xyz.
+  next: side_channel_analysis_phase_2
+  mitre_tactic: Credential Access
+  mitre_technique: T1212 Exploitation for Credential Access
+- id: side_channel_analysis_phase_2
+  phase_type: analysis
+  title: Side-Channel Analysis — Phase 2
+  situation: 'The attacker''s VM has been live-migrated. Forensic analysis of compute-analyst-039 reveals: (1) a custom side-channel framework called ''CacheWarp'' compiled from open-source research tools, (2) the framework implements Flush+Reload, Prime+Probe, and Evict+Time attacks targeting the AES T-table implementation, (3) the attacker used RDTSCP with calibration routines to achieve sub-nanosecond timing resolution, (4) the framework includes a key scheduler that correlates cache access patterns with AES key schedule operations to recover round keys, (5) extracted keys were exfiltrated via a covert DNS channel to keyval[.]xyz.'
+  prompt: How do you fully characterize the side-channel attack?
+  guidance:
+    what: Test the initial theory against telemetry from compute-analyst-039 before committing to a response.
+    action: How do you fully characterize the side-channel attack?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Side-Channel Analysis — Phase 2. Asset in scope: compute-analyst-039.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - reverse-engineer cachewarp
+  - cachewarp framework
+  - framework document
+  - document attack
+  - attack vectors
+  - vectors analyze
+  - analyze key
+  - key extraction
+  reference_answer: |-
+    Reverse-engineer the CacheWarp framework to document all attack vectors, analyze the key extraction methodology, build detection signatures for RDTSC abuse patterns, and identify which AES implementation was targeted (T-table vs. AES-NI)
+
+    Why: Understanding the exact attack methodology enables detection and mitigation. Identifying whether AES-NI was available determines if the attack targeted a software implementation weakness.
+  followup_good: 'The extracted AES-256 key was used to decrypt database backups stored on disk. Analysis of access logs shows the attacker decrypted and accessed database snapshots from the past 30 days (7 daily snapshots). The RSA-2048 key was used to decrypt TLS traffic captured via a packet capture tool on the hypervisor''s mirror port. Total compromised data: 4.7M customer accounts including names, SSNs, account numbers, and transaction history. The attacker is Solaris Financial''s competitor using the cloud platform to conduct corporate espionage.'
+  followup_weak: |-
+    Understanding the exact attack methodology enables detection and mitigation.
+
+    The extracted AES-256 key was used to decrypt database backups stored on disk. Analysis of access logs shows the attacker decrypted and accessed database snapshots from the past 30 days (7 daily snapshots). The RSA-2048 key was used to decrypt TLS traffic captured via a packet capture tool on the hypervisor's mirror port. Total compromised data: 4.7M customer accounts including names, SSNs, account numbers, and transaction history. The attacker is Solaris Financial's competitor using the cloud platform to conduct corporate espionage.
+  next: key_compromise_data_breach_assessment_phase_3
+  mitre_tactic: Collection
+  mitre_technique: T1213 Data from Information Repositories
+- id: key_compromise_data_breach_assessment_phase_3
+  phase_type: containment
+  title: Key Compromise & Data Breach Assessment — Phase 3
+  situation: 'The extracted AES-256 key was used to decrypt database backups stored on disk. Analysis of access logs shows the attacker decrypted and accessed database snapshots from the past 30 days (7 daily snapshots). The RSA-2048 key was used to decrypt TLS traffic captured via a packet capture tool on the hypervisor''s mirror port. Total compromised data: 4.7M customer accounts including names, SSNs, account numbers, and transaction history. The attacker is Solaris Financial''s competitor using the cloud platform to conduct corporate espionage.'
+  prompt: How do you assess and respond to the data breach?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: How do you assess and respond to the data breach?
+    why: Containment buys the time needed to investigate without letting the attacker expand.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Key Compromise & Data Breach Assessment — Phase 3. Asset in scope: compute-analyst-039.'
+  hints:
+  - Consider the affected accounts and their privilege level.
+  - Preserve evidence before disrupting anything.
+  ideal_concepts:
+  - encryption keys
+  - keys aes
+  - aes database
+  - database keys
+  - keys rsa
+  - rsa tls
+  - tls keys
+  - keys revoke
+  reference_answer: |-
+    Rotate all encryption keys (AES database keys, RSA TLS keys), revoke and reissue all TLS certificates, re-encrypt database backups with new keys, notify Solaris Financial of the breach, engage legal counsel for competitor espionage, and file breach notifications per regulatory requirements
+
+    Why: Complete key rotation prevents further decryption of historical data. Re-encryption of backups ensures past snapshots are protected. Legal and regulatory steps address the corporate espionage aspect.
+  followup_good: The attack exploited shared CPU cache between co-located VMs. The hypervisor had no cache partitioning enabled, hyperthreading was active, and VM placement did not consider security domain separation. The attacker chose their VM placement by requesting specific compute availability zones. Other customers' VMs may be at risk from similar side-channel attacks if they share CPU sockets.
+  followup_weak: |-
+    Complete key rotation prevents further decryption of historical data.
+
+    The attack exploited shared CPU cache between co-located VMs. The hypervisor had no cache partitioning enabled, hyperthreading was active, and VM placement did not consider security domain separation. The attacker chose their VM placement by requesting specific compute availability zones. Other customers' VMs may be at risk from similar side-channel attacks if they share CPU sockets.
+  next: hypervisor_security_hardening_phase_4
+  mitre_tactic: Exfiltration
+  mitre_technique: T1048.002 Exfiltration Over Asymmetric Encrypted Non-C2 Protocol
+- id: hypervisor_security_hardening_phase_4
+  phase_type: eradication
+  title: Hypervisor Security Hardening — Phase 4
+  situation: The attack exploited shared CPU cache between co-located VMs. The hypervisor had no cache partitioning enabled, hyperthreading was active, and VM placement did not consider security domain separation. The attacker chose their VM placement by requesting specific compute availability zones. Other customers' VMs may be at risk from similar side-channel attacks if they share CPU sockets.
+  prompt: What hypervisor hardening measures do you implement?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: What hypervisor hardening measures do you implement?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Hypervisor Security Hardening — Phase 4. Asset in scope: compute-analyst-039.'
+  hints:
+  - Eliminates side-channel risk but is economically infeasible for most cloud workloads.
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - intel cache
+  - cache allocation
+  - allocation technology
+  - technology cat
+  - cat amd
+  - amd qos
+  - qos cache
+  - cache partitioning
+  reference_answer: |-
+    Enable Intel Cache Allocation Technology (CAT) or AMD QoS for L3 cache partitioning across all nodes, disable hyperthreading for security-sensitive workloads, implement NUMA-aware VM placement policies that separate security domains, deploy RDTSC instruction monitoring in the hypervisor, and add side-channel resistance to the VM scheduling algorithm
+
+    Why: Cache partitioning prevents cross-VM cache contention. HT disabled eliminates SMT side-channels. NUMA-aware placement separates security domains. RDTSC monitoring detects timing attacks.
+  followup_good: Hardening measures are in place. However, the organization needs ongoing detection capability for side-channel attacks. The cache timing attack was only detected because of an unusually aggressive monitoring configuration. Other customers may attempt similar attacks. The cloud platform needs to provide side-channel resistance as a service-level guarantee.
+  followup_weak: |-
+    Cache partitioning prevents cross-VM cache contention.
+
+    Hardening measures are in place. However, the organization needs ongoing detection capability for side-channel attacks. The cache timing attack was only detected because of an unusually aggressive monitoring configuration. Other customers may attempt similar attacks. The cloud platform needs to provide side-channel resistance as a service-level guarantee.
+  next: recovery_and_validation
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1027 Obfuscated Files or Information
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. compute-analyst-039 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return compute-analyst-039 to production?
+  guidance:
+    what: 'Define what ''clean'' means for compute-analyst-039: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return compute-analyst-039 to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: compute-analyst-039.'
+  hints:
+  - Which backup or rebuild image is known-good for compute-analyst-039, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore compute-analyst-039 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: side_channel_detection_monitoring_phase_5
+  next_weak: ''
+  mitre_tactic: Discovery
+  mitre_technique: T1082 System Information Discovery
+  role_prompts: {}
+- id: side_channel_detection_monitoring_phase_5
+  phase_type: lessons
+  title: Side-Channel Detection & Monitoring — Phase 5
+  situation: Hardening measures are in place. However, the organization needs ongoing detection capability for side-channel attacks. The cache timing attack was only detected because of an unusually aggressive monitoring configuration. Other customers may attempt similar attacks. The cloud platform needs to provide side-channel resistance as a service-level guarantee.
+  prompt: What detection and monitoring measures do you deploy?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on compute-analyst-039.
+    action: What detection and monitoring measures do you deploy?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Side-Channel Detection & Monitoring — Phase 5. Asset in scope: compute-analyst-039.'
+  hints:
+  - Attackers can evade cache miss rate monitoring while still using other timing channels.
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - deploy continuous
+  - continuous cache
+  - cache miss
+  - miss rate
+  - rate monitoring
+  - monitoring per
+  - per implement
+  - implement rdtsc
+  reference_answer: |-
+    Deploy continuous L3 cache miss rate monitoring per VM, implement RDTSC/RDTSCP instruction frequency analysis in the hypervisor, add PMU (Performance Monitoring Unit) based detection for cache line eviction patterns, establish baseline cache behavior profiles per workload type, and create automated alerts for cache contention anomalies exceeding threshold
+
+    Why: Multi-layered detection (cache miss rates + RDTSC frequency + PMU analysis) catches various side-channel attack variants. Behavioral baselines reduce false positives.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Cache Timing Attack — Cross-VM Data Extraction in Cloud Environment incident. The cloud security team detected anomalous CPU cache behavior on hypervisor node HV-NODE-47 in the production cloud cluster. The monitoring system flagged excessive L3 cache contention from VM instance 'compute-analyst-039' (customer: Meridian Corp). Forensic investigation reveals that compute-analyst-039 is co-located on the same physical CPU socket as VM 'prod-db-primary' (customer: Solaris Financial). The attacker in compute-analyst-039 deployed a prime+probe side-channel attack that monitors...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Cache Timing Attack — Cross-VM Data Extraction in Cloud Environment incident. The cloud security team detected anomalous CPU cache behavior on hypervisor node HV-NODE-47 in the production cloud cluster. The monitoring system flagged excessive L3 cache contention from VM instance 'compute-analyst-039' (customer: Meridian Corp). Forensic investigation reveals that compute-analyst-039 is co-located on the same physical CPU socket as VM 'prod-db-primary' (customer: Solaris Financial). The attacker in compute-analyst-039 deployed a prime+probe side-channel attack that monitors...
+  mitre_tactic: Discovery
+  mitre_technique: T1082 System Information Discovery

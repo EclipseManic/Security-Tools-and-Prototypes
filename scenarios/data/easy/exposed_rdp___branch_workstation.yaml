@@ -1,0 +1,163 @@
+id: exposed_rdp___branch_workstation
+name: Exposed RDP — Branch Workstation
+category: Endpoint
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: 'You are the Tier-1 SOC analyst on shift. SIEM alert: RDP brute force followed by successful logon and local admin creation. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond WS-BR-031 (Branch workstation).'
+  incident_manager: You are the Incident Manager coordinating the response to Internet-Exposed RDP Leads to Branch Workstation Compromise. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Internet-Exposed RDP Leads to Branch Workstation Compromise. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Internet-Exposed RDP Leads to Branch Workstation Compromise. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Internet-Exposed RDP Leads to Branch Workstation Compromise incident. The success came from 185.220.xx.xx and was followed by creation of a new local admin account. The attacker has not yet moved laterally, but the host is on the branch LAN. Business impact: An external attacker has local admin on a branch workstation and a path into the branch LAN. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Internet-Exposed RDP Leads to Branch Workstation Compromise
+  opening: A branch workstation was reachable over RDP from the internet after a temporary port-forward was left in place. The next morning, Windows logged 4,000 failed logins and one success for the local 'support' account.
+  summary: The success came from 185.220.xx.xx and was followed by creation of a new local admin account. The attacker has not yet moved laterally, but the host is on the branch LAN.
+  compromised_assets:
+  - WS-BR-031 (Branch workstation)
+  - Local support account
+  - Branch LAN
+  detected_via: 'SIEM alert: RDP brute force followed by successful logon and local admin creation.'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: exposed_rdp___branch_workstation_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: 'A branch workstation was reachable over RDP from the internet after a temporary port-forward was left in place. The next morning, Windows logged 4,000 failed logins and one success for the local ''support'' account. SIEM alert: RDP brute force followed by successful logon and local admin creation.'
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for WS-BR-031 (Branch workstation).
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - public exposure
+  - source ip
+  - successful account
+  - logon type
+  - new accounts
+  - security logs
+  reference_answer: Confirm the public exposure, source IP, successful account, logon type, and new accounts; preserve Security logs and firewall config, and check for lateral connections from WS-BR-031.
+  followup_good: Triage confirms the activity is real. Event logs show 4,012 failed NTLM logons, one success for 'support', and creation of 'svc_backup2' in the local Administrators group. The RDP port-forward was documented as temporary six weeks ago.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. Event logs show 4,012 failed NTLM logons, one success for 'support', and creation of 'svc_backup2' in the local Administrators group. The RDP port-forward was documented as temporary six weeks ago.
+  next: exposed_rdp___branch_workstation_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1110 Brute Force
+- id: exposed_rdp___branch_workstation_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. Event logs show 4,012 failed NTLM logons, one success for 'support', and creation of 'svc_backup2' in the local Administrators group. The RDP port-forward was documented as temporary six weeks ago.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - remove port-forward
+  - block source ip
+  - isolate workstation
+  - disable accounts
+  - terminate sessions
+  reference_answer: Remove the port-forward, block the source IP, isolate WS-BR-031, disable the 'support' and 'svc_backup2' accounts, and terminate active RDP sessions.
+  followup_good: Containment is in place. A temporary internet RDP forward was never removed, and the local support account used a weak shared password without MFA.
+  followup_weak: The activity continues while the team debates. An external attacker has local admin on a branch workstation and a path into the branch LAN.
+  next: exposed_rdp___branch_workstation_phase_3
+  mitre_tactic: Initial Access
+  mitre_technique: T1078 Valid Accounts
+- id: exposed_rdp___branch_workstation_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. A temporary internet RDP forward was never removed, and the local support account used a weak shared password without MFA.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - remove admin account
+  - reset password
+  - check tasks
+  - check services
+  - scan branch
+  reference_answer: Remove the rogue admin account, reset the shared support password, check for scheduled tasks or services, and scan the branch for connections from the host.
+  followup_good: Rebuild WS-BR-031, return it to the LAN only after the firewall rule is removed, and monitor branch authentication for 72 hours.
+  followup_weak: The visible symptom is gone, but the root cause remains. An external attacker has local admin on a branch workstation and a path into the branch LAN.
+  next: exposed_rdp___branch_workstation_phase_4
+  mitre_tactic: Lateral Movement
+  mitre_technique: T1021.001 Remote Desktop Protocol
+- id: exposed_rdp___branch_workstation_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Rebuild WS-BR-031, return it to the LAN only after the firewall rule is removed, and monitor branch authentication for 72 hours.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - rebuild workstation
+  - remove forward
+  - branch lan
+  - monitor authentication
+  - validate clean
+  reference_answer: Rebuild WS-BR-031, confirm the internet port-forward is gone, return the host to the branch LAN, and monitor authentication from the branch for 72 hours.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: exposed_rdp___branch_workstation_phase_5
+  mitre_tactic: Persistence
+  mitre_technique: T1136 Create Account
+- id: exposed_rdp___branch_workstation_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Exposed RDP — Branch Workstation.
+  prompt: What must change so Exposed RDP — Branch Workstation is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - inventory rdp
+  - vpn with mfa
+  - remove shared admin
+  - expire firewall rules
+  - network segmentation
+  reference_answer: Inventory internet-facing RDP, require a VPN plus MFA for remote administration, remove shared local admin passwords, and expire temporary firewall rules automatically.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Initial Access
+  mitre_technique: T1078 Valid Accounts

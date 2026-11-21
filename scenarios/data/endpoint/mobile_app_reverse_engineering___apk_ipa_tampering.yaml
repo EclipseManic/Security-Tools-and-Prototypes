@@ -1,0 +1,241 @@
+id: mobile_app_reverse_engineering___apk_ipa_tampering
+name: Mobile App Reverse Engineering — APK/IPA Tampering
+category: Endpoint
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Tampered Android App Distributes Malware via Third-Party App Store. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Tampered Android App Distributes Malware via Third-Party App Store. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Tampered Android App Distributes Malware via Third-Party App Store. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Tampered Android App Distributes Malware via Third-Party App Store incident. Your company, AcmePay, publishes a mobile payment app (AcmePay v3.8.2) on Google Play and the Apple App Store. At 11:00 today, the AcmePay Android app listing on the Google Play Store shows a 1-star review: ''This app stole my banking credentials! It asked for accessibility permissions and then my bank account was drained.'' Within an hour, 23 similar complaints appear. The SOC team discovers that a modified version of AcmePay (v3.8.3 — a version that doesn''t exist on your release channel) is circulating on third-party app stores (APKPure, APKMirror mirror). The tampered APK contains an injected DEX payload that: enables accessibility services to read screen content, intercepts SMS OTPs, and exfiltrates contacts and SMS to a C2 server. The attacker reverse-engineered your release APK, decompiled it with jadx, injected the malicious payload, re-signed it with a rogue certificate,
+  and published it. The Google Play version (v3.8.2) is clean. The tampered APK has been downloaded approximately 12,000 times from third-party stores. Business impact: endpoint availability and integrity are at risk, and affected hosts may need reimaging before normal work resumes. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed.'
+incident:
+  title: Tampered Android App Distributes Malware via Third-Party App Store
+  opening: 'Your company, AcmePay, publishes a mobile payment app (AcmePay v3.8.2) on Google Play and the Apple App Store. At 11:00 today, the AcmePay Android app listing on the Google Play Store shows a 1-star review: ''This app stole my banking credentials!'
+  summary: 'Your company, AcmePay, publishes a mobile payment app (AcmePay v3.8.2) on Google Play and the Apple App Store. At 11:00 today, the AcmePay Android app listing on the Google Play Store shows a 1-star review: ''This app stole my banking credentials! It asked for accessibility permissions and then my bank account was drained.'' Within an hour, 23 similar complaints appear. The SOC team discovers that a modified version of AcmePay (v3.8.3 — a version that doesn''t exist on your release channel) is circulating on third-party app stores (APKPure, APKMirror mirror). The tampered APK contains an injected DEX payload that: enables accessibility services to read screen content, intercepts SMS OTPs, and exfiltrates contacts and SMS to a C2 server. The attacker reverse-engineered your release APK, decompiled it with jadx, injected the malicious payload, re-signed it with a rogue certificate, and published it. The Google Play version (v3.8.2) is clean. The tampered APK has been downloaded
+    approximately 12,000 times from third-party stores.'
+  compromised_assets:
+  - 12,000+ user devices running tampered AcmePay APK
+  - AcmePay application integrity reputation
+  - User banking credentials (via accessibility service abuse)
+  - Third-party app store listings (impersonation)
+  detected_via: User reviews on Google Play + third-party store monitoring alert
+  kill_chain:
+  - Resource Development
+  - Initial Access
+  - Execution
+  - Collection
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Credential Access
+phases:
+- id: immediate_response_phase_1
+  phase_type: triage
+  title: Immediate Response — Phase 1
+  situation: A tampered version of your app is circulating. Users downloading from third-party stores are at risk. The Google Play version is clean but the tampered v3.8.3 contains malicious DEX code. Users are already reporting financial losses. You need to protect your users and preserve evidence.
+  prompt: What is your immediate priority?
+  guidance:
+    what: Establish what fired on 12,000+ user devices running tampered AcmePay APK, which accounts are involved, and how urgent the signal is.
+    action: What is your immediate priority?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Response — Phase 1. Asset in scope: 12,000+ user devices running tampered AcmePay APK.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - release emergency
+  - emergency app
+  - app update
+  - update implements
+  - implements app
+  - app integrity
+  - integrity verification
+  - verification safetynet
+  reference_answer: |-
+    Release an emergency app update (v3.8.3) that implements app integrity verification (SafetyNet/Play Integrity), includes a tamper-detection mechanism, and displays a prominent in-app warning about third-party stores; simultaneously file DMCA takedowns on the tampered listings
+
+    Why: Protects users by verifying app integrity at runtime, warns users about the threat, and takes down the malicious distribution channels.
+  followup_good: You've obtained the tampered APK from APKPure. The file is 14.2MB vs the legitimate 11.8MB. Decompiling with jadx reveals an additional DEX file (classes3.dex) and an obfuscated Java package (com.a.b.c) that wasn't in the original. The malware uses reflection to load the DEX dynamically and requests android.permission.BIND_ACCESSIBILITY_SERVICE.
+  followup_weak: |-
+    Protects users by verifying app integrity at runtime, warns users about the threat, and takes down the malicious distribution channels.
+
+    You've obtained the tampered APK from APKPure. The file is 14.2MB vs the legitimate 11.8MB. Decompiling with jadx reveals an additional DEX file (classes3.dex) and an obfuscated Java package (com.a.b.c) that wasn't in the original. The malware uses reflection to load the DEX dynamically and requests android.permission.BIND_ACCESSIBILITY_SERVICE.
+  next: malware_analysis_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1624 Event Triggered Execution
+- id: malware_analysis_phase_2
+  phase_type: analysis
+  title: Malware Analysis — Phase 2
+  situation: You've obtained the tampered APK from APKPure. The file is 14.2MB vs the legitimate 11.8MB. Decompiling with jadx reveals an additional DEX file (classes3.dex) and an obfuscated Java package (com.a.b.c) that wasn't in the original. The malware uses reflection to load the DEX dynamically and requests android.permission.BIND_ACCESSIBILITY_SERVICE.
+  prompt: What analysis do you perform to understand the full attack scope?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on 12,000+ user devices running tampered AcmePay APK.
+    action: What analysis do you perform to understand the full attack scope?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Malware Analysis — Phase 2. Asset in scope: 12,000+ user devices running tampered AcmePay APK.'
+  hints:
+  - Manifest analysis is a starting point but doesn't reveal the full malware capabilities or C2 infrastructure.
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - static analysis
+  - analysis injected
+  - injected dex
+  - dex jadx
+  - jadx smali
+  - smali dynamic
+  - dynamic analysis
+  - analysis sandboxed
+  reference_answer: |-
+    Static analysis of the injected DEX (jadx + smali), dynamic analysis in a sandboxed emulator (Cuckoo/Frida) to observe runtime behavior, network traffic capture of C2 communications, and certificate comparison between legitimate and tampered APKs
+
+    Why: Full analysis chain: static reveals code, dynamic shows runtime behavior, network analysis maps C2 infrastructure, certificate analysis confirms tampering method.
+  followup_good: 'The malware analysis reveals the attacker: decompiled with apktool, inserted a malicious DEX via dynamic class loading, re-signed with a self-signed certificate, and obfuscated with Proguard. Your current app has no integrity checks, no certificate pinning, and no anti-tampering protections.'
+  followup_weak: |-
+    Full analysis chain: static reveals code, dynamic shows runtime behavior, network analysis maps C2 infrastructure, certificate analysis confirms tampering method.
+
+    The malware analysis reveals the attacker: decompiled with apktool, inserted a malicious DEX via dynamic class loading, re-signed with a self-signed certificate, and obfuscated with Proguard. Your current app has no integrity checks, no certificate pinning, and no anti-tampering protections.
+  next: app_integrity_hardening_phase_3
+  mitre_tactic: Execution
+  mitre_technique: T1624 Event Triggered Execution
+- id: app_integrity_hardening_phase_3
+  phase_type: containment
+  title: App Integrity Hardening — Phase 3
+  situation: 'The malware analysis reveals the attacker: decompiled with apktool, inserted a malicious DEX via dynamic class loading, re-signed with a self-signed certificate, and obfuscated with Proguard. Your current app has no integrity checks, no certificate pinning, and no anti-tampering protections.'
+  prompt: What integrity controls do you implement to prevent future tampering?
+  guidance:
+    what: 'Balance speed against disruption: what must be isolated now, and what can wait for scoping?'
+    action: What integrity controls do you implement to prevent future tampering?
+    why: Stopping the spread is urgent, but destroying evidence makes the incident impossible to close.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: App Integrity Hardening — Phase 3. Asset in scope: 12,000+ user devices running tampered AcmePay APK.'
+  hints:
+  - Obfuscation slows but doesn't prevent reverse engineering.
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - implement google
+  - google play
+  - play integrity
+  - integrity api
+  - api safetynet
+  - safetynet validation
+  - validation app
+  - app startup
+  reference_answer: |-
+    Implement Google Play Integrity API (SafetyNet) validation at app startup, add certificate pinning for API calls, enable code obfuscation (R8/Proguard), implement runtime tamper detection (signature verification, DEX hash validation), and add server-side app integrity checks
+
+    Why: Multi-layered integrity: platform attestation (Play Integrity), transport security (cert pinning), code protection (obfuscation), runtime detection (tamper checks), and server-side verification.
+  followup_good: 12,000 users may have installed the tampered app. The malware steals banking credentials via accessibility service abuse. You've received reports of unauthorized transactions from 34 users. Financial regulators may need notification.
+  followup_weak: |-
+    Multi-layered integrity: platform attestation (Play Integrity), transport security (cert pinning), code protection (obfuscation), runtime detection (tamper checks), and server-side verification.
+
+    12,000 users may have installed the tampered app. The malware steals banking credentials via accessibility service abuse. You've received reports of unauthorized transactions from 34 users. Financial regulators may need notification.
+  next: user_notification_and_fraud_response_phase_4
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1027 Obfuscated Files or Information
+- id: user_notification_and_fraud_response_phase_4
+  phase_type: eradication
+  title: User Notification and Fraud Response — Phase 4
+  situation: 12,000 users may have installed the tampered app. The malware steals banking credentials via accessibility service abuse. You've received reports of unauthorized transactions from 34 users. Financial regulators may need notification.
+  prompt: How do you handle user notification and the fraud reports?
+  guidance:
+    what: Find every foothold the attacker left on 12,000+ user devices running tampered AcmePay APK, including persistence and stolen credentials.
+    action: How do you handle user notification and the fraud reports?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: User Notification and Fraud Response — Phase 4. Asset in scope: 12,000+ user devices running tampered AcmePay APK.'
+  hints:
+  - Only 34 reported but all 12,000 may be compromised.
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - users push
+  - notification email
+  - email in-app
+  - in-app alert
+  - provide self-check
+  - self-check tool
+  - tool verifies
+  - verifies app
+  reference_answer: |-
+    Notify all users via push notification, email, and in-app alert; provide a self-check tool that verifies app integrity; work with banking partners to flag affected accounts; file regulatory report if required; create a dedicated incident response page with guidance
+
+    Why: Comprehensive user protection: multi-channel notification reaches all potentially affected users, self-check tool helps users verify their installation, banking partnership enables fraud prevention, regulatory compliance.
+  followup_good: 'The C2 server at the exfiltrated domain has been sinkholed by law enforcement in a prior operation. The WHOIS shows privacy protection. The tampered APK signing certificate uses a distinct hash pattern seen in two other tampered app campaigns '
+  followup_weak: "Comprehensive user protection: multi-channel notification reaches all potentially affected users, self-check tool helps users verify their installation, banking partnership enables fraud prevention, regulatory compliance.\n\nThe C2 server at the exfiltrated domain has been sinkholed by law enforcement in a prior operation. The WHOIS shows privacy protection. The tampered APK signing certificate uses a distinct hash pattern seen in two other tampered app campaigns "
+  next: recovery_and_validation
+  mitre_tactic: Impact
+  mitre_technique: T1530 Data from Cloud Storage
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. 12,000+ user devices running tampered AcmePay APK is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return 12,000+ user devices running tampered AcmePay APK to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return 12,000+ user devices running tampered AcmePay APK to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: 12,000+ user devices running tampered AcmePay APK.'
+  hints:
+  - Which backup or rebuild image is known-good for 12,000+ user devices running tampered AcmePay APK, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore 12,000+ user devices running tampered AcmePay APK from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: threat_intelligence_attribution_phase_5
+  next_weak: ''
+  mitre_tactic: Discovery
+  mitre_technique: T1589 Gather Victim Identity Information
+  role_prompts: {}
+- id: threat_intelligence_attribution_phase_5
+  phase_type: lessons
+  title: Threat Intelligence & Attribution — Phase 5
+  situation: 'The C2 server at the exfiltrated domain has been sinkholed by law enforcement in a prior operation. The WHOIS shows privacy protection. The tampered APK signing certificate uses a distinct hash pattern seen in two other tampered app campaigns '
+  prompt: What threat intelligence do you gather and how do you use it?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What threat intelligence do you gather and how do you use it?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Threat Intelligence & Attribution — Phase 5. Asset in scope: 12,000+ user devices running tampered AcmePay APK.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - submit signing
+  - signing certificate
+  - certificate hash
+  - hash misp
+  - misp virustotal
+  - virustotal share
+  - share iocs
+  - iocs domain
+  reference_answer: |-
+    Submit the signing certificate hash to MISP/VirusTotal, share IOCs (C2 domain, certificate hash, DEX hash) with FS-ISAC and mobile threat intelligence feeds, monitor for new tampered versions, and set up ongoing third-party store monitoring for AcmePay impersonation
+
+    Why: Operationalizes threat intelligence: sharing IOCs helps the community, monitoring prevents recurrence, and ongoing surveillance detects future campaigns.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Tampered Android App Distributes Malware via Third-Party App Store incident. Your company, AcmePay, publishes a mobile payment app (AcmePay v3.8.2) on Google Play and the Apple App Store. At 11:00 today, the AcmePay Android app listing on the Google Play Store shows a 1-star review: 'This app stole my banking credentials! It asked for accessibility permissions and then my bank account was drained.' Within an hour, 23 similar complaints appear. The SOC team discovers that a modified version of AcmePay (v3.8.3 — a version that doesn't exist on your release channel) is circ...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Tampered Android App Distributes Malware via Third-Party App Store incident. Your company, AcmePay, publishes a mobile payment app (AcmePay v3.8.2) on Google Play and the Apple App Store. At 11:00 today, the AcmePay Android app listing on the Google Play Store shows a 1-star review: 'This app stole my banking credentials! It asked for accessibility permissions and then my bank account was drained.' Within an hour, 23 similar complaints appear. The SOC team discovers that a modified version of AcmePay (v3.8.3 — a version that doesn't exist on your release channel) is circ...
+  mitre_tactic: Discovery
+  mitre_technique: T1589 Gather Victim Identity Information

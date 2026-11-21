@@ -1,0 +1,193 @@
+id: ddos_attack___volumetric___application_layer_flood
+name: DDoS Attack — Volumetric + Application Layer Flood
+category: Network
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Multi-Vector DDoS — SYN Flood + HTTP GET/POST Flood on Web Infrastructure. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Multi-Vector DDoS — SYN Flood + HTTP GET/POST Flood on Web Infrastructure. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Multi-Vector DDoS — SYN Flood + HTTP GET/POST Flood on Web Infrastructure. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: |-
+  Executive summary of the Multi-Vector DDoS — SYN Flood + HTTP GET/POST Flood on Web Infrastructure incident. On 2025-07-14 at 13:22 UTC, the NOC dashboard (Grafana + NetFlow) showed a sudden traffic spike from 2.4 Gbps to 34.7 Gbps on the internet edge link (Cogent, 100 Gbps). Packet analysis revealed two simultaneous attack vectors:
+
+  1) Volumetric SYN flood: 4.2 million SYN packets/second targeting the public-facing web cluster (web-01 through web-06, VIP 198.51.100.10). Source IPs span 23,000 unique /24 ranges across 78 countries, indicating a large IoT botnet. SYN cookies are enabled but the connection table is filling (87% capacity at 13:28 UTC).
+
+  2) Application layer HTTP GET flood: 180,000 requests/second to GET /api/v2/products (legitimate endpoint, 200 OK, ~45 KB response). The requests use randomized User-Agent strings and referrers, bypassing rate limiting. This endpoint hits the PostgreSQL primary database (10.10.10.50) with 3 queries per request.
+
+  The combined attack caused: web-04 and web-05 to crash (OOM at 13:31 UTC), PostgreSQL CPU at 98%, API response time degraded from 120ms to 14.2 seconds, and the CDN (Cloudflare) cache hit ratio dropped from 94% to 11% due to cache-busting query parameters. Revenue impact: e-commerce checkout failures estimated at $47,000/minute. Business impact: network availability and traffic confidentiality are at risk, and perimeter and segmentation controls are under scrutiny. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel should assess contractual and regulatory notification duties if traffic or data was exposed.
+incident:
+  title: Multi-Vector DDoS — SYN Flood + HTTP GET/POST Flood on Web Infrastructure
+  opening: |-
+    On 2025-07-14 at 13:22 UTC, the NOC dashboard (Grafana + NetFlow) showed a sudden traffic spike from 2.4 Gbps to 34.7 Gbps on the internet edge link (Cogent, 100 Gbps). Packet analysis revealed two simultaneous attack vectors:
+
+    1) Volumetric SYN flood: 4.2 million SYN packets/second targeting the public-facing web cluster (web-01 through web-06, VIP 198.51.100.10).
+  summary: |-
+    On 2025-07-14 at 13:22 UTC, the NOC dashboard (Grafana + NetFlow) showed a sudden traffic spike from 2.4 Gbps to 34.7 Gbps on the internet edge link (Cogent, 100 Gbps). Packet analysis revealed two simultaneous attack vectors:
+
+    1) Volumetric SYN flood: 4.2 million SYN packets/second targeting the public-facing web cluster (web-01 through web-06, VIP 198.51.100.10). Source IPs span 23,000 unique /24 ranges across 78 countries, indicating a large IoT botnet. SYN cookies are enabled but the connection table is filling (87% capacity at 13:28 UTC).
+
+    2) Application layer HTTP GET flood: 180,000 requests/second to GET /api/v2/products (legitimate endpoint, 200 OK, ~45 KB response). The requests use randomized User-Agent strings and referrers, bypassing rate limiting. This endpoint hits the PostgreSQL primary database (10.10.10.50) with 3 queries per request.
+
+    The combined attack caused: web-04 and web-05 to crash (OOM at 13:31 UTC), PostgreSQL CPU at 98%, API response time degraded from 120ms to 14.2 seconds, and the CDN (Cloudflare) cache hit ratio dropped from 94% to 11% due to cache-busting query parameters. Revenue impact: e-commerce checkout failures estimated at $47,000/minute.
+  compromised_assets:
+  - Internet edge link — 34.7 Gbps inbound
+  - Web cluster (web-01 through web-06, VIP 198.51.100.10)
+  - PostgreSQL primary (10.10.10.50) — CPU exhaustion
+  - Cloudflare CDN — cache hit ratio collapse
+  detected_via: NetFlow anomaly detection + Grafana threshold alerts on bandwidth and request rate
+  kill_chain:
+  - Initial Access
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Impact
+phases:
+- id: volumetric_attack_mitigation
+  phase_type: triage
+  title: Phase 1 — Volumetric Attack Mitigation
+  situation: At 13:22 UTC, the SYN flood begins at 4.2M packets/second. The Cogent edge router (ASR 1001) connection table is at 87% capacity. Cloudflare is in proxy mode but the cache-busting query parameters on the API endpoint bypass the CDN. The application layer flood is hitting your origin directly. You have 5-10 minutes before the connection table fills completely and all connections drop.
+  prompt: What is your immediate mitigation action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on Internet edge link, its severity, and the affected accounts.'
+    action: What is your immediate mitigation action?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Phase 1 — Volumetric Attack Mitigation. Asset in scope: Internet edge link.'
+  hints:
+  - Adding servers does not help when the attack is overwhelming network and database resources.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - two-pronged immediate
+  - immediate response
+  - response cogent
+  - cogent edge
+  - edge router
+  - router apply
+  - apply syn
+  - syn rate-limit
+  reference_answer: |-
+    Two-pronged immediate response: (1) On the Cogent edge router, apply a SYN rate-limit policer: 'police rate 1m burst 10k' on the inbound interface to cap SYN packets. (2) Enable SYN cookies on the web cluster load balancer (F5 BIG-IP). (3) Activate Cloudflare's Under Attack mode on the /api/v2/products path, which forces JS challenge. (4) Contact Cogent NOC to request upstream scrubbing (BGP Flowspec or blackhole the worst /24 ranges).
+
+    Why: Rate limiting SYN packets at the edge prevents connection table exhaustion. SYN cookies eliminate the state maintenance for half-open connections. Cloudflare Under Attack mode adds JS challenges that bots cannot pass. Upstream scrubbing from Cogent filters attack traffic before it reaches your network.
+  followup_good: The SYN flood is partially mitigated by Cogent scrubbing (dropped to 800K pps). However, the HTTP GET flood on /api/v2/products is still at 180K req/sec. Cloudflare cache hit ratio remains at 11% because the attacker appends random query strings (?v=8x7k2m9...). The PostgreSQL primary CPU is at 98%, and the connection pool (max 200) is exhausted. web-04 and web-05 are still down. API response times are 14.2 seconds. The e-commerce checkout page depends on /api/v2/products for product data.
+  followup_weak: |-
+    Rate limiting SYN packets at the edge prevents connection table exhaustion.
+
+    The SYN flood is partially mitigated by Cogent scrubbing (dropped to 800K pps). However, the HTTP GET flood on /api/v2/products is still at 180K req/sec. Cloudflare cache hit ratio remains at 11% because the attacker appends random query strings (?v=8x7k2m9...). The PostgreSQL primary CPU is at 98%, and the connection pool (max 200) is exhausted. web-04 and web-05 are still down. API response times are 14.2 seconds. The e-commerce checkout page depends on /api/v2/products for product data.
+  next: application_layer_attack_mitigation
+  mitre_tactic: Impact
+  mitre_technique: T1498.001 — Direct Network Flood
+- id: application_layer_attack_mitigation
+  phase_type: containment
+  title: Phase 2 — Application Layer Attack Mitigation
+  situation: The SYN flood is partially mitigated by Cogent scrubbing (dropped to 800K pps). However, the HTTP GET flood on /api/v2/products is still at 180K req/sec. Cloudflare cache hit ratio remains at 11% because the attacker appends random query strings (?v=8x7k2m9...). The PostgreSQL primary CPU is at 98%, and the connection pool (max 200) is exhausted. web-04 and web-05 are still down. API response times are 14.2 seconds. The e-commerce checkout page depends on /api/v2/products for product data.
+  prompt: How do you mitigate the application layer attack?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: How do you mitigate the application layer attack?
+    why: Containment buys the time needed to investigate without letting the attacker expand.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Phase 2 — Application Layer Attack Mitigation. Asset in scope: Internet edge link.'
+  hints:
+  - Read replicas help with read scaling but the primary database is CPU-bound from the flood.
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - layered application
+  - application mitigation
+  - mitigation big-ip
+  - big-ip configure
+  - configure irule
+  - irule rate-limit
+  - rate-limit api
+  - api products
+  reference_answer: |-
+    Layered application mitigation: (1) At the F5 BIG-IP, configure an iRule to rate-limit /api/v2/products to 10K req/sec per source IP and drop requests with random query parameters (pattern: ?v=[a-z0-9]{6,10}), (2) At Cloudflare, enable 'Cache Everything' with cache key normalization that strips query parameters for this endpoint, (3) Add application-level caching (Redis) in front of PostgreSQL to serve cached product data, (4) Implement a circuit breaker pattern to fail-open cached product data when DB is overloaded, (5) Restart web-04 and web-05 with connection limits increased.
+
+    Why: Rate limiting per source IP throttles bot traffic. Query parameter normalization restores CDN caching. Redis caching reduces database load. Circuit breaker prevents cascade failure. This combination addresses both the network and application layers of the attack.
+  followup_good: 'The attack subsided at 15:47 UTC (2 hours 25 minutes duration). Peak metrics: 38.2 Gbps inbound, 180K HTTP req/sec, 4.2M SYN/sec. Financial impact: estimated $7.2M in lost revenue and SLA penalties. Your current infrastructure: Cloudflare Pro plan (no Enterprise DDoS protection), Cogent transit (no DDoS scrubbing service), F5 BIG-IP with basic rate limiting, no dedicated DDoS mitigation service. The CISO wants a resilience plan.'
+  followup_weak: |-
+    Rate limiting per source IP throttles bot traffic.
+
+    The attack subsided at 15:47 UTC (2 hours 25 minutes duration). Peak metrics: 38.2 Gbps inbound, 180K HTTP req/sec, 4.2M SYN/sec. Financial impact: estimated $7.2M in lost revenue and SLA penalties. Your current infrastructure: Cloudflare Pro plan (no Enterprise DDoS protection), Cogent transit (no DDoS scrubbing service), F5 BIG-IP with basic rate limiting, no dedicated DDoS mitigation service. The CISO wants a resilience plan.
+  next: recovery_and_validation
+  mitre_tactic: Impact
+  mitre_technique: T1499.003 — Application Exhaustion Flood
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Internet edge link is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Internet edge link to production?
+  guidance:
+    what: 'Define what ''clean'' means for Internet edge link: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return Internet edge link to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Internet edge link.'
+  hints:
+  - Which backup or rebuild image is known-good for Internet edge link, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Internet edge link from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_attack_analysis_and_hardening
+  next_weak: ''
+  mitre_tactic: Impact
+  mitre_technique: T1498 — Denial of Service
+  role_prompts: {}
+- id: post_attack_analysis_and_hardening
+  phase_type: lessons
+  title: Phase 3 — Post-Attack Analysis and Hardening
+  situation: 'The attack subsided at 15:47 UTC (2 hours 25 minutes duration). Peak metrics: 38.2 Gbps inbound, 180K HTTP req/sec, 4.2M SYN/sec. Financial impact: estimated $7.2M in lost revenue and SLA penalties. Your current infrastructure: Cloudflare Pro plan (no Enterprise DDoS protection), Cogent transit (no DDoS scrubbing service), F5 BIG-IP with basic rate limiting, no dedicated DDoS mitigation service. The CISO wants a resilience plan.'
+  prompt: What DDoS resilience architecture do you recommend?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What DDoS resilience architecture do you recommend?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Phase 3 — Post-Attack Analysis and Hardening. Asset in scope: Internet edge link.'
+  hints:
+  - While Cloudflare proxying helps, it does not cover all services (SMTP, VPN, API webhooks).
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - comprehensive ddos
+  - ddos resilience
+  - resilience plan
+  - plan upgrade
+  - upgrade cloudflare
+  - cloudflare enterprise
+  - enterprise plan
+  - plan advanced
+  reference_answer: |-
+    Comprehensive DDoS resilience plan: (1) Upgrade Cloudflare to Enterprise plan with Advanced DDoS Protection (L3/L4/L7 mitigation, 100+ Tbps capacity), (2) Contract with a dedicated DDoS scrubbing provider (Cloudflare Spectrum or Akamai Prolexic) for BGP-based always-on or on-demand scrubbing, (3) Implement rate limiting at multiple layers (CDN, WAF, load balancer, application), (4) Add application-level caching (Redis/Memcached) to reduce database dependency, (5) Implement circuit breaker and bulkhead patterns in the application, (6) Conduct quarterly DDoS simulation drills, (7) Establish a DDoS response runbook with escalation matrix.
+
+    Why: Enterprise CDN provides volumetric protection. Dedicated scrubbing provides BGP-based mitigation for attacks that bypass CDN. Multi-layer rate limiting provides defense in depth. Application caching reduces the impact of cache-busting attacks. Simulation drills ensure the team can respond effectively.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Multi-Vector DDoS — SYN Flood + HTTP GET/POST Flood on Web Infrastructure incident. On 2025-07-14 at 13:22 UTC, the NOC dashboard (Grafana + NetFlow) showed a sudden traffic spike from 2.4 Gbps to 34.7 Gbps on the internet edge link (Cogent, 100 Gbps). Packet analysis revealed two simultaneous attack vectors:
+
+    1) Volumetric SYN flood: 4.2 million SYN packets/second targeting the public-facing web cluster (web-01 through web-06, VIP 198.51.100.10). Source IPs span 23,000 unique /24 ranges across 78 countries, indicating a large IoT botnet. SYN cookies are enabled but the connect...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Multi-Vector DDoS — SYN Flood + HTTP GET/POST Flood on Web Infrastructure incident. On 2025-07-14 at 13:22 UTC, the NOC dashboard (Grafana + NetFlow) showed a sudden traffic spike from 2.4 Gbps to 34.7 Gbps on the internet edge link (Cogent, 100 Gbps). Packet analysis revealed two simultaneous attack vectors:
+
+    1) Volumetric SYN flood: 4.2 million SYN packets/second targeting the public-facing web cluster (web-01 through web-06, VIP 198.51.100.10). Source IPs span 23,000 unique /24 ranges across 78 countries, indicating a large IoT botnet. SYN cookies are enabled but the connect...
+  mitre_tactic: Impact
+  mitre_technique: T1498 — Denial of Service

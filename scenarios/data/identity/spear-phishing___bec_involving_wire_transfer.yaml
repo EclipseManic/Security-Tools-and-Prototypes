@@ -1,0 +1,208 @@
+id: spear-phishing___bec_involving_wire_transfer
+name: Spear-Phishing — BEC Involving Wire Transfer
+category: Identity & Access
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Business Email Compromise — $2.4M Fraudulent Wire Transfer. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Business Email Compromise — $2.4M Fraudulent Wire Transfer. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Business Email Compromise — $2.4M Fraudulent Wire Transfer. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Business Email Compromise — $2.4M Fraudulent Wire Transfer incident. At 16:45 on Thursday, the CFO of your organization received an email appearing to be from the CEO, requesting an urgent $2.4M wire transfer to a ''new vendor'' account for an ''acquisition closing fee''. The email came from ceo@acme-corp.com — but the actual CEO''s email is ceo@acmecorp.com (same domain). The CFO, under time pressure, called the phone number in the email (which was NOT the CEO''s real number) to ''verify''. The person on the phone impersonated the CEO and confirmed the transfer. The CFO approved the wire at 17:10. At 17:30, the real CEO returned from a board meeting and had no knowledge of the transfer. The fraud was discovered at 17:35. The $2.4M has been transferred to an account at a bank in the Philippines. The bank was contacted at 17:40 but the funds may have already been moved. The SOC was alerted at 17:50. The email headers show the message originated from
+  an IP in Nigeria but passed through a legitimate-looking SPF record — the attacker registered a look-alike domain acme-c0rp.com (zero instead of letter O) and set up SPF to pass verification. Business impact: account takeover could enable lateral movement and privilege abuse across the directory, so identity trust must be rebuilt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess notification duties for any account or directory data accessed.'
+incident:
+  title: Business Email Compromise — $2.4M Fraudulent Wire Transfer
+  opening: At 16:45 on Thursday, the CFO of your organization received an email appearing to be from the CEO, requesting an urgent $2.4M wire transfer to a 'new vendor' account for an 'acquisition closing fee'. The email came from ceo@acme-corp.com — but the actual CEO's email is ceo@acmecorp.com (same domain).
+  summary: At 16:45 on Thursday, the CFO of your organization received an email appearing to be from the CEO, requesting an urgent $2.4M wire transfer to a 'new vendor' account for an 'acquisition closing fee'. The email came from ceo@acme-corp.com — but the actual CEO's email is ceo@acmecorp.com (same domain). The CFO, under time pressure, called the phone number in the email (which was NOT the CEO's real number) to 'verify'. The person on the phone impersonated the CEO and confirmed the transfer. The CFO approved the wire at 17:10. At 17:30, the real CEO returned from a board meeting and had no knowledge of the transfer. The fraud was discovered at 17:35. The $2.4M has been transferred to an account at a bank in the Philippines. The bank was contacted at 17:40 but the funds may have already been moved. The SOC was alerted at 17:50. The email headers show the message originated from an IP in Nigeria but passed through a legitimate-looking SPF record — the attacker registered a look-alike
+    domain acme-c0rp.com (zero instead of letter O) and set up SPF to pass verification.
+  compromised_assets:
+  - CEO's identity (impersonated)
+  - CFO (socially engineered)
+  - $2.4M transferred
+  detected_via: Real CEO reported no knowledge of the transfer; CFO reported the wire
+  kill_chain:
+  - Recon
+  - Pretext
+  - Impersonate
+  - Fraud
+  mitre_tactics:
+  - Initial Access
+  - Financial Fraud
+phases:
+- id: emergency_financial_response_phase_1
+  phase_type: triage
+  title: Emergency Financial Response — Phase 1
+  situation: $2.4M was transferred to a Philippine bank account 20 minutes ago. The receiving bank was contacted at 17:40. Every minute matters — funds may be laundered further.
+  prompt: What is your FIRST priority action?
+  guidance:
+    what: 'Frame the decision for ''Emergency Financial Response — Phase 1'': the asset at risk, the evidence available, and the time pressure.'
+    action: What is your FIRST priority action?
+    why: Every later decision depends on an accurate picture of CEO's identity and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Emergency Financial Response — Phase 1. Asset in scope: CEO''s identity.'
+  hints:
+  - Law enforcement involvement is important but bank recall is more time-sensitive.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - immediately contact
+  - contact receiving
+  - receiving bank
+  - bank fraud
+  - fraud department
+  - department phone
+  - phone email
+  - email freeze
+  reference_answer: |-
+    Immediately contact the receiving bank's fraud department via phone (not email) to freeze the recipient account; simultaneously notify your own bank to recall the wire if possible
+
+    Why: Time-critical financial recovery. Phone the bank directly — emails are too slow for fraud recall.
+  followup_good: The bank has been contacted and is attempting to freeze the funds. Meanwhile, you need to understand how the attacker impersonated the CEO's email. The CFO received the email from 'ceo@acme-c0rp.com' but Outlook displayed it as 'ceo@acmecorp.com' due to display-name spoofing. The attacker also set up a VoIP number that forwarded to their mobile for the 'CEO verification' call.
+  followup_weak: |-
+    Time-critical financial recovery.
+
+    The bank has been contacted and is attempting to freeze the funds. Meanwhile, you need to understand how the attacker impersonated the CEO's email. The CFO received the email from 'ceo@acme-c0rp.com' but Outlook displayed it as 'ceo@acmecorp.com' due to display-name spoofing. The attacker also set up a VoIP number that forwarded to their mobile for the 'CEO verification' call.
+  next: email_forensics_phase_2
+  mitre_tactic: Financial Fraud
+  mitre_technique: T1656 Financial Theft
+- id: email_forensics_phase_2
+  phase_type: analysis
+  title: Email Forensics — Phase 2
+  situation: The bank has been contacted and is attempting to freeze the funds. Meanwhile, you need to understand how the attacker impersonated the CEO's email. The CFO received the email from 'ceo@acme-c0rp.com' but Outlook displayed it as 'ceo@acmecorp.com' due to display-name spoofing. The attacker also set up a VoIP number that forwarded to their mobile for the 'CEO verification' call.
+  prompt: How do you investigate the email infrastructure compromise?
+  guidance:
+    what: Test the initial theory against telemetry from CEO's identity before committing to a response.
+    action: How do you investigate the email infrastructure compromise?
+    why: Acting on an unverified scope either misses the attacker or over-contains the business.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Email Forensics — Phase 2. Asset in scope: CEO''s identity.'
+  hints:
+  - Good instinct but the CEO's real account was never accessed — this was a look-alike domain.
+  - Important for the report but doesn't stop the attack infrastructure.
+  ideal_concepts:
+  - analyze full
+  - full email
+  - email headers
+  - headers received
+  - received spf
+  - spf dkim
+  - dkim dmarc
+  - dmarc check
+  reference_answer: |-
+    Analyze full email headers (Received, SPF, DKIM, DMARC); check DNS for acme-c0rp.com; report the domain to registrar for takedown; search mail logs for other recipients
+
+    Why: Full forensic chain: headers prove the spoof, DNS reveals the attacker's infrastructure, domain takedown prevents reuse.
+  followup_good: Domain analysis confirms acme-c0rp.com was registered 3 days ago with privacy protection. You've filed an abuse report. The attacker sent the phishing email to only the CFO (targeted), but you don't know if other executives received similar emails.
+  followup_weak: |-
+    Full forensic chain: headers prove the spoof, DNS reveals the attacker's infrastructure, domain takedown prevents reuse.
+
+    Domain analysis confirms acme-c0rp.com was registered 3 days ago with privacy protection. You've filed an abuse report. The attacker sent the phishing email to only the CFO (targeted), but you don't know if other executives received similar emails.
+  next: employee_communication_phase_3
+  mitre_tactic: Initial Access
+  mitre_technique: T1566.001 Spearphishing Attachment
+- id: employee_communication_phase_3
+  phase_type: eradication
+  title: Employee Communication — Phase 3
+  situation: Domain analysis confirms acme-c0rp.com was registered 3 days ago with privacy protection. You've filed an abuse report. The attacker sent the phishing email to only the CFO (targeted), but you don't know if other executives received similar emails.
+  prompt: How do you handle internal communications?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: How do you handle internal communications?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Employee Communication — Phase 3. Asset in scope: CEO''s identity.'
+  hints:
+  - Well-intentioned but the email contains the attacker's phone number and domain — could cause copycat attacks.
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - urgent advisory
+  - advisory executives
+  - executives finance
+  - finance staff
+  - staff warning
+  - warning about
+  - about look-alike
+  - look-alike domains
+  reference_answer: |-
+    Send an urgent advisory to ALL executives and finance staff warning about look-alike domains; set up DMARC enforcement (p=reject) on your real domain to prevent future spoofing
+
+    Why: Alerts potential targets AND hardens the domain against future display-name spoofing.
+  followup_good: The receiving bank has frozen $1.8M of the $2.4M (the rest was already transferred out). Law enforcement has been engaged. The CISO wants a full incident report.
+  followup_weak: |-
+    Alerts potential targets AND hardens the domain against future display-name spoofing.
+
+    The receiving bank has frozen $1.8M of the $2.4M (the rest was already transferred out). Law enforcement has been engaged. The CISO wants a full incident report.
+  next: recovery_and_validation
+  mitre_tactic: Initial Access
+  mitre_technique: T1566
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. CEO's identity is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return CEO's identity to production?
+  guidance:
+    what: 'Define what ''clean'' means for CEO''s identity: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return CEO's identity to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: CEO''s identity.'
+  hints:
+  - Which backup or rebuild image is known-good for CEO's identity, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore CEO's identity from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_legal_phase_4
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1070
+  role_prompts: {}
+- id: post_incident_legal_phase_4
+  phase_type: lessons
+  title: Post-Incident & Legal — Phase 4
+  situation: The receiving bank has frozen $1.8M of the $2.4M (the rest was already transferred out). Law enforcement has been engaged. The CISO wants a full incident report.
+  prompt: What are the key recommendations in your report?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What are the key recommendations in your report?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident & Legal — Phase 4. Asset in scope: CEO''s identity.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - implement callback
+  - callback verification
+  - verification wire
+  - wire transfers
+  - transfers enforce
+  - enforce dmarc
+  - dmarc reject
+  - reject register
+  reference_answer: |-
+    1) Implement callback verification for wire transfers over $50K. 2) Enforce DMARC p=reject. 3) Register look-alike domains proactively. 4) Executive awareness training. 5) Out-of-band verification for all financial transactions.
+
+    Why: Addresses the root cause (lack of verification) with multiple defense-in-depth layers.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Business Email Compromise — $2.4M Fraudulent Wire Transfer incident. At 16:45 on Thursday, the CFO of your organization received an email appearing to be from the CEO, requesting an urgent $2.4M wire transfer to a 'new vendor' account for an 'acquisition closing fee'. The email came from ceo@acme-corp.com — but the actual CEO's email is ceo@acmecorp.com (same domain). The CFO, under time pressure, called the phone number in the email (which was NOT the CEO's real number) to 'verify'. The person on the phone impersonated the CEO and confirmed the transfer. The CFO...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Business Email Compromise — $2.4M Fraudulent Wire Transfer incident. At 16:45 on Thursday, the CFO of your organization received an email appearing to be from the CEO, requesting an urgent $2.4M wire transfer to a 'new vendor' account for an 'acquisition closing fee'. The email came from ceo@acme-corp.com — but the actual CEO's email is ceo@acmecorp.com (same domain). The CFO, under time pressure, called the phone number in the email (which was NOT the CEO's real number) to 'verify'. The person on the phone impersonated the CEO and confirmed the transfer. The CFO...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1070

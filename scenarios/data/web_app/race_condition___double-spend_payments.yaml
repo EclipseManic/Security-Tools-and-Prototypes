@@ -1,0 +1,210 @@
+id: race_condition___double-spend_payments
+name: Race Condition — Double-Spend Payments
+category: Web App
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Race Condition Enables Double-Spend Payment Fraud. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Race Condition Enables Double-Spend Payment Fraud. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Race Condition Enables Double-Spend Payment Fraud. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Race Condition Enables Double-Spend Payment Fraud incident. Your organization runs an e-commerce platform at shop.acmecorp.com (Ruby on Rails, PostgreSQL, Stripe for payments). At 09:00 today, the finance team flagged that several high-value orders were shipped but payments were reversed. Investigation revealed that between 02:00 and 04:00 today, 23 orders totaling $187,000 were placed where the payment was processed but then the credit card charge was reversed while the order was still marked as ''paid.'' The attacker exploited a race condition in the checkout flow: by sending 5-10 simultaneous requests to /api/checkout with the same Stripe payment intent but different shipping addresses, the application created multiple orders before the payment status could be updated. The database transaction isolation level was set to READ COMMITTED (default), allowing concurrent reads of the same payment status. The attacker''s accounts used stolen credit
+  cards and the orders were shipped to various drop addresses. The attacker operated from VPN IPs in the Netherlands and Lithuania. Business impact: customer-facing service availability and data confidentiality are at risk, and customer notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties for exposed customer records.'
+incident:
+  title: Race Condition Enables Double-Spend Payment Fraud
+  opening: Your organization runs an e-commerce platform at shop.acmecorp.com (Ruby on Rails, PostgreSQL, Stripe for payments). At 09:00 today, the finance team flagged that several high-value orders were shipped but payments were reversed.
+  summary: 'Your organization runs an e-commerce platform at shop.acmecorp.com (Ruby on Rails, PostgreSQL, Stripe for payments). At 09:00 today, the finance team flagged that several high-value orders were shipped but payments were reversed. Investigation revealed that between 02:00 and 04:00 today, 23 orders totaling $187,000 were placed where the payment was processed but then the credit card charge was reversed while the order was still marked as ''paid.'' The attacker exploited a race condition in the checkout flow: by sending 5-10 simultaneous requests to /api/checkout with the same Stripe payment intent but different shipping addresses, the application created multiple orders before the payment status could be updated. The database transaction isolation level was set to READ COMMITTED (default), allowing concurrent reads of the same payment status. The attacker''s accounts used stolen credit cards and the orders were shipped to various drop addresses. The attacker operated from VPN
+    IPs in the Netherlands and Lithuania.'
+  compromised_assets:
+  - shop.acmecorp.com checkout system
+  - $187,000 in fraudulent orders
+  - 23 shipped orders to drop addresses
+  detected_via: 'Finance team: payment reversals for shipped orders'
+  kill_chain:
+  - Initial Access
+  - Credential Access
+  - Collection
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Impact
+  - Fraud
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: The race condition is actively being exploited. Orders are being placed with stolen credit cards, and the double-spend allows the attacker to receive goods without paying. 23 orders totaling $187,000 have already been shipped.
+  prompt: What do you do to stop the ongoing fraud?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on shop.acmecorp.com checkout system, its severity, and the affected accounts.'
+    action: What do you do to stop the ongoing fraud?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: shop.acmecorp.com checkout system.'
+  hints:
+  - Stops the financial loss but doesn't prevent future exploitation.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - temporarily halt
+  - halt shipping
+  - shipping orders
+  - orders placed
+  - placed last
+  - last hours
+  - hours implement
+  - implement rate
+  reference_answer: |-
+    Temporarily halt shipping for all orders placed in the last 24 hours, implement a rate limit of 1 checkout request per user per 30 seconds, and add a database-level lock on the payment status check
+
+    Why: Stops the bleeding (halt shipping), limits exploitation (rate limit), and fixes the root cause (database lock).
+  followup_good: The finance team needs a complete list of affected orders. The attacker placed 23 orders across multiple accounts using different stolen credit cards. Each order was $8,000-$12,000 in high-value electronics. The orders were shipped to 15 different addresses across 3 states.
+  followup_weak: |-
+    Stops the bleeding (halt shipping), limits exploitation (rate limit), and fixes the root cause (database lock).
+
+    The finance team needs a complete list of affected orders. The attacker placed 23 orders across multiple accounts using different stolen credit cards. Each order was $8,000-$12,000 in high-value electronics. The orders were shipped to 15 different addresses across 3 states.
+  next: fraud_assessment_phase_2
+  mitre_tactic: Impact
+  mitre_technique: T1657 Financial Theft
+- id: fraud_assessment_phase_2
+  phase_type: analysis
+  title: Fraud Assessment — Phase 2
+  situation: The finance team needs a complete list of affected orders. The attacker placed 23 orders across multiple accounts using different stolen credit cards. Each order was $8,000-$12,000 in high-value electronics. The orders were shipped to 15 different addresses across 3 states.
+  prompt: How do you assess the full scope of the fraud?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on shop.acmecorp.com checkout system.
+    action: How do you assess the full scope of the fraud?
+    why: Acting on an unverified scope either misses the attacker or over-contains the business.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Fraud Assessment — Phase 2. Asset in scope: shop.acmecorp.com checkout system.'
+  hints:
+  - Useful for unshipped orders but doesn't assess the full scope.
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - query database
+  - database orders
+  - orders payment
+  - payment status
+  - status pending
+  - pending order
+  - order status
+  - status shipped
+  reference_answer: |-
+    Query the database for all orders where payment status was 'pending' but order status was 'shipped' or 'processing' in the last 48 hours, cross-reference with Stripe payment intent IDs to identify which payments were reversed, and compile a complete fraud report with order details, shipping addresses, and payment methods
+
+    Why: Complete fraud assessment: identify all affected orders, confirm payment reversals, and compile evidence for law enforcement.
+  followup_good: 'The checkout flow performs: 1) Check payment status (SELECT ... FOR UPDATE), 2) Verify payment with Stripe, 3) Create order, 4) Update payment status. Steps 1-2 use READ COMMITTED isolation, allowing concurrent requests to see the same payment status before any update is committed.'
+  followup_weak: |-
+    Complete fraud assessment: identify all affected orders, confirm payment reversals, and compile evidence for law enforcement.
+
+    The checkout flow performs: 1) Check payment status (SELECT ... FOR UPDATE), 2) Verify payment with Stripe, 3) Create order, 4) Update payment status. Steps 1-2 use READ COMMITTED isolation, allowing concurrent requests to see the same payment status before any update is committed.
+  next: race_condition_fix_phase_3
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: race_condition_fix_phase_3
+  phase_type: eradication
+  title: Race Condition Fix — Phase 3
+  situation: 'The checkout flow performs: 1) Check payment status (SELECT ... FOR UPDATE), 2) Verify payment with Stripe, 3) Create order, 4) Update payment status. Steps 1-2 use READ COMMITTED isolation, allowing concurrent requests to see the same payment status before any update is committed.'
+  prompt: How do you fix the race condition in the checkout flow?
+  guidance:
+    what: Find every foothold the attacker left on shop.acmecorp.com checkout system, including persistence and stolen credentials.
+    action: How do you fix the race condition in the checkout flow?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Race Condition Fix — Phase 3. Asset in scope: shop.acmecorp.com checkout system.'
+  hints:
+  - Prevents duplicate orders but doesn't address the race condition.
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - select update
+  - update serializable
+  - serializable isolation
+  - isolation payment
+  - payment status
+  - status check
+  - implement idempotency
+  - idempotency keys
+  reference_answer: |-
+    Use SELECT ... FOR UPDATE with SERIALIZABLE isolation for the payment status check, implement idempotency keys for each checkout request, add application-level locking with a mutex on the checkout endpoint, and implement Stripe idempotency keys to prevent duplicate charges
+
+    Why: Multi-layer fix: database-level locking, idempotency keys, application-level mutex, and Stripe-side idempotency.
+  followup_good: The race condition existed because the checkout flow was designed for a lower traffic period and never stress-tested for concurrent requests. The finance team didn't notice the fraud for 5 hours because there was no automated alerting for payment reversals on shipped orders.
+  followup_weak: |-
+    Multi-layer fix: database-level locking, idempotency keys, application-level mutex, and Stripe-side idempotency.
+
+    The race condition existed because the checkout flow was designed for a lower traffic period and never stress-tested for concurrent requests. The finance team didn't notice the fraud for 5 hours because there was no automated alerting for payment reversals on shipped orders.
+  next: recovery_and_validation
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. shop.acmecorp.com checkout system is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return shop.acmecorp.com checkout system to production?
+  guidance:
+    what: 'Define what ''clean'' means for shop.acmecorp.com checkout system: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return shop.acmecorp.com checkout system to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: shop.acmecorp.com checkout system.'
+  hints:
+  - Which backup or rebuild image is known-good for shop.acmecorp.com checkout system, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore shop.acmecorp.com checkout system from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: process_improvement_phase_4
+  next_weak: ''
+  mitre_tactic: Discovery
+  mitre_technique: T1592 Gather Victim Host Information
+  role_prompts: {}
+- id: process_improvement_phase_4
+  phase_type: lessons
+  title: Process Improvement — Phase 4
+  situation: The race condition existed because the checkout flow was designed for a lower traffic period and never stress-tested for concurrent requests. The finance team didn't notice the fraud for 5 hours because there was no automated alerting for payment reversals on shipped orders.
+  prompt: What process improvements prevent this type of fraud in the future?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What process improvements prevent this type of fraud in the future?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Process Improvement — Phase 4. Asset in scope: shop.acmecorp.com checkout system.'
+  hints:
+  - Alerting helps detect but doesn't prevent.
+  - Valid approach but doesn't address the race condition itself.
+  ideal_concepts:
+  - implement automated
+  - automated alerting
+  - alerting payment
+  - payment reversals
+  - reversals add
+  - stress testing
+  - testing race
+  - race conditions
+  reference_answer: |-
+    Implement automated alerting for payment reversals, add stress testing for race conditions in the CI/CD pipeline, implement real-time fraud detection for unusual order patterns, and add Stripe webhook monitoring for charge disputes
+
+    Why: Prevents both the technical vulnerability (stress testing) and the detection gap (automated alerting).
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Race Condition Enables Double-Spend Payment Fraud incident. Your organization runs an e-commerce platform at shop.acmecorp.com (Ruby on Rails, PostgreSQL, Stripe for payments). At 09:00 today, the finance team flagged that several high-value orders were shipped but payments were reversed. Investigation revealed that between 02:00 and 04:00 today, 23 orders totaling $187,000 were placed where the payment was processed but then the credit card charge was reversed while the order was still marked as 'paid.' The attacker exploited a race condition in the che...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Race Condition Enables Double-Spend Payment Fraud incident. Your organization runs an e-commerce platform at shop.acmecorp.com (Ruby on Rails, PostgreSQL, Stripe for payments). At 09:00 today, the finance team flagged that several high-value orders were shipped but payments were reversed. Investigation revealed that between 02:00 and 04:00 today, 23 orders totaling $187,000 were placed where the payment was processed but then the credit card charge was reversed while the order was still marked as 'paid.' The attacker exploited a race condition in the che...
+  mitre_tactic: Discovery
+  mitre_technique: T1592 Gather Victim Host Information
