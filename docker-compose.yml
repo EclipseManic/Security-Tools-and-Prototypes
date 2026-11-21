@@ -1,0 +1,46 @@
+name: file-intelligence-platform
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    # Loopback only. The scanner can read every mounted file, so do not expose
+    # this port on a network interface.
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      DATABASE_URL: sqlite+aiosqlite:////app/data/fip.db
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      LOG_LEVEL: INFO
+      LOG_FORMAT: json
+      AI_PROVIDER: ${AI_PROVIDER:-none}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_MODEL: ${OPENROUTER_MODEL:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      OPENAI_MODEL: ${OPENAI_MODEL:-}
+      BAZAARLINK_API_KEY: ${BAZAARLINK_API_KEY:-}
+      BAZAARLINK_MODEL: ${BAZAARLINK_MODEL:-}
+    volumes:
+      - fip_data:/app/data
+      # Read-only host content. Override HOST_SCAN_PATH in .env to scan
+      # something else, then use /host-files as the scan path in the UI.
+      - ${HOST_SCAN_PATH:-./examples/sample-data}:/host-files:ro
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "127.0.0.1:3000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  fip_data:

@@ -1,0 +1,5 @@
+customer_id,name,email,phone,account,card,notes
+1001,Ada Demo,ada.demo@example.com,+1-555-010-0101,DEMO-ACCT-1001,4111 1111 1111 1111,Synthetic record
+1002,Ben Example,ben.example@example.com,+1-555-010-0102,DEMO-ACCT-1002,5500 0000 0000 0004,Synthetic record
+1003,Cara Sample,cara.sample@example.com,+1-555-010-0103,DEMO-ACCT-1003,3400 000000 00000,Synthetic record
+1004,Dev Fixture,dev.fixture@example.com,+1-555-010-0104,DEMO-ACCT-1004,6011 0000 0000 0004,Synthetic record

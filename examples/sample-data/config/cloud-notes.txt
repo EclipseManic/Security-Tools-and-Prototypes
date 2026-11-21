@@ -1,0 +1,11 @@
+Cloud migration notes (synthetic)
+
+- Demo environment: staging-demo.example
+- Storage bucket owner: cloud.demo@example.com
+- Service account marker: 123456789012-demoexample000000000000000000.apps.googleusercontent.com
+- Azure connection (fake): DefaultEndpointsProtocol=https;AccountName=demostorage;AccountKey=not-a-real-key
+- SSH jump host: ssh demo@10.20.30.55
+- Internal status page: http://192.168.50.10/status
+
+Nothing on this page grants access to a real account. The values are
+deliberately fake and are used to exercise the detector.
