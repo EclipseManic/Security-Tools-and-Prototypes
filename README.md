@@ -47,8 +47,8 @@ git merge -s ours --no-commit --allow-unrelated-histories <tool>/main
 git read-tree --prefix=tools/<slug>/ -u <tool>/main
 ```
 
-`git log --follow tools/fwscan/fwscan.py` still walks the original commits. The
-standalone repositories have been retired; the history is the part worth keeping,
+Every original commit is reachable in `git log`, and the standalone repositories
+are being retired in favour of this one. The history is the part worth keeping,
 and it is here.
 
 ## What is deliberately not here
