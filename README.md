@@ -1,67 +1,11 @@
-# Day 2 Mission - Manichand Gupta - Blue - Working Tool
+# LogTriage
 
-- **Tool name:** LogTriage
-- **Time spent:** 3h 00m
-- **Language/dependencies:** Python 3.10+; standard library only (no third-party packages)
-- **Run command:** `python tool/log_triage.py --input sample_input/triage_sample.log --out-dir sample_output`
-- **Repo map:**
-  - [Report](report.md)
-  - [Tool](tool/)
-  - [Config](tool/tool.config)
-  - [Sample input](sample_input/)
-  - [Sample output](sample_output/)
-  - [Evidence](evidence/)
-  - [Sources](sources/links.md)
+Read-only log triage from a single command. Point it at a mixed text log and it
+returns ranked findings, an inventory of indicators with first/last seen times,
+and a Markdown report plus a JSON artifact you can attach to a ticket.
 
-Full usage, formats, and detection rules are documented in
-[tool/README.md](tool/README.md). This page is the submission-facing overview.
-
-## What the Tool Does
-
-LogTriage is a defensive, read-only log triage CLI. It ingests a mixed text log,
-extracts IPv4 addresses, domains, URLs, and MD5/SHA-1/SHA-256 hashes, detects
-SSH brute-force/password spraying, web scanning, sensitive-file exposure, port
-scanning, offensive scanner user-agents, and local watchlist matches, then
-writes a structured Markdown report and a machine-readable JSON summary.
-
-The included sample log is synthetic and contains several deliberately injected
-incidents so the tool can be evaluated end-to-end without downloading data.
-
-Capabilities at a glance:
-
-- Tolerant ingestion of OpenSSH auth logs, Apache/Nginx combined logs, dnsmasq
-  queries, UFW/iptables blocks, ISO-8601 EDR lines, and generic lines.
-- IOC extraction with internal/external classification, per-indicator hit
-  counts, first/last seen timestamps, source IPs, and evidence line numbers.
-- Behavioural detections with configurable thresholds and a single 0-100 risk
-  score.
-- Deterministic Markdown + JSON artifacts, suitable for committing or attaching
-  to a ticket.
-- No network access, no shell execution, no writes to the input file.
-
-## Key Results
-
-1. Detected **SSH brute force / password spraying** from `203.0.113.45`: 9
-   failures across 7 usernames, followed by a successful login as `deploy`
-   (critical).
-2. Detected **web scanning** from `198.51.100.77`: 13 error responses across 13
-   paths, including a `200 OK` on `/backup.sql` (critical exposure lead).
-3. Detected a **12-port firewall scan** from `192.0.2.88`, plus three matches
-   against the local watchlist (C2 IP, malware domain, file hash).
-4. Produced a **CRITICAL (100/100)** risk summary with 9 findings from 83
-   parsed events; JSON and Markdown outputs are committed in `sample_output/`.
-
-## Quick Start
-
-From the repository root:
-
-```bash
-python --version
-python -m pip install -r tool/requirements.txt
-python tool/log_triage.py --input sample_input/triage_sample.log --out-dir sample_output
-```
-
-Expected console summary:
+Python 3.10+ standard library only. No network access, no shell execution, no
+writes to the input file.
 
 ```text
 LogTriage v1.0.0 | defensive log triage (read-only)
@@ -74,6 +18,67 @@ Risk      : CRITICAL (100/100) | 9 findings (2 critical, 5 high, 2 medium)
 Outputs
   JSON     : sample_output/triage.json
   Markdown : sample_output/triage.md
+```
+
+## Why it exists
+
+The first pass over a raw log is mechanical work: split the lines by format,
+classify which addresses are internal, cluster the failures by source, pull the
+indicators out, and write it up. None of that requires judgement, and all of it
+is easy to do inconsistently at 3am.
+
+LogTriage does that pass and leaves the judgement to the analyst. It does not
+decide whether an asset is compromised. It produces a ranked list of leads with
+the evidence line numbers attached, so the next step is validation rather than
+data entry.
+
+It runs offline against a file. There is no agent, no daemon, no API key, and
+nothing to deploy.
+
+## What it does
+
+- Ingests OpenSSH auth logs, Apache/Nginx combined logs, dnsmasq queries,
+  UFW/iptables blocks, ISO-8601 endpoint/EDR lines, and generic lines — mixed
+  in one file, best-effort, without a format flag.
+- Extracts IPv4 addresses, domains, URLs, and MD5/SHA-1/SHA-256 hashes, with
+  per-indicator hit counts, first/last seen timestamps, source IPs, and
+  evidence line numbers.
+- Classifies addresses as external, internal, or reserved so the report does
+  not present RFC 1918 noise as a threat.
+- Runs behavioural detections with configurable thresholds and collapses them
+  into a single 0-100 risk score.
+- Writes deterministic Markdown and JSON artifacts. The same input produces the
+  same findings every run.
+- Matches extracted indicators against a local JSON watchlist.
+
+## Detections
+
+| Rule | Logic | Default threshold | MITRE ATT&CK |
+|---|---|---|---|
+| `brute_force` | Failed SSH logins clustered per source IP by inter-event gap; flags a successful login within 300s after the burst as critical | 5 failures / 20s | T1110, T1110.001, T1110.003 |
+| `http_scanning` | HTTP 4xx/5xx clustered per source IP; distinct paths and sensitive targets raise severity | 10 errors or 8 distinct paths / 20s | T1595, T1595.002, T1190 |
+| `sensitive_file_exposure` | HTTP 2xx returned for a sensitive path (`.env`, `.git`, backups, `.aws`, `.ssh`, admin panels, traversal) | any match | T1552.001, T1190 |
+| `port_scanning` | Firewall blocks clustered per source IP by distinct destination ports | 8 ports / 20s | T1046, T1595.001 |
+| `scanner_user_agent` | User-agent matches sqlmap, Nikto, nmap, masscan, zgrab, Nuclei, gobuster, ffuf, etc. | any match | T1595, T1595.002 |
+| `watchlist_ip`, `watchlist_domain`, `watchlist_hash` | Extracted indicator matches the local JSON watchlist | any match | Rule-dependent |
+
+Risk scoring is deliberately simple and documented:
+
+- Severity weights: critical 40, high 25, medium 10, low 3, info 0.
+- Score = sum of finding weights, capped at 100.
+- Levels: clean 0, low <20, medium <45, high <70, critical >=70.
+
+Findings are sorted by severity, then first-seen time, and assigned stable IDs
+(`F-001`, `F-002`, ...) for the run.
+
+## Quick start
+
+From the repository root:
+
+```bash
+python --version
+python -m pip install -r tool/requirements.txt
+python tool/log_triage.py --input sample_input/triage_sample.log --out-dir sample_output
 ```
 
 Defaults come from `tool/tool.config`. Edit that file to change thresholds,
@@ -166,27 +171,34 @@ Output behaviour:
 Console output is a compact summary only; the full detail is in the two files.
 Colour is used only when stdout is a TTY and `--no-color`/`NO_COLOR` are absent.
 
-## Detection Rules
+## Sample run
 
-| Rule | Logic | Default threshold | MITRE ATT&CK |
-|---|---|---|---|
-| `brute_force` | Failed SSH logins clustered per source IP by inter-event gap; flags a successful login within 300s after the burst as critical | 5 failures / 20s | T1110, T1110.001, T1110.003 |
-| `http_scanning` | HTTP 4xx/5xx clustered per source IP; distinct paths and sensitive targets raise severity | 10 errors or 8 distinct paths / 20s | T1595, T1595.002, T1190 |
-| `sensitive_file_exposure` | HTTP 2xx returned for a sensitive path (`.env`, `.git`, backups, `.aws`, `.ssh`, admin panels, traversal) | any match | T1552.001, T1190 |
-| `port_scanning` | Firewall blocks clustered per source IP by distinct destination ports | 8 ports / 20s | T1046, T1595.001 |
-| `scanner_user_agent` | User-agent matches sqlmap, Nikto, nmap, masscan, zgrab, Nuclei, gobuster, ffuf, etc. | any match | T1595, T1595.002 |
-| `watchlist_ip`, `watchlist_domain`, `watchlist_hash` | Extracted indicator matches the local JSON watchlist | any match | Rule-dependent |
+The repo ships a synthetic log with five injected incidents and the reports the
+tool produces from it. If you want to see the output without running anything,
+read:
 
-Risk scoring is intentionally simple and documented:
+- [`sample_output/triage.md`](sample_output/triage.md) — the rendered report.
+- [`docs/triage-walkthrough.md`](docs/triage-walkthrough.md) — what each finding
+  means, why it fired, and where the detection would need tuning on real data.
 
-- Severity weights: critical 40, high 25, medium 10, low 3, info 0.
-- Score = sum of finding weights, capped at 100.
-- Levels: clean 0, low <20, medium <45, high <70, critical >=70.
+The log is committed and the generator is deterministic, so the findings below
+are stable across runs:
 
-Findings are sorted by severity, then first-seen time, and assigned stable IDs
-(`F-001`, `F-002`, ...) for the run.
+1. **SSH brute force that succeeded** — 9 failures from `203.0.113.45` across 7
+   usernames, then a successful login as `deploy` four minutes later (critical).
+2. **Sensitive file exposure lead** — `198.51.100.77` got `200 OK` for
+   `/backup.sql` during a scanning burst (critical, requires body validation).
+3. **Web scanning** — 13 errors across 13 distinct paths including `/.env`,
+   `/.git/config`, `/.aws/credentials` (high).
+4. **Port scanning** — 12 blocked connections from `192.0.2.88` across 12 ports
+   in 44 seconds (high).
+5. **Watchlist hits** — a C2 IP, a malware-update domain, and a SHA-256 on an
+   EDR quarantine event (high).
+6. **Scanner user-agents** — Nikto and sqlmap signatures (medium).
 
-## CLI Options
+Overall: `CRITICAL (100/100)`, 9 findings from 83 parsed events.
+
+## CLI options
 
 | Option | Default | Purpose |
 |---|---|---|
@@ -326,25 +338,34 @@ Watchlist matching is optional and local. The default file is
 - Sample data uses only documentation/private address space and `.example`
   domains; no real users, hosts, or malware are represented.
 
-## Reproduce
+## Repository layout
 
-```bash
-python --version
-python -m pip install -r tool/requirements.txt
-python tool/log_triage.py --input sample_input/triage_sample.log --out-dir sample_output
-python -m unittest discover -s tool -p "test_*.py" -v
-```
-
-The command is read-only with respect to the input and makes no network calls.
-The committed `sample_output/triage.md` and `sample_output/triage.json` were
-generated by this exact command. Re-running the tool refreshes `generated_at`;
-findings and IOC counts stay stable because the sample input is committed and
-deterministic.
-
-To regenerate the synthetic input itself:
-
-```bash
-python sample_input/generate_sample.py
+```text
+.
+|-- README.md                  This file
+|-- docs/
+|   `-- triage-walkthrough.md  Walkthrough of the committed sample run
+|-- tool/
+|   |-- log_triage.py          CLI entry point and output writing
+|   |-- triage_config.py       INI config loading and validation
+|   |-- tool.config            Editable runtime configuration
+|   |-- triage_types.py        Dataclasses, constants, risk scoring
+|   |-- triage_parse.py        Ingestion, parsing, IOC extraction
+|   |-- triage_detect.py       Watchlist, detectors, orchestration
+|   |-- triage_report.py       JSON and Markdown rendering
+|   |-- watchlist.json         Synthetic demo indicators
+|   |-- requirements.txt       No third-party dependencies
+|   |-- test_log_triage.py     Unit and end-to-end tests
+|   `-- README.md              Detailed tool documentation
+|-- sample_input/
+|   |-- triage_sample.log      Committed synthetic log (83 lines)
+|   |-- generate_sample.py     Deterministic generator
+|   `-- README.md              Scenarios and safety notes
+|-- sample_output/
+|   |-- triage.md              Committed Markdown report
+|   `-- triage.json            Committed JSON report
+|-- evidence/                  Run and output captures
+`-- sources/links.md           Public references
 ```
 
 ## Testing
@@ -369,40 +390,32 @@ Coverage includes:
 - Configuration loading, CLI-over-config precedence, config-supplied input and
   output, and rejection of unknown keys.
 
-## Repository Layout
+## Reproducing the committed output
 
-```text
-.
-|-- README.md                  Submission-facing overview (this file)
-|-- report.md                  1-page mission report with evidence links
-|-- tool/
-|   |-- log_triage.py          CLI entry point and output writing
-|   |-- triage_config.py       INI config loading and validation
-|   |-- tool.config            Editable runtime configuration
-|   |-- triage_types.py        Dataclasses, constants, risk scoring
-|   |-- triage_parse.py        Ingestion, parsing, IOC extraction
-|   |-- triage_detect.py       Watchlist, detectors, orchestration
-|   |-- triage_report.py       JSON and Markdown rendering
-|   |-- watchlist.json         Synthetic demo indicators
-|   |-- requirements.txt       No third-party dependencies
-|   |-- test_log_triage.py     Unit and end-to-end tests
-|   `-- README.md              Detailed tool documentation
-|-- sample_input/
-|   |-- triage_sample.log      Committed synthetic log (83 lines)
-|   |-- generate_sample.py     Deterministic generator
-|   `-- README.md              Scenarios and safety notes
-|-- sample_output/
-|   |-- triage.md              Committed Markdown report
-|   `-- triage.json            Committed JSON report
-|-- evidence/                  Run/output screenshots and notes
-`-- sources/links.md           Public references
+```bash
+python --version
+python -m pip install -r tool/requirements.txt
+python tool/log_triage.py --input sample_input/triage_sample.log --out-dir sample_output
+python -m unittest discover -s tool -p "test_*.py" -v
+```
+
+The command is read-only with respect to the input and makes no network calls.
+The committed `sample_output/triage.md` and `sample_output/triage.json` were
+generated by this exact command. Re-running the tool refreshes `generated_at`;
+findings and IOC counts stay stable because the sample input is committed and
+deterministic.
+
+To regenerate the synthetic input itself:
+
+```bash
+python sample_input/generate_sample.py
 ```
 
 ## Safety
 
-This is a **Blue** defensive tool. It has no offensive capability, no target
-selection, no network access, and no destructive actions. The sample data uses
-only RFC 5737 documentation addresses, RFC 1918 private addresses, and reserved
+This is a defensive tool. It has no offensive capability, no target selection,
+no network access, and no destructive actions. The sample data uses only RFC
+5737 documentation addresses, RFC 1918 private addresses, and reserved
 `.example` domains. There are no real credentials, secrets, or PII in the repo.
 
 Safety guards in the code:
@@ -414,7 +427,9 @@ Safety guards in the code:
 - Markdown/HTML escaping of log-derived text and truncation of evidence lines.
 - Local, static watchlist; no external enrichment or telemetry.
 
-## Self-Attestation
+## References
 
-I self-sourced all materials, used only public/synthetic/self-owned resources,
-built a working tool, and performed non-destructive work.
+Detection logic and log formats are based on public documentation: MITRE ATT&CK
+technique pages, the OpenSSH/Nginx/Apache/dnsmasq/UFW manuals, RFC 5737, RFC
+1918, RFC 2606, and the OWASP Logging Cheat Sheet. Full list in
+[`sources/links.md`](sources/links.md).

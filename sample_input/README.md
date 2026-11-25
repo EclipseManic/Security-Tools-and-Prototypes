@@ -1,8 +1,8 @@
 # Sample Input
 
-`triage_sample.log` is a **synthetic** mixed log created for this exercise.
-`generate_sample.py` regenerates it deterministically (83 lines, 2026-03-12,
-03:00-03:32 UTC).
+`triage_sample.log` is a **synthetic** mixed log written to exercise every
+detector in the tool. `generate_sample.py` regenerates it deterministically
+(83 lines, 2026-03-12, 03:00-03:32 UTC).
 
 ## Safety
 
