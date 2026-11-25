@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Start the ServiceSentinel web console.
 
-    python run.py                          # production server on 127.0.0.1:8765
+    python run.py                          # local server on 127.0.0.1:8765
     python run.py --port 9000              # different port
     python run.py --password "s3cret"      # require a login
     python run.py --no-browser             # do not open a browser
@@ -81,7 +81,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--server",
         choices=["waitress", "dev"],
         default="waitress",
-        help="WSGI server: waitress (default, production) or dev (Flask, debugging only)",
+        help="WSGI server: waitress (default) or dev (Flask, debugging only)",
     )
     parser.add_argument("--workers", type=int, default=4, help="waitress worker threads (default 4)")
     return parser.parse_args(argv)
