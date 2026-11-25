@@ -6,19 +6,17 @@
 [![ML Stack](https://img.shields.io/badge/ML-Scikit--learn-orange.svg)](https://scikit-learn.org/)
 [![Database](https://img.shields.io/badge/Database-SQLAlchemy-blue.svg)](https://www.sqlalchemy.org/)
 
-> Automate external asset discovery, intelligently enrich with multi-source data, and leverage ensemble machine learning to predict and prioritize risk. Transform alert fatigue into actionable intelligence.
+> Pulls exposed-host data from Shodan, enriches it with NVD vulnerability records, and ranks the results so the loudest-looking host is not automatically the first one you chase.
 
 ## Mission Statement
 
-**ThreatSentry AI** eliminates security alert fatigue and enables proactive threat hunting through intelligent risk prioritization. It combines automated asset discovery, multi-source data enrichment, and advanced machine learning to transform raw security data into actionable intelligence.
+**ThreatSentry AI** is an early prototype. It collects exposed-asset data, enriches it, and produces a ranked queue with the reasoning behind each score. The ranking is a starting point for triage, not an assessment you can hand to somebody else.
 
 ---
 
 ## ‍ Author & Acknowledgments
 
 **Project Lead:** EclipseManic
-
-**Development Note:** This comprehensive enterprise security platform was architected and developed by a single developer with assistance from AI development tools for code generation, optimization, and documentation—demonstrating the viability of AI-augmented software engineering for complex systems.
 
 ---
 
@@ -34,7 +32,7 @@ Modern security teams face unprecedented challenges:
 1. **Automated External Asset Discovery** via Shodan API for continuous visibility
 2. **Intelligent Multi-Source Enrichment** from NVD, internal systems, and behavioral analytics
 3. **ML-Powered Risk Scoring** using ensemble models for accurate threat prioritization
-4. **Executive-Ready Dashboards** for actionable intelligence and rapid response
+4. **Dashboards** showing the ranked queue and why each host scored the way it did
 5. **Proactive Alerting** that surfaces high-risk assets before incidents occur
 
 ---
@@ -94,7 +92,7 @@ Modern security teams face unprecedented challenges:
   - Executive summary with risk score and confidence
   - Detailed vulnerability list (top N by CVSS)
   - Risk factor breakdown for security team context
-  - Actionable remediation recommendations
+  - Remediation notes per finding
 - **Flexible Configuration**: Define alert recipients, email templates, and trigger conditions
 
 #### Sample Alert Email
@@ -126,7 +124,7 @@ Modern security teams face unprecedented challenges:
 - **Robust Error Handling**:
   - Exponential backoff retry logic for API failures (Shodan, NVD, SendGrid)
   - Graceful degradation if optional services unavailable
-  - Comprehensive logging with file rotation
+  - Logging with file rotation
   - Thread-safe signal/slot architecture prevents race conditions
 - **Memory Efficient**:
   - Garbage collection after chart renders
@@ -168,7 +166,7 @@ Modern security teams face unprecedented challenges:
 
 *Intelligent search that spans entire device database, not just currently displayed rows*
 
-- **Comprehensive Search**: Search across IP addresses, organization names, countries, and risk levels
+- **Search**: across IP addresses, organization names, countries, and risk levels
 - **Auto-IP Detection**: Automatically detects IP address format and searches accordingly
 - **Full Database Coverage**: Search results include ALL devices in database, not limited to first 50 rows
 - **Real-Time Results**: Debounced 300ms delay for responsive search without performance impact
@@ -386,7 +384,7 @@ The dashboard will launch with the scheduler running in the background.
 
 ### Dashboard Components Overview
 ![Dashboard Main Interface with All Tabs]
-*Overview, Analytics, and Tools tabs for comprehensive threat assessment*
+*Overview, Analytics and Tools tabs*
 
 ### 1. Device Table & Discovery
 ![Organization and Country Filters with Device List]
