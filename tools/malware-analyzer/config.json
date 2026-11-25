@@ -1,0 +1,24 @@
+{
+  "virustotal": {
+    "api_key": "API_KEY"
+  },
+  "hybrid_analysis": {
+    "api_key": "API_KEY"
+  },
+  "malwarebazaar": {
+    "api_key": "API_KEY",
+    "header": "Auth-Key"
+  }
+  ,
+  "rate_limits": {
+    "virustotal": 15,
+    "hybrid_analysis": 5
+  },
+  "timeouts": {
+    "request_timeout": 30,
+    "max_retries": 2,
+    "backoff_factor": 1.5,
+  "max_file_size": 104857600,
+    "enable_ssl_verification": true
+  }
+}
