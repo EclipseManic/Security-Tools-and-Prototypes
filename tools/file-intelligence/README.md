@@ -2,9 +2,6 @@
 
 **Local-first file inventory, content analysis, and sensitive-data discovery.**
 
-[![Tests](https://github.com/EclipseManic/file-intelligence-platform/actions/workflows/ci.yml/badge.svg)](https://github.com/EclipseManic/file-intelligence-platform/actions/workflows/ci.yml)
-[![Python 3.12+](https://img.shields.io/badge/python-3.12%2B-blue.svg)](https://www.python.org/)
-[![Node 20+](https://img.shields.io/badge/node-20%2B-green.svg)](https://nodejs.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Point FIP at a directory and it builds a searchable catalog of what is actually

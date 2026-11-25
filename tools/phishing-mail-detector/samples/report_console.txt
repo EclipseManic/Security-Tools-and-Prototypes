@@ -1,0 +1,59 @@
+﻿
+========== HEADER ANALYSIS ==========
+Display Name: PayPal Security
+From Address: security@paypa1-verify.com
+Return-Path: Not Found
+Reply-To: recover@paypa1-verify.com
+[i] Return-Path not available for comparison.
+[!!] Reply-To mismatch detected.
+SPF Result: [!!] softfail
+DKIM Result: [i] none
+DMARC Result: [!!] fail
+SPF MailFrom Domains: ['paypa1-verify.com']
+DKIM Domains: None
+Display Name Brand Mentions: ['paypal']
+[!!] Display name uses a brand that does not match the actual From domain.
+SPF Aligned: True
+DKIM Aligned: None
+Sender/Public Relay IPs: 185.220.101.47
+Received Path:
+- hop 1: from mail.paypa1-verify.com by mx.example.org ips=[185.220.101.47]
+
+========== URL EXTRACTION ==========
+URL: hxxp://paypa1-verify[.]com/login/secure?session=8842 host=paypa1-verify.com
+URL: hxxp://paypa1-verify[.]com/account host=paypa1-verify.com
+
+========== TECHNICAL IOCs ==========
+EMAIL:
+- security@paypa1-verify[.]com | source: header.From
+- recover@paypa1-verify[.]com | source: header.Reply-To
+- analyst@example[.]org | source: header.To
+DOMAIN:
+- paypa1-verify[.]com | source: header.From,header.Reply-To,auth.smtp.mailfrom,auth.header.from,body.html.href,body.html.text | VT: skipped: disabled by --no-vt
+- example[.]org | source: header.To | VT: skipped: disabled by --no-vt
+IP:
+- 185[.]220[.]101[.]47 | source: auth_or_received.sender_ip,received.hop_1 | VT: skipped: disabled by --no-vt
+URL:
+- hxxp://paypa1-verify[.]com/login/secure?session=8842 | source: body.html.href | VT: skipped: disabled by --no-vt
+- hxxp://paypa1-verify[.]com/account | source: body.html.text | VT: skipped: disabled by --no-vt
+
+URL DETAILS:
+- hxxp://paypa1-verify[.]com/login/secure?session=8842
+  source=body.html.href host=paypa1-verify.com VT=skipped: disabled by --no-vt
+- hxxp://paypa1-verify[.]com/account
+  source=body.html.text host=paypa1-verify.com VT=skipped: disabled by --no-vt
+
+========== FINAL VERDICT ==========
+Phishing Score: 10/10
+Verdict: UNSAFE
+
+========== DETAILED FEEDBACK ==========
+[!!] Reply-To Mismatch: Replies go to recover@paypa1-verify.com instead of security@paypa1-verify.com.
+[!!] DMARC Failure: Header From domain failed DMARC validation.
+[!!] SPF Failure: SPF result is 'softfail'.
+[!!] Brand Display Name Mismatch: Display name mentions ['paypal'] but From domain is paypa1-verify.com.
+[i] Pressure Language: Body contains urgency/account-verification wording.
+[!!] Brand Impersonation Context: Pressure wording appears with known brand names.
+
+Detailed IOC report saved to samples\report.json
+

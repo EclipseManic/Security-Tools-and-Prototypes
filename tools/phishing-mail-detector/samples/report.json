@@ -1,0 +1,354 @@
+{
+    "file": "samples\\phishing_sample.eml",
+    "analysis_time_utc": "2026-11-25T05:24:14.446085+00:00",
+    "verdict": "UNSAFE",
+    "score": 10,
+    "feedback": [
+        "[!!] Reply-To Mismatch: Replies go to recover@paypa1-verify.com instead of security@paypa1-verify.com.",
+        "[!!] DMARC Failure: Header From domain failed DMARC validation.",
+        "[!!] SPF Failure: SPF result is 'softfail'.",
+        "[!!] Brand Display Name Mismatch: Display name mentions ['paypal'] but From domain is paypa1-verify.com.",
+        "[i] Pressure Language: Body contains urgency/account-verification wording.",
+        "[!!] Brand Impersonation Context: Pressure wording appears with known brand names."
+    ],
+    "summary": {
+        "observable_count": 8,
+        "url_count": 2,
+        "attachment_count": 0,
+        "sender_ips": [
+            "185.220.101.47"
+        ]
+    },
+    "details": {
+        "header_findings": {
+            "From": {
+                "display_name": "PayPal Security",
+                "address": "security@paypa1-verify.com",
+                "domain": "paypa1-verify.com",
+                "raw_header": "From"
+            },
+            "Return-Path": null,
+            "Reply-To": {
+                "display_name": "",
+                "address": "recover@paypa1-verify.com",
+                "domain": "paypa1-verify.com",
+                "raw_header": "Reply-To"
+            },
+            "To": [
+                {
+                    "display_name": "",
+                    "address": "analyst@example.org",
+                    "domain": "example.org",
+                    "raw_header": "To"
+                }
+            ],
+            "Cc": [],
+            "From Address": "security@paypa1-verify.com",
+            "Return-Path Address": null,
+            "Reply-To Address": "recover@paypa1-verify.com",
+            "Return-Path Mismatch": null,
+            "Reply-To Mismatch": true,
+            "SPF Result": "softfail",
+            "DKIM Result": "none",
+            "DMARC Result": "fail",
+            "CompAuth Result": null,
+            "CompAuth Reason": null,
+            "Auth Action": null,
+            "SPF MailFrom Domains": [
+                "paypa1-verify.com"
+            ],
+            "Header From Domains": [
+                "paypa1-verify.com"
+            ],
+            "DKIM Domains": [],
+            "Display Name Claimed Emails": [],
+            "Display Name Claimed Domains": [],
+            "Display Name Domain Mismatch": null,
+            "Display Name Brand Mentions": [
+                "paypal"
+            ],
+            "Display Name Brand Mismatch": true,
+            "SPF Aligned": true,
+            "DKIM Aligned": null,
+            "Sender IPs": [
+                "185.220.101.47"
+            ],
+            "Authentication-Results": [
+                {
+                    "header_name": "Authentication-Results",
+                    "results": {
+                        "spf": "softfail",
+                        "dkim": "none",
+                        "dmarc": "fail"
+                    },
+                    "params": {
+                        "smtp.mailfrom": [
+                            "paypa1-verify.com"
+                        ],
+                        "header.from": [
+                            "paypa1-verify.com"
+                        ]
+                    },
+                    "sender_ips": [],
+                    "raw": "mx.example.org; spf=softfail smtp.mailfrom=paypa1-verify.com;\tdkim=none; dmarc=fail header.from=paypa1-verify.com"
+                }
+            ],
+            "Primary Authentication-Results": {
+                "header_name": "Authentication-Results",
+                "results": {
+                    "spf": "softfail",
+                    "dkim": "none",
+                    "dmarc": "fail"
+                },
+                "params": {
+                    "smtp.mailfrom": [
+                        "paypa1-verify.com"
+                    ],
+                    "header.from": [
+                        "paypa1-verify.com"
+                    ]
+                },
+                "sender_ips": [],
+                "raw": "mx.example.org; spf=softfail smtp.mailfrom=paypa1-verify.com;\tdkim=none; dmarc=fail header.from=paypa1-verify.com"
+            },
+            "Microsoft Security Headers": {
+                "raw_headers": [],
+                "fields": {},
+                "direct_headers": {}
+            },
+            "Received Path": [
+                {
+                    "hop": 1,
+                    "from": "mail.paypa1-verify.com",
+                    "by": "mx.example.org",
+                    "with": "ESMTP",
+                    "tls_version": null,
+                    "cipher": null,
+                    "ips": [
+                        "185.220.101.47"
+                    ],
+                    "public_ips": [
+                        "185.220.101.47"
+                    ],
+                    "date": "Tue, 24 Nov 2026 09:14:22 +0000",
+                    "date_utc": "2026-11-24T09:14:22+00:00",
+                    "raw": "from mail.paypa1-verify.com (mail.paypa1-verify.com [185.220.101.47])\tby mx.example.org (Postfix) with ESMTP id 4A2B3C77\tfor <analyst@example.org>; Tue, 24 Nov 2026 09:14:22 +0000"
+                }
+            ],
+            "DKIM Signatures": [],
+            "Received-SPF": [],
+            "Subject": "Urgent: your account will be suspended within 24 hours",
+            "Message-ID": "<20261124091410.7f3a1@paypa1-verify.com>",
+            "Date": "Tue, 24 Nov 2026 09:14:10 +0000"
+        },
+        "spoof_findings": {
+            "is_homograph_attack": false,
+            "punycode_version": null,
+            "unicode_normalized": "paypa1-verify.com",
+            "registered_domain": "paypa1-verify.com"
+        },
+        "domain_age_days": null,
+        "content_findings": {
+            "javascript_present": false,
+            "script_count": 0,
+            "form_count": 0,
+            "password_inputs": 0,
+            "iframe_sources": [],
+            "meta_refresh_urls": [],
+            "hidden_element_count": 0
+        },
+        "observables": [
+            {
+                "type": "email",
+                "value": "security@paypa1-verify.com",
+                "defanged": "security@paypa1-verify[.]com",
+                "sources": [
+                    "header.From"
+                ],
+                "roles": [
+                    "from"
+                ],
+                "metadata": {},
+                "vt": null
+            },
+            {
+                "type": "domain",
+                "value": "paypa1-verify.com",
+                "defanged": "paypa1-verify[.]com",
+                "sources": [
+                    "header.From",
+                    "header.Reply-To",
+                    "auth.smtp.mailfrom",
+                    "auth.header.from",
+                    "body.html.href",
+                    "body.html.text"
+                ],
+                "roles": [
+                    "from_domain",
+                    "reply-to_domain",
+                    "spf_mailfrom",
+                    "header_from",
+                    "url_host"
+                ],
+                "metadata": {},
+                "vt": {
+                    "status": "skipped",
+                    "reason": "disabled by --no-vt"
+                },
+                "registered_domain": "paypa1-verify.com"
+            },
+            {
+                "type": "email",
+                "value": "recover@paypa1-verify.com",
+                "defanged": "recover@paypa1-verify[.]com",
+                "sources": [
+                    "header.Reply-To"
+                ],
+                "roles": [
+                    "reply-to"
+                ],
+                "metadata": {},
+                "vt": null
+            },
+            {
+                "type": "email",
+                "value": "analyst@example.org",
+                "defanged": "analyst@example[.]org",
+                "sources": [
+                    "header.To"
+                ],
+                "roles": [
+                    "to"
+                ],
+                "metadata": {},
+                "vt": null
+            },
+            {
+                "type": "domain",
+                "value": "example.org",
+                "defanged": "example[.]org",
+                "sources": [
+                    "header.To"
+                ],
+                "roles": [
+                    "to_domain"
+                ],
+                "metadata": {},
+                "vt": {
+                    "status": "skipped",
+                    "reason": "disabled by --no-vt"
+                },
+                "registered_domain": "example.org"
+            },
+            {
+                "type": "ip",
+                "value": "185.220.101.47",
+                "defanged": "185[.]220[.]101[.]47",
+                "sources": [
+                    "auth_or_received.sender_ip",
+                    "received.hop_1"
+                ],
+                "roles": [
+                    "sender_ip",
+                    "received_public_ip"
+                ],
+                "metadata": {
+                    "from": "mail.paypa1-verify.com",
+                    "by": "mx.example.org"
+                },
+                "vt": {
+                    "status": "skipped",
+                    "reason": "disabled by --no-vt"
+                },
+                "is_public": true
+            },
+            {
+                "type": "url",
+                "value": "http://paypa1-verify.com/login/secure?session=8842",
+                "defanged": "hxxp://paypa1-verify[.]com/login/secure?session=8842",
+                "sources": [
+                    "body.html.href"
+                ],
+                "roles": [
+                    "embedded_url"
+                ],
+                "metadata": {
+                    "host": "paypa1-verify.com",
+                    "features": []
+                },
+                "vt": {
+                    "status": "skipped",
+                    "reason": "disabled by --no-vt"
+                }
+            },
+            {
+                "type": "url",
+                "value": "http://paypa1-verify.com/account",
+                "defanged": "hxxp://paypa1-verify[.]com/account",
+                "sources": [
+                    "body.html.text"
+                ],
+                "roles": [
+                    "embedded_url"
+                ],
+                "metadata": {
+                    "host": "paypa1-verify.com",
+                    "features": []
+                },
+                "vt": {
+                    "status": "skipped",
+                    "reason": "disabled by --no-vt"
+                }
+            }
+        ],
+        "url_results": [
+            {
+                "url": "http://paypa1-verify.com/login/secure?session=8842",
+                "normalized_url": "http://paypa1-verify.com/login/secure?session=8842",
+                "defanged": "hxxp://paypa1-verify[.]com/login/secure?session=8842",
+                "source": "body.html.href",
+                "host": "paypa1-verify.com",
+                "registered_domain": "paypa1-verify.com",
+                "path": "/login/secure",
+                "query_keys": [
+                    "session"
+                ],
+                "link_text": "http://paypa1-verify.com/account",
+                "displayed_url": "http://paypa1-verify.com/account",
+                "deceptive_display": false,
+                "features": [],
+                "vt": {
+                    "status": "skipped",
+                    "reason": "disabled by --no-vt"
+                },
+                "redirect_chain": [],
+                "final_url": null
+            },
+            {
+                "url": "http://paypa1-verify.com/account",
+                "normalized_url": "http://paypa1-verify.com/account",
+                "defanged": "hxxp://paypa1-verify[.]com/account",
+                "source": "body.html.text",
+                "host": "paypa1-verify.com",
+                "registered_domain": "paypa1-verify.com",
+                "path": "/account",
+                "query_keys": [],
+                "link_text": null,
+                "displayed_url": null,
+                "deceptive_display": false,
+                "features": [],
+                "vt": {
+                    "status": "skipped",
+                    "reason": "disabled by --no-vt"
+                },
+                "redirect_chain": [],
+                "final_url": null
+            }
+        ],
+        "attachment_results": [],
+        "virustotal": {
+            "scanned": 0,
+            "skipped_reason": "disabled by --no-vt"
+        }
+    }
+}

@@ -1,0 +1,12 @@
+SYNTHETIC SAMPLE - NOT CAPTURED FROM A REAL MACHINE
+This file shows the log format the tool writes. It is hand-written so the
+repository can demonstrate the output without recording anyone's keystrokes.
+
+-------- Switched to: Document1 - Notepad --------
+T h i s [SPACE] i s [SPACE] a [SPACE] s y n t h e t i c [SPACE] l i n e [ENTER]
+-------- Switched to: Chrome --------
+h t t p s : / / e x a m p l e [.] o r g [ENTER]
+-------- Switched to: Terminal --------
+l s [SPACE] - l a [ENTER]
+-------- Switched to: Document1 - Notepad --------
+[CTRL] s [ENTER]

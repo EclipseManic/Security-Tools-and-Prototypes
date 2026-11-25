@@ -78,11 +78,11 @@ _(Restart your terminal after running this for the variable to take effect.)_
 
 ### Basic command:
 
-`python Advance_Phising_Mail_detector.py <email_file.eml>`
+`python "Advance Phishing Mail Detector.py" <email_file.eml>`
 
 ### Example with JSON report:
 
-`python Advance_Phising_Mail_detector.py suspicious_mail.eml --report analysis.json`
+`python "Advance Phishing Mail Detector.py" suspicious_mail.eml --report analysis.json`
 
 ### Arguments:
 

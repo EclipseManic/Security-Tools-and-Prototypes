@@ -11,30 +11,42 @@ only, and the ones that are not say so in their own README.
 
 ## Tools
 
-| Tool | What it does | Runs on | Tests |
-|---|---|---|---|
-| [FwScan](tools/fwscan/) | Reads a firewall deny log and separates sweep, subnet-wide and distributed port scans, with the reasoning for each source | Python 3.10+, no dependencies | 2 test files |
-| [LogTriage](tools/log-triage/) | Ranked findings, indicator inventory with first and last seen times, Markdown and JSON report | Python 3.10+, standard library only | yes |
-| [Endpoint Behavior Monitor](tools/endpoint-monitor/) | Windows keystroke and active-window logger, kept to study how that telemetry is produced | pynput, pygetwindow. Authorised hosts only | none |
-| [Malware Analyzer CLI](tools/malware-analyzer/) | File triage: hashes, YARA rules, PE metadata, optional VirusTotal lookups | see its README; API key optional | none |
-| [Phishing Mail Detector](tools/phishing-mail-detector/) | `.eml` header and content analysis with a SAFE / CAUTIOUS / UNSAFE verdict | see its README; API key optional | none |
-| [File Intelligence Platform](tools/file-intelligence/) | Local-first file inventory and sensitive-data discovery with a small web UI | see its README | 8 test files |
-| [ThreatSentry AI](tools/threat-sentry/) | Shodan and NVD prototype that scores exposed hosts and drafts alerts | see its README | none |
+Every row links to something you can open without installing anything: a committed
+sample report, a sample log, or a screenshot of a real run.
 
-"Tests: yes" means the test files are present and run; it is not a coverage claim.
+| Tool | What it does | Runs on | Evidence |
+|---|---|---|---|
+| [FwScan](tools/fwscan/) | Reads a firewall deny log and separates sweep, subnet-wide and distributed port scans, with the reasoning for each source | Python 3.10+, no dependencies | [sample report](tools/fwscan/examples/report.txt) |
+| [LogTriage](tools/log-triage/) | Ranked findings, indicator inventory with first and last seen times, Markdown and JSON report | Python 3.10+, standard library only | [sample Markdown + JSON](tools/log-triage/sample_output/) |
+| [Endpoint Behavior Monitor](tools/endpoint-monitor/) | Windows keystroke and active-window logger, kept to study how that telemetry is produced | pynput, pygetwindow; authorised hosts only | [sample log (synthetic)](tools/endpoint-monitor/samples/key_log_sample.txt) |
+| [Malware Analyzer CLI](tools/malware-analyzer/) | File triage: hashes, YARA rules, PE metadata, optional VirusTotal lookups | Python 3.8+; the offline path needs no keys | [sample report (txt + json)](tools/malware-analyzer/samples/) |
+| [Phishing Mail Detector](tools/phishing-mail-detector/) | `.eml` header and content analysis with a SAFE / CAUTIOUS / UNSAFE verdict | Python 3.8+; `--no-vt` runs offline | [sample verdict + JSON](tools/phishing-mail-detector/samples/) |
+| [File Intelligence Platform](tools/file-intelligence/) | Local-first file inventory and sensitive-data discovery with a small web UI | Python 3.12+, Node 20+ to build the UI | [dashboard screenshot](tools/file-intelligence/docs/screenshots/dashboard.png) · [sample data](tools/file-intelligence/examples/sample-data/) |
+| [ThreatSentry AI](tools/threat-sentry/) | Shodan and NVD prototype that scores exposed hosts and drafts alerts | see its README; a Shodan key is needed for live data | [dashboard screenshot](tools/threat-sentry/assets/screenshots/Screenshot%202026-01-10%20153154.png) |
+
+The malware and phishing samples are committed next to the exact commands that
+produced them, so the output can be reproduced. The endpoint log is synthetic on
+purpose: recording real keystrokes is not something to demonstrate.
 
 ## Screenshots
 
-Real output from a real run on this machine, not mockups.
+Real output from real runs on this machine, not mockups.
 
-**FwScan** - `python fwscan.py demo`, 2812 synthetic deny records, four scan
-patterns found:
+| FwScan | LogTriage |
+|---|---|
+| ![FwScan demo output](docs/screenshots/fwscan-demo.png) | ![LogTriage findings](docs/screenshots/logtriage-triage.png) |
 
-![FwScan demo output](docs/screenshots/fwscan-demo.png)
+| Malware Analyzer CLI | Phishing Mail Detector |
+|---|---|
+| ![Malware Analyzer offline triage](docs/screenshots/malware-analyzer-report.png) | ![Phishing Mail Detector verdict](docs/screenshots/phishing-detector-verdict.png) |
 
-**LogTriage** - `python tool/log_triage.py --input sample_input/triage_sample.log`:
+| Endpoint Behavior Monitor | File Intelligence Platform |
+|---|---|
+| ![Endpoint Behavior Monitor sample log](docs/screenshots/endpoint-monitor-log.png) | ![File Intelligence dashboard](tools/file-intelligence/docs/screenshots/dashboard.png) |
 
-![LogTriage findings](docs/screenshots/logtriage-triage.png)
+**ThreatSentry AI** - main hunting interface:
+
+![ThreatSentry AI dashboard](tools/threat-sentry/assets/screenshots/Screenshot%202026-01-10%20153154.png)
 
 ## Why one repository
 

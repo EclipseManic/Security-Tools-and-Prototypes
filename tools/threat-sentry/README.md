@@ -1,10 +1,6 @@
-# ThreatSentry AI: AI-Powered Threat Hunting Tool
+# ThreatSentry AI: an experimental Shodan + NVD prototype
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](https://www.python.org/downloads/)
-[![Framework](https://img.shields.io/badge/UI-PyQt5-green.svg)](https://www.qt.io/qt-for-python)
-[![ML Stack](https://img.shields.io/badge/ML-Scikit--learn-orange.svg)](https://scikit-learn.org/)
-[![Database](https://img.shields.io/badge/Database-SQLAlchemy-blue.svg)](https://www.sqlalchemy.org/)
 
 > Pulls exposed-host data from Shodan, enriches it with NVD vulnerability records, and ranks the results so the loudest-looking host is not automatically the first one you chase.
 
@@ -96,9 +92,8 @@ Modern security teams face unprecedented challenges:
 - **Flexible Configuration**: Define alert recipients, email templates, and trigger conditions
 
 #### Sample Alert Email
-![Automated Security Alert Email Template]
 
-<img width="1494" height="1010" alt="Screenshot 2026-01-10 160955" src="https://github.com/user-attachments/assets/64936d95-d5f0-4fec-8350-c2ac7969398a" />
+<img width="1494" height="1010" alt="Screenshot 2026-01-10 160955" src="assets/screenshots/Screenshot%202026-01-10%20160955.png" />
 
 
 *HTML formatted email with risk summary, CVE details, and remediation guidance sent via SendGrid*
@@ -136,21 +131,17 @@ Modern security teams face unprecedented challenges:
 ## � Visual Overview
 
 ### Main Dashboard
-![ThreatSentry AI Dashboard - Main Threat Hunting Interface]
 
-<img width="1489" height="867" alt="Screenshot 2026-01-10 153154" src="https://github.com/user-attachments/assets/e10c7a66-8212-4748-9cfa-a767456c14b1" />
+<img width="1489" height="867" alt="Screenshot 2026-01-10 153154" src="assets/screenshots/Screenshot%202026-01-10%20153154.png" />
 
 *Real-time risk visualization with sortable device table and risk distribution bar chart*
 
 ### Device Risk Assessment Table
-![Device Table with Risk Indicators]
 
-<img width="523" height="513" alt="image" src="https://github.com/user-attachments/assets/4825f015-c814-4e3c-80d1-a8e6181ba53f" />
 
 *Sortable and filterable device listing with color-coded risk levels (Green=Low, Yellow=Medium, Red=High)*
 
 ### Advanced Filtering Panel
-![Advanced Filters - CVSS Range, Organization, Country, Risk Level]
 
 *Powerful filtering controls with CVSS range, organization, country, and risk level filters + "Clear All" button*
 
@@ -162,7 +153,6 @@ Modern security teams face unprecedented challenges:
 - **Apply Filters**: Instantly apply all selected filters with results reflected in real-time
 
 ### Full-Database Search Capability
-![Search Input - Multi-Column Search Across Entire Database]
 
 *Intelligent search that spans entire device database, not just currently displayed rows*
 
@@ -173,7 +163,6 @@ Modern security teams face unprecedented challenges:
 - **Pagination Integration**: Search results respect pagination system for efficient loading
 
 ### Intelligent Pagination & Large Dataset Support
-![Load More Button - Pagination Controls]
 
 *Optimized pagination system for handling thousands of devices efficiently*
 
@@ -185,31 +174,27 @@ Modern security teams face unprecedented challenges:
 - **Search Integration**: Search filters work seamlessly with pagination for fast results
 
 ### Analytics & Reporting Panel
-![Analytics Tab - Risk Trends and CVE Analysis]
 
-<img width="1494" height="651" alt="Screenshot 2026-01-10 153300" src="https://github.com/user-attachments/assets/1801484a-30e9-465a-8e1e-bc1187e67296" />
+<img width="1494" height="651" alt="Screenshot 2026-01-10 153300" src="assets/screenshots/Screenshot%202026-01-10%20153300.png" />
 
 *Historical risk trends, vulnerability analysis, and organization-wise security metrics*
 
 ### Tools & Configuration
-![Tools Tab - Model Status and Data Export]
 
-<img width="1494" height="638" alt="Screenshot 2026-01-10 153240" src="https://github.com/user-attachments/assets/64a51a37-51d9-4af3-aec0-46073af11776" />
+<img width="1494" height="638" alt="Screenshot 2026-01-10 153240" src="assets/screenshots/Screenshot%202026-01-10%20153240.png" />
 
 *Model training information, performance metrics, data export, and advanced filtering options*
 
 ### Email Alert Notifications
 
-<img width="796" height="632" alt="Screenshot 2026-01-10 153939" src="https://github.com/user-attachments/assets/1044ca7f-1cfd-4bac-92c5-fefa2ddac2bb" />
+<img width="796" height="632" alt="Screenshot 2026-01-10 153939" src="assets/screenshots/Screenshot%202026-01-10%20153939.png" />
 
-![Automated Security Alert Email]
 
 *HTML formatted email with executive summary, vulnerability details, and remediation guidance*
 
 ### Manual Scan Workflow
-![Scan Trigger Dialog]
 
-<img width="505" height="152" alt="Screenshot 2026-01-10 153710" src="https://github.com/user-attachments/assets/7554cf9d-e2bc-4cc4-9602-885632e39820" />
+<img width="505" height="152" alt="Screenshot 2026-01-10 153710" src="assets/screenshots/Screenshot%202026-01-10%20153710.png" />
 
 *Execute Shodan + NVD enrichment with detailed error reporting and progress indication*
 
@@ -383,18 +368,15 @@ The dashboard will launch with the scheduler running in the background.
 ## Usage Guide
 
 ### Dashboard Components Overview
-![Dashboard Main Interface with All Tabs]
 *Overview, Analytics and Tools tabs*
 
 ### 1. Device Table & Discovery
-![Organization and Country Filters with Device List]
 *Sortable device table with color-coded risk indicators (Green=Low, Yellow=Medium, Red=High)*
 - **Color Coding**: Instant visual risk assessment
 - **Sortable/Filterable**: Click column headers or use Quick Filter for rapid searching
 - **Real-time Updates**: Dashboard refreshes as new threats detected
 
 ### 2. Risk Distribution Chart
-![Risk Distribution Bar Chart]
 *Overall security posture visualization with device counts per risk level*
 - Shows count of devices across all risk categories
 - Updates in real-time as model predictions change
@@ -409,14 +391,13 @@ The dashboard will launch with the scheduler running in the background.
 ### Advanced Features
 
 #### Analytics Tab
-![Analytics Panel - Risk Trends and Metrics]
 - Detailed risk trends over time with historical analysis
 - Top vulnerable services identification
 - Organization-wise risk metrics and comparisons
 - CVE impact analysis and vulnerability trending
 
 #### Tools Tab
-![Tools Panel - Model Status and Export
+**Tools Panel - Model Status and Export**
 - Model status and training information
 
 
