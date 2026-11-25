@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-label="Demo shield">
+  <rect width="128" height="128" rx="24" fill="#0f172a"/>
+  <path d="M64 22 102 36v28c0 22-16 37-38 44-22-7-38-22-38-44V36L64 22Z" fill="#1d4ed8"/>
+  <path d="M56 76 42 62l8-8 6 6 22-22 8 8-30 30Z" fill="#e2e8f0"/>
+</svg>

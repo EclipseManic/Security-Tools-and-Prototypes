@@ -1,0 +1,47 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+sqlalchemy[asyncio]==2.0.36
+aiosqlite==0.20.0
+pydantic-settings==2.7.0
+python-multipart==0.0.19
+orjson==3.10.12
+anyio==4.8.0
+
+# Document Analysis
+PyMuPDF==1.28.0
+python-docx==1.2.0
+openpyxl==3.1.5
+python-pptx==1.0.2
+extract-msg==0.55.0
+
+# Image Analysis
+Pillow==12.2.0
+
+# Archive Analysis
+rarfile==4.3
+py7zr==1.1.0
+
+# Executable Analysis
+pefile==2024.8.26
+
+# Audio/Video
+mutagen==1.48.1
+
+# MIME Type Detection (libmagic is bundled on Windows, system-provided elsewhere)
+python-magic-bin==0.4.14; sys_platform == "win32"
+python-magic==0.4.27; sys_platform != "win32"
+
+# Text Processing
+chardet==7.4.3
+
+# AI Provider
+google-genai==2.11.0
+
+# Real-time Monitoring
+watchdog==6.0.0
+
+# Development
+httpx==0.28.1
+pytest==8.3.4
+pytest-asyncio==0.25.0
+ruff==0.8.4
