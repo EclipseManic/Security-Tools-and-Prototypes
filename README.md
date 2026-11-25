@@ -262,3 +262,5 @@ stopping, containing, or deleting anything.
 ## License
 
 MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Eclipsemanic.
+
+Part of my [SOC and detection portfolio](https://github.com/EclipseManic). See also [Security-Tools-and-Prototypes](https://github.com/EclipseManic/Security-Tools-and-Prototypes) for smaller service and log utilities.
