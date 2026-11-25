@@ -1,0 +1,172 @@
+==============================================================================
+ FIREWALL DENY LOG - PORT SCAN ANALYSIS
+==============================================================================
+ Input            : data\deny.log
+ Deny records     : 2812 (skipped 0 of 2812 lines)
+ Observed window  : 2025-03-01T00:03:52Z .. 2025-03-01T23:55:14Z
+ Sources/targets  : 50 sources, 252 destinations
+ Protocol mix     : {'TCP': 2812}
+ Detection        : window=15m, min_ports=20, min_hosts=15, long_baseline=on
+
+ 1. SUMMARY
+------------------------------------------------------------------------------
+ 4 finding(s) across 4 pattern type(s):
+
+ #  SOURCE                    PATTERN                    SCORE SEV     EVENTS  PORTS  HOSTS
+ 1  203.0.113.45              vertical_port_scan          0.97 high      1023   1023      1
+ 2  198.51.100.77             horizontal_sweep            0.81 high       756      3    252
+ 3  6 sources -> port(s) 22   distributed_probe           0.63 medium      24      1  6 src
+ 4  203.0.113.90              slow_port_scan              0.60 medium      40     40      1
+
+ 2. SCAN PATTERN DETAIL
+
+------------------------------------------------------------------------------
+ FINDING 1 - vertical_port_scan - score 0.97 (HIGH)
+------------------------------------------------------------------------------
+ Source          : 203.0.113.45  [documentation / hostile_by_behaviour]
+ Active          : 2025-03-01T03:14:00.602000Z .. 2025-03-01T03:22:49.919000Z (8.8 min)
+ Volume          : 1023 denies (115.961/min), proto=TCP flags=SYN
+ Breadth         : 1023 dst ports across 1 host(s)
+ In 15m window   : 1023 distinct ports (trigger 20), 1 distinct hosts (trigger 15)
+ Ordering        : 100% of adjacent ports consecutive; arrival regularity 0.86
+ Targets         : 10.0.4.12
+ Ports (sample)  : 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+ Why flagged     : Distinct destination ports inside one window far exceed the threshold while the target set stays tiny: the signature of enumerating services on a host.
+ COVERAGE HOLE   : port(s) [443] absent from a contiguous run
+                   -> most likely permitted (or non-answering). A deny log cannot tell which.
+                   -> verify against ALLOW records before calling this a blocked attack.
+ Reputation      : RFC 5737 documentation range: not a routable address, so in this synthetic set it stands in for an internet source. On a real log an address here means spoofing, a lab leak or a mis-typed export.
+ Basis           : address space only; address is not routable in the real internet (confidence low, feed_consulted=false)
+
+------------------------------------------------------------------------------
+ FINDING 2 - horizontal_sweep - score 0.81 (HIGH)
+------------------------------------------------------------------------------
+ Source          : 198.51.100.77  [documentation / hostile_by_behaviour]
+ Active          : 2025-03-01T04:02:00.797000Z .. 2025-03-01T04:13:23.329000Z (11.4 min)
+ Volume          : 756 denies (66.458/min), proto=TCP flags=SYN
+ Breadth         : 3 dst ports across 252 host(s)
+ In 15m window   : 3 distinct ports (trigger 20), 252 distinct hosts (trigger 15)
+ Ordering        : 0% of adjacent ports consecutive; arrival regularity 0.82
+ Targets         : 10.0.4.1, 10.0.4.10, 10.0.4.100, 10.0.4.101, 10.0.4.102, 10.0.4.103, 10.0.4.104, 10.0.4.105, 10.0.4.106, 10.0.4.107 (+242 more)
+ Ports (sample)  : 139, 445, 3389
+ Why flagged     : Distinct destination hosts inside one window far exceed the threshold while the port set stays tiny: the signature of hunting one service across a subnet.
+ COVERAGE HOLE   : host(s) ['10.0.4.99', '10.0.4.200'] absent from a contiguous sweep
+                   -> most likely permitted (or non-answering). A deny log cannot tell which.
+                   -> verify against ALLOW records before calling this a blocked attack.
+ Reputation      : RFC 5737 documentation range: not a routable address, so in this synthetic set it stands in for an internet source. On a real log an address here means spoofing, a lab leak or a mis-typed export.
+ Basis           : address space only; address is not routable in the real internet (confidence low, feed_consulted=false)
+
+------------------------------------------------------------------------------
+ FINDING 3 - distributed_probe - score 0.63 (MEDIUM)
+------------------------------------------------------------------------------
+ Source          : 6 sources -> port(s) 22  [documentation / suspicious_by_behaviour]
+ Sources         : 192.0.2.11, 192.0.2.12, 192.0.2.13, 192.0.2.14, 192.0.2.15, 192.0.2.16
+ Target ports    : 22
+ Per-source      : 4 denies each
+ Why invisible   : Every source is below the per-source thresholds (20 ports / 15 hosts in 15 min), so per-source detection returns nothing.
+ Why flagged     : Each source stays under every per-source threshold, but the sources converge on the same service port. Per-source detection cannot see this at all.
+ Reputation      : RFC 5737 documentation range: not a routable address, so in this synthetic set it stands in for an internet source. On a real log an address here means spoofing, a lab leak or a mis-typed export.
+ Basis           : address space only; address is not routable in the real internet (confidence low, feed_consulted=false)
+
+------------------------------------------------------------------------------
+ FINDING 4 - slow_port_scan - score 0.60 (MEDIUM)
+------------------------------------------------------------------------------
+ Source          : 203.0.113.90  [documentation / insufficient_evidence]
+ Active          : 2025-03-01T00:20:30Z .. 2025-03-01T21:48:29Z (1288.0 min)
+ Volume          : 40 denies (0.031/min), proto=TCP flags=SYN
+ Breadth         : 40 dst ports across 1 host(s)
+ In 15m window   : 1 distinct ports (trigger 20), 1 distinct hosts (trigger 15)
+ Ordering        : 20% of adjacent ports consecutive; arrival regularity 0.98
+ Targets         : 10.0.4.12
+ Ports (sample)  : 21, 22, 23, 25, 53, 67, 69, 80, 110, 111, 123, 135, 137, 138, 139, 143, 161, 162, 179, 389
+ Windowed rule   : would score 1 against a trigger of 20 -> no alert. This is a detection gap, not a low-confidence finding.
+ Why flagged     : Total port breadth is high but no window ever reaches the trigger value, so a windowed threshold scores this far below threshold. Caught only by a long-baseline rule - and that rule is what a real attacker paces against.
+ Reputation      : RFC 5737 documentation range: not a routable address, so in this synthetic set it stands in for an internet source. On a real log an address here means spoofing, a lab leak or a mis-typed export.
+ Basis           : address space only; address is not routable in the real internet (confidence low, feed_consulted=false)
+
+ 3. SOURCE REPUTATION ASSUMPTION
+------------------------------------------------------------------------------
+ No reputation feed is consulted. Attribution rests on these assumptions,
+ stated so they can be argued with:
+
+ R1. The SRC field is the true originator of the traffic.
+     because   : It is the only identity a deny log carries.
+     breaks if : NAT, CGNAT, a forward proxy, cloud egress or a VPN concentrator rewrites the source.
+     effect    : Every finding becomes an attribution to a middlebox, not a host.
+     validate  : Correlate SRC against NAT translation logs before any block or takedown action.
+
+ R2. No reputation feed is consulted; reputation is derived from address space and observed behaviour only.
+     because   : A bundled blocklist goes stale and silently decides attribution.
+     breaks if : You need prior badness for a first-seen address, or you need to clear an address that a feed already flagged.
+     effect    : A known-bad scanner on its first visit here scores the same as any noisy host; a compromised friendly host is never pre-cleared.
+     validate  : Join SRC against your own threat-intel and asset inventory, then re-run with --known-bad / --internal.
+
+ R3. Internal RFC 1918 sources are lower risk than external ones.
+     because   : Most internal deny bursts are broken jobs, not intrusions.
+     breaks if : The internal host is already compromised and is scanning east-west, which is the exact behaviour this assumption de-prioritises.
+     effect    : Lateral movement from an internal host can be ranked below a noisy internet scanner.
+     validate  : Treat internal high-score findings as containment candidates, not as noise; check EDR/AV history for the host.
+
+ R4. One firewall's view equals the whole network's view.
+     because   : Only one deny log was supplied.
+     breaks if : Traffic is denied (or permitted) on a path this sensor does not see: east-west segments, cloud VPC, host firewalls.
+     effect    : Scan volume is under-counted and a scan that succeeds elsewhere looks like a scan that stopped.
+     validate  : Aggregate every deny source you have; compare per-sensor counts.
+
+ 4. DETECTION GAPS
+------------------------------------------------------------------------------
+ What this log cannot tell you, and what it would take to close it.
+
+ G1 [high] Deny-only telemetry: the log ends where the attack succeeds
+     observed : Interior holes in contiguous scan runs - 203.0.113.45: port(s) [443] / host(s) []; 198.51.100.77: port(s) [] / host(s) ['10.0.4.99', '10.0.4.200']
+     impact   : A hole is a place the scanner went and no deny was logged. The likely reason is that the connection was permitted (or the host did not answer). This log cannot tell those apart, so the most interesting events of the day are the ones missing from it.
+     close    : Ship ACCEPT/ALLOW records (or netflow) alongside denies and re-run: the hole becomes a confirmed success instead of an inference.
+
+ G2 [high] Windowed thresholds lose to a patient scanner
+     observed : 203.0.113.90 peaks at 1 distinct ports per 15 min against a threshold of 20; catching it with a windowed rule needs a window of ~644 min (10h 44m)
+     impact   : At any practical window the paced campaign scores far below threshold and produces no alert, while the window is short enough to stay alertable.
+     close    : Keep a long-baseline rule (this tool's slow_* rule) with a per-source baseline instead of a fixed window, and alert on the change in a source's distinct-port total per hour.
+
+ G3 [high] Distributed sources defeat every per-source threshold
+     observed : 6 sources on port(s) 22, up to 4 denies each
+     impact   : Each source looks like a stray denial. Aggregated they are a coordinated sweep, but nothing in a per-source rule says so.
+     close    : Add a cross-source rule keyed on destination port (this tool's distributed_probe) and correlate on /24 or ASN, not on address.
+
+ G4 [medium] Attribution assumes SRC is the attacker
+     observed : Every finding is attributed to the SRC address in the deny record.
+     impact   : NAT, CGNAT, a proxy, cloud egress or a VPN concentrator makes that address a middlebox. Blocking it punishes bystanders; investigating it wastes the response window.
+     close    : Join SRC against NAT/translation logs before any block action; record post-NAT identity in the log itself.
+
+ G5 [medium] No threat feed, so first-seen addresses are neither cleared nor condemned
+     observed : Reputation is derived from address space plus behaviour. feed_consulted=false on every finding.
+     impact   : A known-bad scanner scores like any noisy host on its first visit; a compromised partner address is never pre-cleared.
+     close    : Join findings against your own intel and asset inventory; re-run with a known-bad list to raise severity for confirmed addresses.
+
+ G6 [medium] Thresholds create false positives and a sub-threshold blind spot at once
+     observed : Unflagged but pattern-adjacent sources: 10.0.4.50 (864 denies, 6 hosts, 40% of trigger)
+     impact   : Lowering the threshold flags these benign shapes; raising it hides the next paced campaign. One fixed threshold cannot do both.
+     close    : Run 'fwscan sweep' to read the precision/recall curve before choosing a threshold, and allow-list known job accounts by source+port+schedule.
+
+ G7 [low] Fields the log does not carry
+     observed : No allow records, no packet/byte counts, no user or asset identity, no ASN/geo, no sampling flag, no sensor-independent correlation id.
+     impact   : Scan vs flood vs retransmit cannot be separated; a permitted port is invisible; a sampled log under-counts breadth and can drop a scan below every threshold.
+     close    : Log ALLOW on the same sensor, add packet counts and asset owner, and record whether the export is sampled.
+
+ 5. NEXT STEPS
+------------------------------------------------------------------------------
+ 1. Pull ALLOW records for the coverage holes above - that is where a
+    denied scan turns into a permitted one.
+ 2. Confirm the source identity against NAT logs before blocking anything.
+ 3. Run 'fwscan sweep' to pick a threshold from measured precision/recall
+    instead of taste.
+ 4. Keep the long-baseline and cross-source rules on; they are the only
+    rules that catch campaigns A/B/D in this dataset.
+
+ GROUND TRUTH (synthetic data only - not real-world accuracy)
+------------------------------------------------------------------------------
+  campaign A (vertical_port_scan): DETECTED
+  campaign B (horizontal_sweep): DETECTED
+  campaign C (distributed_low_and_slow): DETECTED
+  campaign D (slow_port_scan): DETECTED
+  benign sources flagged (false positives): none
+  planted attack sources covered: 9/9
