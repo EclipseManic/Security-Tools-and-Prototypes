@@ -59,9 +59,17 @@ git merge -s ours --no-commit --allow-unrelated-histories <tool>/main
 git read-tree --prefix=tools/<slug>/ -u <tool>/main
 ```
 
-Every original commit is reachable in `git log`, and the standalone repositories
-are being retired in favour of this one. The history is the part worth keeping,
-and it is here.
+Every original commit is reachable in `git log`, and the seven standalone
+repositories have been retired in favour of this one. The history is the part
+worth keeping, and it is here.
+
+If you followed an old link, the mapping is: `FwScan` → [`tools/fwscan/`](tools/fwscan/),
+`LogTriage` → [`tools/log-triage/`](tools/log-triage/),
+`Endpoint-Behavior-Monitor` → [`tools/endpoint-monitor/`](tools/endpoint-monitor/),
+`Malware_Analyzer_CLI` → [`tools/malware-analyzer/`](tools/malware-analyzer/),
+`Advance_Phishing_Mail_Detector_CLI` → [`tools/phishing-mail-detector/`](tools/phishing-mail-detector/),
+`File-Intelligence-Platform` → [`tools/file-intelligence/`](tools/file-intelligence/),
+`ThreatSentry-AI` → [`tools/threat-sentry/`](tools/threat-sentry/).
 
 ## What is deliberately not here
 

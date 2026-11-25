@@ -64,5 +64,5 @@ Initial public release.
 - Unused OCR dependency and the obsolete root-level batch test scripts.
 - Generated report artifacts and caches from the repository.
 
-[1.0.1]: https://github.com/EclipseManic/file-intelligence-platform/releases/tag/v1.0.1
-[1.0.0]: https://github.com/EclipseManic/file-intelligence-platform/releases/tag/v1.0.0
+[1.0.1]: https://github.com/EclipseManic/Security-Tools-and-Prototypes/tree/main/tools/file-intelligence/
+[1.0.0]: https://github.com/EclipseManic/Security-Tools-and-Prototypes/tree/main/tools/file-intelligence/

@@ -47,8 +47,8 @@ Requirements: **Python 3.12+**, **Node.js 20+** (only to build the browser app),
 and a modern browser.
 
 ```powershell
-git clone https://github.com/EclipseManic/file-intelligence-platform.git
-cd file-intelligence-platform
+git clone https://github.com/EclipseManic/Security-Tools-and-Prototypes.git
+cd Security-Tools-and-Prototypes/tools/file-intelligence
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r backend/requirements.txt
