@@ -73,8 +73,7 @@ own and stay as separate repositories.
   back to offline checks, and the verdicts are weaker for it.
 - Quality varies with age. The 2025 scripts were learning work; the newer tools
   have tests.
-- AI coding assistants were used for scaffolding and boilerplate. The problem
-  definition, the detection logic and the limits written here are mine.
+- The problem definitions, detection logic and every limitation written above are mine.
 
 ## Licence
 

@@ -2,14 +2,12 @@
 
 **Author:** EclipseManic  
 
-Advance Phishing Mail Detector is a powerful, Python-based tool designed to analyze .eml files and detect phishing attempts with a high degree of accuracy. By integrating with the VirusTotal API and employing a multi-faceted analysis approach, this tool can identify a wide range of malicious indicators in emails. From detailed header analysis to in-depth content scanning, this tool provides a comprehensive defense against phishing threats.
+Advance Phishing Mail Detector reads `.eml` files and reports what looks like phishing: authentication failures in the headers, mismatched or lookalike senders, risky links, attachment types, and optional VirusTotal lookups.
 
-> ⚙️ Note: This project was developed with the assistance of AI tools to accelerate development and improve functionality.
-
-### This tool is perfect for security enthusiasts, researchers, and anyone looking to better understand the anatomy of a phishing email. It provides a clear and actionable verdict, helping you to quickly determine if an email is SAFE, CAUTIOUS, or UNSAFE.
+It ends with a verdict - SAFE, CAUTIOUS or UNSAFE - and the indicators behind it. Read the indicators, not just the verdict: the score is a reading aid, not a detection guarantee.
 ---
 
-## 🚀 Features
+## Features
 
 ### Header Analysis
 - Detects **Return-Path** and **Reply-To** mismatches  
@@ -41,7 +39,7 @@ Advance Phishing Mail Detector is a powerful, Python-based tool designed to anal
 
 ---
 
-## 📦 Requirements
+## Requirements
 
 - Python **3.8+**  
 - A valid **VirusTotal API key**  
@@ -53,7 +51,7 @@ Clone the repository and install required libraries:
 pip install -r requirements.txt
 ```
 
-## 🔑 Environment Setup: VirusTotal API Key
+## Environment Setup: VirusTotal API Key
 
 This script requires a **VirusTotal API key**. Without it, the tool will not run.
 
@@ -76,7 +74,7 @@ _(Restart your terminal after running this for the variable to take effect.)_
 
 `$env:VT_API_KEY="your_api_key_here"`
 
-## 🔧 Usage
+## Usage
 
 ### Basic command:
 
@@ -93,7 +91,7 @@ _(Restart your terminal after running this for the variable to take effect.)_
 -   `--report analysis.json` → Saves a JSON report of the analysis
     
 
-## 📝 Output
+## Output
 
 -   **Header Analysis** → Authentication checks, domain spoofing, mismatches
     
@@ -106,11 +104,11 @@ _(Restart your terminal after running this for the variable to take effect.)_
 -   **JSON Report** → If `--report` option is used
     
 
-## 📂 Example JSON Report
+## Example JSON Report
 
 `{   "file": "suspicious_mail.eml",   "verdict": "UNSAFE",   "score": 8,   "feedback": [     "Return-Path Mismatch: Possible spoofing.",     "DMARC Failure: Sender is forged.",     "Malicious Links: 2 flagged as unsafe."   ],   "details": {     "header_findings": {...},     "spoof_findings": {...},     "reputation_results": [...],     "url_results": [...],     "attachment_results": [...],     "domain_age_days": 12   } }`
 
-## ⚠️ Disclaimer
+## Disclaimer
 
 This tool is designed strictly for **educational and defensive security purposes**.  
 Do **not** use it for offensive, malicious, or illegal activities.  

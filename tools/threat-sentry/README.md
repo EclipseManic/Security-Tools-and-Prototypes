@@ -8,13 +8,13 @@
 
 > Automate external asset discovery, intelligently enrich with multi-source data, and leverage ensemble machine learning to predict and prioritize risk. Transform alert fatigue into actionable intelligence.
 
-## 🚀 Mission Statement
+## Mission Statement
 
 **ThreatSentry AI** eliminates security alert fatigue and enables proactive threat hunting through intelligent risk prioritization. It combines automated asset discovery, multi-source data enrichment, and advanced machine learning to transform raw security data into actionable intelligence.
 
 ---
 
-## 👨‍💻 Author & Acknowledgments
+## ‍ Author & Acknowledgments
 
 **Project Lead:** EclipseManic
 
@@ -22,7 +22,7 @@
 
 ---
 
-## 📋 Executive Summary
+## Executive Summary
 
 Modern security teams face unprecedented challenges:
 - **Alert Fatigue**: Thousands of daily alerts with signal-to-noise ratios making manual triage impossible
@@ -39,9 +39,9 @@ Modern security teams face unprecedented challenges:
 
 ---
 
-## ✨ Core Features
+## Core Features
 
-### 🤖 Intelligent Risk Scoring Engine
+### Intelligent Risk Scoring Engine
 - **Ensemble Machine Learning Model**: Combines Random Forest, Gradient Boosting, and Neural Networks for robust risk classification
 - **Multi-Factor Analysis**: Evaluates 40+ security and business attributes beyond simple vulnerability counts:
   - **Temporal Context**: Exposure duration, patch lag, incident history
@@ -51,7 +51,7 @@ Modern security teams face unprecedented challenges:
 - **Confidence Scoring**: Each prediction includes a confidence metric (0-1) for analysts to gauge reliability
 - **Continuous Learning**: Model retrains automatically on configurable intervals with feedback integration
 
-### 🌐 Automated Asset Discovery & Intelligence Fusion
+### Automated Asset Discovery & Intelligence Fusion
 - **Shodan Integration**: Continuous discovery of internet-facing devices with advanced query support
   - Preset queries for common scenarios (SSL certificates, RDP services, ICS/Modbus, etc.)
   - Custom query support for organization-specific asset hunting
@@ -66,7 +66,7 @@ Modern security teams face unprecedented challenges:
   - **Network Monitoring Collector**: Traffic patterns, DDoS detection, anomaly scores
 - **Unified Database**: SQLite with 40+ indexed columns for efficient querying and reporting
 
-### 📊 Executive Dashboard & Analysis Tools
+### Executive Dashboard & Analysis Tools
 - **PyQt5-Based GUI** with dark/light theme support:
   - Real-time risk distribution visualization (bar charts with Matplotlib)
   - Sortable, filterable device table with color-coded risk indicators
@@ -86,7 +86,7 @@ Modern security teams face unprecedented challenges:
   - CVE impact analysis
   - Organization-wise vulnerability metrics
 
-### 📧 Proactive Email Alerting
+### Proactive Email Alerting
 - **SendGrid Integration**: Automatic HTML email notifications for high-risk assets
   - Triggered immediately upon risk label change (Low/Medium → High)
   - Prevents duplicate alerts with "notified" status tracking
@@ -105,7 +105,7 @@ Modern security teams face unprecedented challenges:
 
 *HTML formatted email with risk summary, CVE details, and remediation guidance sent via SendGrid*
 
-### 📈 Model Transparency & Continuous Improvement
+### Model Transparency & Continuous Improvement
 - **Performance Monitoring**:
   - Accuracy tracking across training epochs
   - Confusion matrix and classification reports
@@ -117,7 +117,7 @@ Modern security teams face unprecedented challenges:
   - Model weight adjustments based on feedback
   - Automated retraining schedule with metadata logging
 
-### ⚡ Performance & Reliability
+### Performance & Reliability
 - **Optimized for Scale**:
   - Database indexing on 5+ columns for sub-millisecond queries
   - Result caching for frequently accessed data (28.7x speedup)
@@ -217,7 +217,7 @@ Modern security teams face unprecedented challenges:
 
 ---
 
-## �🛠️ Technology Stack
+## � Technology Stack
 
 | Layer | Technologies |
 |-------|---------------|
@@ -230,7 +230,7 @@ Modern security teams face unprecedented challenges:
 
 ---
 
-## 🏗️ Architecture & Data Flow
+## Architecture & Data Flow
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -295,7 +295,7 @@ Collector Collector   Collector    Collector   Mgmt     Monitor
 
 ---
 
-## 📋 Getting Started
+## Getting Started
 
 ### Prerequisites
 - **Python**: 3.9 or later
@@ -382,7 +382,7 @@ The dashboard will launch with the scheduler running in the background.
 
 ---
 
-## 🚀 Usage Guide
+## Usage Guide
 
 ### Dashboard Components Overview
 ![Dashboard Main Interface with All Tabs]
@@ -451,7 +451,7 @@ Edit `alerts/email_alerts.py`:
 
 ---
 
-## 📊 Data Model
+## Data Model
 
 ### Device Table (40+ Columns)
 ```
@@ -473,7 +473,7 @@ CVE Info:         cve_id, cvss, summary
 
 ---
 
-## 🔄 Workflow Examples
+## Workflow Examples
 
 ### Scenario 1: Daily Threat Hunting
 1. Open dashboard → Review Risk=High devices (red)
@@ -498,7 +498,7 @@ CVE Info:         cve_id, cvss, summary
 
 ---
 
-## 🔧 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -524,7 +524,7 @@ CVE Info:         cve_id, cvss, summary
 
 ---
 
-## 🛡️ Security Considerations
+## Security Considerations
 
 1. **API Key Management**: Use environment variables, never commit `.env` to Git
 2. **Database Security**: SQLite suitable for single-user; migrate to PostgreSQL for multi-user
@@ -534,7 +534,7 @@ CVE Info:         cve_id, cvss, summary
 
 ---
 
-## 📈 Performance Optimization Tips
+## Performance Optimization Tips
 
 | Issue | Solution |
 |-------|----------|
@@ -546,7 +546,7 @@ CVE Info:         cve_id, cvss, summary
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
@@ -559,13 +559,13 @@ Areas for enhancement:
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License—see [LICENSE](LICENSE) file for details.
 
 ---
 
-## 📞 Support & Contact
+## Support & Contact
 
 - **Issues**: GitHub Issues for bug reports and feature requests
 - **Documentation**: See [docs/](docs/) directory for detailed technical documentation
@@ -573,7 +573,7 @@ This project is licensed under the MIT License—see [LICENSE](LICENSE) file for
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Shodan**: For comprehensive internet-facing device discovery
 - **NVD/NIST**: For authoritative vulnerability data
@@ -589,7 +589,7 @@ pip install -r requirements.txt
 
 ---
 
-## 🔐 Configuration
+## Configuration
 
 ### 1. Environment Variables (`.env` file)
 Create a `.env` file in the root directory with the following structure:
@@ -637,7 +637,7 @@ LOG_LEVEL="INFO" # DEBUG, INFO, WARNING, ERROR, CRITICAL
 
 ---
 
-## 🔍 Shodan Query Presets (`config.py`)
+## Shodan Query Presets (`config.py`)
 
 Modify the `SHODAN_QUERIES` dictionary to define your custom query presets:
 
@@ -661,7 +661,7 @@ the scheduler will automatically cycle through these presets.
 
 ---
 
-## 🧠 Implementing Internal Collectors
+## Implementing Internal Collectors
 
 > ⚠️ **Important:** The internal collectors (`cmdb_collector.py`, `siem_collector.py`, `patch_collector.py`, `network_monitor_collector.py`) are **placeholders**.  
 > Replace the placeholder logic with real integrations to your systems.
@@ -675,7 +675,7 @@ Without these integrations, the model will lack context for accurate predictions
 
 ---
 
-## 🧪 Running the Application
+## Running the Application
 
 ### (Optional) Generate Initial Training Data
 ```bash
@@ -692,7 +692,7 @@ The GUI will open and the scheduler will start scanning, enriching, and predicti
 
 ---
 
-## ⚡ Quick Demo with Generated Data
+## Quick Demo with Generated Data
 
 1. Complete installation (steps 1–3).  
 2. Set up your `.env` file (even with placeholder keys).  
@@ -711,7 +711,7 @@ The GUI will open and the scheduler will start scanning, enriching, and predicti
 
 ---
 
-## 🛠️ Scripts and Usage Guide
+## Scripts and Usage Guide
 
 | Script | Description |
 |--------|--------------|
@@ -742,7 +742,7 @@ python scripts/reset_db.py
 
 ---
 
-## 💬 Feedback & Suggestions
+## Feedback & Suggestions
 
 This project was developed by **EclipseManic**.  
 While code contributions are currently closed, your **feedback and bug reports** are highly appreciated.
@@ -751,7 +751,7 @@ Please open an [Issue](https://github.com/EclipseManic/Security-Tools-and-Protot
 
 ---
 
-## 📄 License
+## License
 
 This project is licensed under the **MIT License**.  
 See the [LICENSE](./LICENSE) file for details.
