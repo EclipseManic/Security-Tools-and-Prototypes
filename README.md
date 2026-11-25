@@ -1,58 +1,50 @@
-----------------------------------------  
-Keylogger with Active Window Tracking  
-----------------------------------------  
+# Endpoint Behavior Monitor
 
-**Author**: Eclipsemanic  
+An early Windows script that writes keystrokes and active-window switches to a
+local text file. It exists to show, at the API level, how basic endpoint telemetry
+is produced: `pynput` for key events, `pygetwindow` for the foreground window title.
 
-----------------------------------------  
-### DESCRIPTION  
-A Python script that logs keystrokes and tracks active window changes. Data is saved to `key_log.txt`, including timestamps for application/window switches. Special keys are formatted for readability.  
+This is a keystroke logger. It is the one script in this collection that should
+only ever run on a machine you own or have written permission to monitor. There is
+no stealth, no persistence, no encoding and no network code in it - it is a single
+file of callbacks appending lines to `key_log.txt`.
 
-----------------------------------------  
-### FEATURES  
-- Logs keystrokes to a text file.  
-- Tracks active window titles (e.g., "Chrome" or "Notepad").  
-- Maps special keys (e.g., [ENTER], [SHIFT], [CTRL]).  
-- Runs in the background until stopped with Ctrl+C.  
+## What it does
 
-----------------------------------------  
-### INSTALLATION  
-1. **Install Dependencies**:  
-   Run these commands in your terminal:  
-   pip install pynput pygetwindow  
+| Behaviour | Detail |
+|---|---|
+| Key capture | Every key press is appended to `key_log.txt` |
+| Window context | A separator line is written whenever the foreground window changes |
+| Special keys | Mapped to readable tokens: `[ENTER]`, `[TAB]`, `[BACKSPACE]`, `[SHIFT]`, `[CTRL]`, `[ALT]`, `[CAPSLOCK]`, `[ESC]`, `[DEL]` |
+| Lifetime | Runs until `Ctrl+C` in the terminal that started it |
 
-2. **Download Script**:  
-   Save the script as `keylogger.py`.  
+## Running it
 
-----------------------------------------  
-### USAGE  
-1. **Start the Keylogger**:  
-   Run the script:  
-   python keylogger.py  
+```text
+pip install pynput pygetwindow
+python endpoint_behavior_monitor.py
+```
 
-2. **Stop the Keylogger**:  
-   Press Ctrl+C in the terminal.  
+Output is appended to `key_log.txt` in the working directory.
 
-3. **View Logs**:  
-   Open `key_log.txt` to see keystrokes and window changes.  
+## Limits and risks
 
-----------------------------------------  
-### EXAMPLE LOG  
--------- Switched to: Document1 - Notepad --------  
-H e l l o [SPACE][ENTER]  
--------- Switched to: Chrome --------  
-h t t p s : / / g i t h u b . c o m [ENTER]  
+- Windows only. `pygetwindow` reads foreground window titles through the Win32 API
+  and returns nothing elsewhere.
+- No rotation, no size cap, no redaction. Anything typed while it runs, including
+  passwords, lands in plain text on disk.
+- No tamper evidence. The output is an ordinary text file that anything can edit.
+- No detection value. It produces the telemetry, it does not spot it. For the
+  defensive side of endpoint work, see ServiceSentinel.
+- Consent is not a technical control. On a shared or employer-owned machine,
+  running this without explicit written permission is a policy and legal problem.
 
-----------------------------------------  
-### DISCLAIMER  
-- **Educational use only**.  
-- Use only with **explicit permission** on systems you own.  
-- The author is not responsible for misuse.  
+## Why it is still here
 
-----------------------------------------  
-### LICENSE  
-Free and open-source. Modify and redistribute freely.  
+Written in 2025 while learning how Windows input and window-focus telemetry is
+actually produced. It stayed because knowing what that telemetry looks like is what
+makes the detection side readable. It is not presented as a tool.
 
-----------------------------------------  
-**Author**: eclipsemanic  
-**GitHub**: https://github.com/EclipseManic
+## Licence
+
+MIT. See `LICENSE`.
