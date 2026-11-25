@@ -14,4 +14,4 @@ If you have a suggestion that would make this project better, please fork the re
 
 ## Acknowledgment
 
-This project was developed by a single author, who utilized AI tools to assist in the development process. As the sole maintainer, I am always learning and welcome any feedback or contributions to improve the code and its functionality.
+This project has a single maintainer. Feedback and contributions are welcome - open an issue describing what you tried and what happened.
