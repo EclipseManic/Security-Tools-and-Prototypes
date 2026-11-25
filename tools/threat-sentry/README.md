@@ -547,7 +547,7 @@ This project is licensed under the MIT License—see [LICENSE](LICENSE) file for
 ## Support & Contact
 
 - **Issues**: GitHub Issues for bug reports and feature requests
-- **Documentation**: See [docs/](docs/) directory for detailed technical documentation
+- **Documentation**: This README covers setup, configuration and usage; the code is organised under [core/](core/), [collectors/](collectors/) and [scripts/](scripts/)
 - **Email**: Maintainer information in [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
 
 ---

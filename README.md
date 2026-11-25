@@ -98,3 +98,5 @@ own and stay as separate repositories.
 ## Licence
 
 MIT. See `LICENSE`.
+
+Part of my [SOC and detection portfolio](https://github.com/EclipseManic). Larger tools live in [ServiceSentinel](https://github.com/EclipseManic/ServiceSentinel) and [SOC-IR-Trainer](https://github.com/EclipseManic/SOC-IR-Trainer).
