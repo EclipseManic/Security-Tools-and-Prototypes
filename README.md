@@ -19,13 +19,13 @@ One line each. Open a folder for its README and a sample of the tool's real outp
 |---|---|
 | **[ServiceSentinel](tools/service-sentinel/)** | Windows service and event-log triage: what is installed, what changed, what looks wrong — and why. |
 | **[SOC IR Trainer](tools/soc-ir-trainer/)** | Practise incident response under pressure: 133 scenarios, four roles, a scored debrief. |
+| **[File Intelligence Platform](tools/file-intelligence/)** | Inventories a directory and surfaces exposed secrets, personal data and sensitive files. |
 | **[FwScan](tools/fwscan/)** | Reads a firewall deny log and separates a broad sweep, a subnet-wide walk and a coordinated scan. |
 | **[LogTriage](tools/log-triage/)** | One command that ranks a raw log's findings and lists every indicator, with first and last seen. |
-| **[Endpoint Behavior Monitor](tools/endpoint-monitor/)** | A small script showing, at the API level, how keystroke and window telemetry is produced. |
 | **[Malware Analyzer CLI](tools/malware-analyzer/)** | The usual file triage in one command: hashes, strings, YARA, PE metadata, optional VirusTotal. |
 | **[Phishing Mail Detector](tools/phishing-mail-detector/)** | Reads an `.eml` and flags the header, link and attachment red flags, ending in a verdict. |
-| **[File Intelligence Platform](tools/file-intelligence/)** | Inventories a directory and surfaces exposed secrets, personal data and sensitive files. |
 | **[ThreatSentry AI](tools/threat-sentry/)** | Prototype that ranks exposed hosts from Shodan and NVD — and is honest about its limits. |
+| **[Endpoint Behavior Monitor](tools/endpoint-monitor/)** | A small script showing, at the API level, how keystroke and window telemetry is produced. |
 
 Every tool ships a sample of its real output beside the commands that produced it.
 SOC IR Trainer is a practice resource, not an analyser.
