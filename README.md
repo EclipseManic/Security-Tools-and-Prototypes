@@ -38,21 +38,21 @@ Real output from real runs on this machine, not mockups.
 |---|---|
 | ![ServiceSentinel overview](tools/service-sentinel/docs/screenshots/overview.png) | ![SOC IR Trainer scenario library](tools/soc-ir-trainer/docs/screenshots/library.png) |
 
-| FwScan | LogTriage |
+| File Intelligence Platform | FwScan |
 |---|---|
-| ![FwScan demo output](docs/screenshots/fwscan-demo.png) | ![LogTriage findings](docs/screenshots/logtriage-triage.png) |
+| ![File Intelligence dashboard](tools/file-intelligence/docs/screenshots/dashboard.png) | ![FwScan demo output](docs/screenshots/fwscan-demo.png) |
 
-| Malware Analyzer CLI | Phishing Mail Detector |
+| LogTriage | Malware Analyzer CLI |
 |---|---|
-| ![Malware Analyzer offline triage](docs/screenshots/malware-analyzer-report.png) | ![Phishing Mail Detector verdict](docs/screenshots/phishing-detector-verdict.png) |
+| ![LogTriage findings](docs/screenshots/logtriage-triage.png) | ![Malware Analyzer offline triage](docs/screenshots/malware-analyzer-report.png) |
 
-| Endpoint Behavior Monitor | File Intelligence Platform |
+| Phishing Mail Detector | ThreatSentry AI |
 |---|---|
-| ![Endpoint Behavior Monitor sample log](docs/screenshots/endpoint-monitor-log.png) | ![File Intelligence dashboard](tools/file-intelligence/docs/screenshots/dashboard.png) |
+| ![Phishing Mail Detector verdict](docs/screenshots/phishing-detector-verdict.png) | ![ThreatSentry AI dashboard](tools/threat-sentry/assets/screenshots/Screenshot%202026-01-10%20153154.png) |
 
-**ThreatSentry AI** - main hunting interface:
+**Endpoint Behavior Monitor** - sample log:
 
-![ThreatSentry AI dashboard](tools/threat-sentry/assets/screenshots/Screenshot%202026-01-10%20153154.png)
+![Endpoint Behavior Monitor sample log](docs/screenshots/endpoint-monitor-log.png)
 
 ## Why one repository
 
