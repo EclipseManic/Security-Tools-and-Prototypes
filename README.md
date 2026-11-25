@@ -1,6 +1,6 @@
 # Security-Tools-and-Prototypes
 
-Defensive security utilities and prototypes, consolidated from earlier standalone repositories. Each tool here was built to solve one specific problem that came up during lab work, coursework or an investigation. None of them is a product, and none is described as production-ready.
+Defensive security utilities and prototypes, consolidated from earlier standalone repositories. Each tool here was built to solve one specific problem that came up during lab work or an investigation. None of them is a product, and none is described as production-ready.
 
 ## Utilities
 
@@ -11,13 +11,13 @@ Defensive security utilities and prototypes, consolidated from earlier standalon
 | [File-Intelligence-Platform](https://github.com/EclipseManic/File-Intelligence-Platform) | Local-first file intelligence and sensitive-data discovery |
 | [Advance_Phishing_Mail_Detector_CLI](https://github.com/EclipseManic/Advance_Phishing_Mail_Detector_CLI) | Inspects `.eml` files for phishing indicators |
 | [Malware_Analyzer_CLI](https://github.com/EclipseManic/Malware_Analyzer_CLI) | Offline and online malware triage |
-| [day2-manichand-gupta-blue-tool](https://github.com/EclipseManic/day2-manichand-gupta-blue-tool) | Defensive log triage CLI: IOC extraction, brute-force and scanning detection |
+| [LogTriage](https://github.com/EclipseManic/LogTriage) | Defensive log triage CLI: IOC extraction, brute-force and scanning detection |
 
 These are being moved in from their standalone repositories, so for now each link points at the original.
 
 ## What is deliberately not here
 
-The five analyst tools that were folded into a single workbench live there and only there: IOC lookup, malware analysis, phishing analysis, EVTX event analysis and detection-rule translation are all in [SecLyst](https://github.com/EclipseManic/SecLyst). Nothing is duplicated between the two repositories.
+The five analyst tools that were folded into a single workbench live there and only there: IOC lookup, malware analysis, phishing analysis, EVTX event analysis and detection-rule translation are all in SecLyst (in development; public once the integration work settles). Nothing is duplicated between the two repositories.
 
 ## Notes
 
