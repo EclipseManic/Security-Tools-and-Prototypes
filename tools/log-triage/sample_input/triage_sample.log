@@ -1,0 +1,83 @@
+Mar 12 03:00:10 lab-ubuntu sshd[2110]: Accepted publickey for ops1 from 10.0.0.15 port 51000 ssh2: RSA SHA256:demoKeyFingerprint
+10.0.0.31 - - [12/Mar/2026:03:00:20 +0000] "GET / HTTP/1.1" 200 1024 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+10.0.0.32 - - [12/Mar/2026:03:01:02 +0000] "GET /health HTTP/1.1" 200 1037 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:01:25 lab-ubuntu sshd[2185]: Accepted publickey for svc_deploy from 10.0.0.18 port 51000 ssh2: RSA SHA256:demoKeyFingerprint
+198.51.100.10 - - [12/Mar/2026:03:01:44 +0000] "GET /api/v1/status HTTP/1.1" 200 1050 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+10.0.0.31 - - [12/Mar/2026:03:02:26 +0000] "GET /assets/app.js HTTP/1.1" 200 1063 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:02:40 lab-ubuntu sshd[2260]: Accepted publickey for ops1 from 10.0.0.15 port 51000 ssh2: RSA SHA256:demoKeyFingerprint
+10.0.0.32 - - [12/Mar/2026:03:03:08 +0000] "GET /login HTTP/1.1" 200 1076 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+198.51.100.10 - - [12/Mar/2026:03:03:50 +0000] "GET / HTTP/1.1" 200 1089 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:04:05 lab-ubuntu sshd[2345]: Accepted publickey for labadmin from 10.0.0.21 port 51000 ssh2: RSA SHA256:demoKeyFingerprint
+10.0.0.31 - - [12/Mar/2026:03:04:32 +0000] "GET /health HTTP/1.1" 200 1102 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+10.0.0.32 - - [12/Mar/2026:03:05:14 +0000] "GET /api/v1/status HTTP/1.1" 200 1115 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:05:20 lab-ubuntu sshd[2420]: Accepted publickey for svc_deploy from 10.0.0.18 port 51000 ssh2: RSA SHA256:demoKeyFingerprint
+198.51.100.10 - - [12/Mar/2026:03:05:56 +0000] "GET /assets/app.js HTTP/1.1" 200 1128 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:06:35 lab-ubuntu sshd[2495]: Accepted publickey for ops1 from 10.0.0.15 port 51000 ssh2: RSA SHA256:demoKeyFingerprint
+10.0.0.31 - - [12/Mar/2026:03:06:38 +0000] "GET /login HTTP/1.1" 200 1141 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:06:40 lab-ubuntu sudo: ops1 : TTY=pts/0 ; PWD=/home/ops1 ; USER=root ; COMMAND=/usr/bin/apt-get update
+10.0.0.32 - - [12/Mar/2026:03:07:20 +0000] "GET / HTTP/1.1" 200 1154 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:07:50 lab-ubuntu sshd[2570]: Accepted publickey for labadmin from 10.0.0.21 port 51000 ssh2: RSA SHA256:demoKeyFingerprint
+198.51.100.10 - - [12/Mar/2026:03:08:02 +0000] "GET /health HTTP/1.1" 200 1167 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:08:10 lab-ubuntu sudo: ops1 : TTY=pts/0 ; PWD=/home/ops1 ; USER=root ; COMMAND=/usr/bin/systemctl restart nginx
+10.0.0.31 - - [12/Mar/2026:03:08:44 +0000] "GET /api/v1/status HTTP/1.1" 200 1180 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:08:45 lab-web01 systemd[1]: Started Daily apt upgrade and clean activities.
+Mar 12 03:09:05 lab-ubuntu sshd[2645]: Accepted publickey for svc_deploy from 10.0.0.18 port 51000 ssh2: RSA SHA256:demoKeyFingerprint
+10.0.0.32 - - [12/Mar/2026:03:09:26 +0000] "GET /assets/app.js HTTP/1.1" 200 1193 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:09:30 lab-ubuntu CRON[3001]: (root) CMD (command -v debian-sa1 > /dev/null && debian-sa1 1 1)
+Mar 12 03:10:00 lab-ubuntu sshd[2400]: Failed password for invalid user root from 203.0.113.45 port 45001 ssh2
+198.51.100.10 - - [12/Mar/2026:03:10:08 +0000] "GET /login HTTP/1.1" 200 1206 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:10:18 lab-ubuntu sshd[2401]: Failed password for invalid user admin from 203.0.113.45 port 45002 ssh2
+Mar 12 03:10:36 lab-ubuntu sshd[2402]: Failed password for invalid user oracle from 203.0.113.45 port 45003 ssh2
+10.0.0.31 - - [12/Mar/2026:03:10:50 +0000] "GET / HTTP/1.1" 200 1219 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:10:54 lab-ubuntu sshd[2403]: Failed password for invalid user postgres from 203.0.113.45 port 45004 ssh2
+Mar 12 03:11:12 lab-ubuntu sshd[2404]: Failed password for invalid user test from 203.0.113.45 port 45005 ssh2
+Mar 12 03:11:30 lab-ubuntu sshd[2405]: Failed password for invalid user ubuntu from 203.0.113.45 port 45006 ssh2
+10.0.0.32 - - [12/Mar/2026:03:11:32 +0000] "GET /health HTTP/1.1" 200 1232 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:11:48 lab-ubuntu sshd[2406]: Failed password for invalid user deploy from 203.0.113.45 port 45007 ssh2
+Mar 12 03:12:06 lab-ubuntu sshd[2407]: Failed password for invalid user root from 203.0.113.45 port 45008 ssh2
+198.51.100.10 - - [12/Mar/2026:03:12:14 +0000] "GET /api/v1/status HTTP/1.1" 200 1245 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:12:24 lab-ubuntu sshd[2408]: Failed password for invalid user admin from 203.0.113.45 port 45009 ssh2
+10.0.0.31 - - [12/Mar/2026:03:12:56 +0000] "GET /assets/app.js HTTP/1.1" 200 1258 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+10.0.0.32 - - [12/Mar/2026:03:13:38 +0000] "GET /login HTTP/1.1" 200 1271 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:13:40 lab-ubuntu sshd[2410]: Accepted password for deploy from 203.0.113.45 port 45990 ssh2
+198.51.100.11 - - [12/Mar/2026:03:14:00 +0000] "GET /favicon.ico HTTP/1.1" 404 512 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+198.51.100.11 - - [12/Mar/2026:03:14:20 +0000] "GET /old-page HTTP/1.1" 404 512 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+198.51.100.12 - - [12/Mar/2026:03:14:40 +0000] "GET /missing.png HTTP/1.1" 404 512 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+198.51.100.12 - - [12/Mar/2026:03:15:00 +0000] "GET /robots.txt HTTP/1.1" 404 512 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+Mar 12 03:19:00 lab-ubuntu sshd[2199]: Failed password for ops1 from 10.0.0.77 port 50111 ssh2
+198.51.100.77 - - [12/Mar/2026:03:20:00 +0000] "GET /.env HTTP/1.1" 403 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:20:08 +0000] "GET /.git/config HTTP/1.1" 404 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:20:16 +0000] "GET /backup.sql HTTP/1.1" 200 18432 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:20:24 +0000] "GET /wp-login.php HTTP/1.1" 404 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:20:32 +0000] "GET /phpmyadmin/ HTTP/1.1" 404 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:20:40 +0000] "GET /admin HTTP/1.1" 403 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:20:48 +0000] "GET /server-status HTTP/1.1" 403 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:20:56 +0000] "GET /vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php HTTP/1.1" 404 233 "-" "sqlmap/1.8.3#stable"
+198.51.100.77 - - [12/Mar/2026:03:21:04 +0000] "GET /cgi-bin/test.cgi HTTP/1.1" 404 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:21:12 +0000] "GET /xmlrpc.php HTTP/1.1" 404 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:21:20 +0000] "GET /.aws/credentials HTTP/1.1" 404 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:21:28 +0000] "GET /../../etc/passwd HTTP/1.1" 400 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:21:36 +0000] "GET /shell.php HTTP/1.1" 404 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+198.51.100.77 - - [12/Mar/2026:03:21:44 +0000] "GET /.ssh/id_rsa HTTP/1.1" 404 233 "-" "Mozilla/5.00 (Nikto/2.5.0) (Evasions:None) (Test:000001)"
+Mar 12 03:25:00 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41000 DPT=21 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:04 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41001 DPT=22 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:08 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41002 DPT=23 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:12 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41003 DPT=25 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:16 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41004 DPT=53 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:20 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41005 DPT=80 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:24 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41006 DPT=110 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:28 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41007 DPT=143 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:32 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41008 DPT=443 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:36 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41009 DPT=3306 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:40 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41010 DPT=3389 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:25:44 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.88 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=41011 DPT=8080 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:27:05 lab-dns dnsmasq[811]: query[A] update-check.example from 10.0.0.23
+Mar 12 03:27:08 lab-dns dnsmasq[811]: query[A] update-check.example from 10.0.0.23
+Mar 12 03:27:30 lab-dns dnsmasq[811]: query[A] deb.debian.org from 10.0.0.23
+Mar 12 03:27:45 lab-dns dnsmasq[811]: query[AAAA] github.com from 10.0.0.23
+Mar 12 03:28:00 lab-dns dnsmasq[811]: query[A] telemetry.example from 10.0.0.44
+2026-03-12T03:28:14Z lab-edr1 edr-agent[221]: ALERT verdict=malicious action=quarantined file="/tmp/invoice_scan.pdf" sha256=d235842f1fa6b2bf5afef3c941af2bf777ea0ddd6a2d7370db75563248d729f3
+2026-03-12T03:29:02Z lab-edr1 edr-agent[221]: scan file="/usr/bin/curl" sha256=b0c98431229bdb155964ce2609b9f0e102c1672300069f10beee4f4f2ce93277 md5=90fe540a068e4954aca2a7f6969e0f65 verdict=clean
+Mar 12 03:30:01 lab-gw kernel: [12345.678901] [UFW BLOCK] IN=eth0 OUT= MAC=02:00:00:00:00:01 SRC=192.0.2.200 DST=10.0.0.5 LEN=44 TOS=0x00 PREC=0x00 TTL=52 ID=54321 PROTO=TCP SPT=55555 DPT=4444 WINDOW=1024 RES=0x00 SYN URGP=0
+Mar 12 03:31:20 lab-ubuntu sshd[2500]: Accepted publickey for ops1 from 10.0.0.15 port 51222 ssh2: RSA SHA256:demoKeyFingerprint
+198.51.100.10 - - [12/Mar/2026:03:32:00 +0000] "GET /health HTTP/1.1" 200 512 "-" "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
