@@ -2,7 +2,6 @@
 
 **A local, browser-based incident-response trainer for SOC analysts.**
 
-[![Tests](https://github.com/EclipseManic/SOC-IR-Trainer/actions/workflows/tests.yml/badge.svg)](https://github.com/EclipseManic/SOC-IR-Trainer/actions/workflows/tests.yml)
 [![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -67,8 +66,8 @@ Requirements: **Python 3.11+**, **Node.js 18+** (only to build the browser app),
 and a modern browser.
 
 ```powershell
-git clone https://github.com/EclipseManic/soc-ir-trainer.git
-cd soc-ir-trainer
+git clone https://github.com/EclipseManic/Security-Tools-and-Prototypes.git
+cd Security-Tools-and-Prototypes/tools/soc-ir-trainer
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt

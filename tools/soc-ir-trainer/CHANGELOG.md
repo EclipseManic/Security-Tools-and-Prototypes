@@ -39,4 +39,4 @@ Initial public release.
 - The legacy Python scenario modules and the obsolete scenario archive are no
   longer part of the repository.
 
-[3.0.0]: https://github.com/EclipseManic/soc-ir-trainer/releases/tag/v3.0.0
+[3.0.0]: https://github.com/EclipseManic/Security-Tools-and-Prototypes/tree/main/tools/soc-ir-trainer

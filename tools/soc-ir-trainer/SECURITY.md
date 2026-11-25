@@ -12,7 +12,7 @@
 Please do not open a public issue for a security problem.
 
 Use GitHub's private vulnerability reporting:
-<https://github.com/EclipseManic/soc-ir-trainer/security/advisories/new>
+<https://github.com/EclipseManic/Security-Tools-and-Prototypes/security/advisories/new>
 
 Include the version, operating system, reproduction steps, and the impact you
 believe is possible. You will get an acknowledgement, a triage decision, and a

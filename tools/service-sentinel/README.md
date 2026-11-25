@@ -2,7 +2,6 @@
 
 **A local-first investigation console for Windows services.**
 
-[![Tests](https://github.com/EclipseManic/ServiceSentinel/actions/workflows/tests.yml/badge.svg)](https://github.com/EclipseManic/ServiceSentinel/actions/workflows/tests.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
@@ -46,8 +45,8 @@ Requirements: Windows, Python 3.10+, and PowerShell 5.1 or 7 (used only as a dat
 collector).
 
 ```powershell
-git clone https://github.com/EclipseManic/servicesentinel.git
-cd servicesentinel
+git clone https://github.com/EclipseManic/Security-Tools-and-Prototypes.git
+cd Security-Tools-and-Prototypes/tools/service-sentinel
 python -m venv .venv
 .venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -263,4 +262,4 @@ stopping, containing, or deleting anything.
 
 MIT — see [LICENSE](LICENSE). Copyright (c) 2026 Eclipsemanic.
 
-Part of my [SOC and detection portfolio](https://github.com/EclipseManic). See also [Security-Tools-and-Prototypes](https://github.com/EclipseManic/Security-Tools-and-Prototypes) for smaller service and log utilities.
+Part of my [SOC and detection portfolio](https://github.com/EclipseManic).
