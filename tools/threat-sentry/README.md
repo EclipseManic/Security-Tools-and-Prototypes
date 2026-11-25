@@ -312,8 +312,8 @@ Collector Collector   Collector    Collector   Mgmt     Monitor
 
 #### Step 1: Clone Repository
 ```bash
-git clone https://github.com/EclipseManic/ThreatSentry-AI.git
-cd ThreatSentry-AI
+git clone https://github.com/EclipseManic/Security-Tools-and-Prototypes.git
+cd Security-Tools-and-Prototypes/tools/threat-sentry
 ```
 
 #### Step 2: Create Virtual Environment
@@ -747,7 +747,7 @@ python scripts/reset_db.py
 This project was developed by **EclipseManic**.  
 While code contributions are currently closed, your **feedback and bug reports** are highly appreciated.
 
-Please open an [Issue](https://github.com/EclipseManic/ThreatSentry-AI/issues) to share your thoughts or report a problem.
+Please open an [Issue](https://github.com/EclipseManic/Security-Tools-and-Prototypes/tree/main/tools/threat-sentry/issues) to share your thoughts or report a problem.
 
 ---
 
