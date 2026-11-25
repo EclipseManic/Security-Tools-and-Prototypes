@@ -1,0 +1,175 @@
+id: jwt_forgery___mass_data_access
+name: JWT Forgery — Mass Data Access
+category: Web App
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to JWT Algorithm Confusion Enables Mass Data Access. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for JWT Algorithm Confusion Enables Mass Data Access. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for JWT Algorithm Confusion Enables Mass Data Access. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the JWT Algorithm Confusion Enables Mass Data Access incident. Your organization runs an API gateway at api.acmecorp.com (Python/Flask, behind NGINX) that uses JWT tokens for authentication. The tokens are signed with RS256 (RSA). At 06:00 today, the rate limiter detected an unusual pattern: a single IP (78.46.xx.xx) made 12,000 API calls in 10 minutes, accessing /api/v3/users, /api/v3/payments, and /api/v3/medical-records endpoints. The attacker exploited a JWT algorithm confusion vulnerability: the server accepts the ''alg'' header from the token, so the attacker changed the algorithm from RS256 to HS256 and signed the token with the server''s public RSA key (which was publicly available in the /jwks.json endpoint). The server accepted the HS256 token signed with the public key. The attacker exfiltrated 89,000 user profiles, 34,000 payment records (card numbers), and 12,000 medical records. The attack lasted from 05:47 to 05:57. Business impact: customer-facing
+  service availability and data confidentiality are at risk, and customer notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties for exposed customer records.'
+incident:
+  title: JWT Algorithm Confusion Enables Mass Data Access
+  opening: Your organization runs an API gateway at api.acmecorp.com (Python/Flask, behind NGINX) that uses JWT tokens for authentication. The tokens are signed with RS256 (RSA).
+  summary: 'Your organization runs an API gateway at api.acmecorp.com (Python/Flask, behind NGINX) that uses JWT tokens for authentication. The tokens are signed with RS256 (RSA). At 06:00 today, the rate limiter detected an unusual pattern: a single IP (78.46.xx.xx) made 12,000 API calls in 10 minutes, accessing /api/v3/users, /api/v3/payments, and /api/v3/medical-records endpoints. The attacker exploited a JWT algorithm confusion vulnerability: the server accepts the ''alg'' header from the token, so the attacker changed the algorithm from RS256 to HS256 and signed the token with the server''s public RSA key (which was publicly available in the /jwks.json endpoint). The server accepted the HS256 token signed with the public key. The attacker exfiltrated 89,000 user profiles, 34,000 payment records (card numbers), and 12,000 medical records. The attack lasted from 05:47 to 05:57.'
+  compromised_assets:
+  - api.acmecorp.com
+  - 89,000 user profiles
+  - 34,000 payment records
+  - 12,000 medical records
+  detected_via: Rate limiter anomaly (12K requests in 10 min from single IP)
+  kill_chain:
+  - Initial Access
+  - Credential Access
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Credential Access
+  - Collection
+phases:
+- id: token_revocation_phase_1
+  phase_type: triage
+  title: Token Revocation — Phase 1
+  situation: The attacker has forged JWT tokens and is actively accessing the API. The current JWT signing key may be compromised (the attacker used the public key as HMAC secret). All issued tokens need to be considered untrusted.
+  prompt: What do you do to immediately stop the unauthorized access?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on api.acmecorp.com, its severity, and the affected accounts.'
+    action: What do you do to immediately stop the unauthorized access?
+    why: Every later decision depends on an accurate picture of api.acmecorp.com and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Token Revocation — Phase 1. Asset in scope: api.acmecorp.com.'
+  hints:
+  - The attacker can still forge tokens with lower rate.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - immediately rotate
+  - jwt signing
+  - signing key
+  - key invalidate
+  - invalidate currently
+  - currently issued
+  - issued tokens
+  - tokens deploying
+  reference_answer: |-
+    Immediately rotate the JWT signing key, invalidate all currently issued tokens by deploying a token blocklist, and disable the /jwks.json endpoint from public access
+
+    Why: Kills all forged and legitimate tokens, generates new signing key, and removes the public key from exposure.
+  followup_good: 'Code review of the JWT validation middleware shows: the server reads the ''alg'' header from the incoming token and uses it to determine which verification method to apply. When ''alg'' is ''HS256'', it uses the RSA public key bytes as the HMAC secret. The /jwks.json endpoint exposes the public key at api.acmecorp.com/.well-known/jwks.json.'
+  followup_weak: |-
+    Kills all forged and legitimate tokens, generates new signing key, and removes the public key from exposure.
+
+    Code review of the JWT validation middleware shows: the server reads the 'alg' header from the incoming token and uses it to determine which verification method to apply. When 'alg' is 'HS256', it uses the RSA public key bytes as the HMAC secret. The /jwks.json endpoint exposes the public key at api.acmecorp.com/.well-known/jwks.json.
+  next: algorithm_confusion_fix_phase_2
+  mitre_tactic: Credential Access
+  mitre_technique: T1550.004 Web Session Cookie
+- id: algorithm_confusion_fix_phase_2
+  phase_type: containment
+  title: Algorithm Confusion Fix — Phase 2
+  situation: 'Code review of the JWT validation middleware shows: the server reads the ''alg'' header from the incoming token and uses it to determine which verification method to apply. When ''alg'' is ''HS256'', it uses the RSA public key bytes as the HMAC secret. The /jwks.json endpoint exposes the public key at api.acmecorp.com/.well-known/jwks.json.'
+  prompt: How do you fix the JWT algorithm confusion vulnerability?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: How do you fix the JWT algorithm confusion vulnerability?
+    why: The first containment action sets the blast radius for everything that follows.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Algorithm Confusion Fix — Phase 2. Asset in scope: api.acmecorp.com.'
+  hints:
+  - Valid alternative but doesn't address the specific vulnerability.
+  - The attacker could still forge tokens at lower rates.
+  ideal_concepts:
+  - hardcode expected
+  - expected algorithm
+  - algorithm rs256
+  - rs256 server
+  - server ignore
+  - ignore alg
+  - alg header
+  - header tokens
+  reference_answer: |-
+    Hardcode the expected algorithm (RS256) on the server, ignore the 'alg' header from tokens entirely, rotate the signing key, and restrict /jwks.json to internal network only
+
+    Why: Fixes the root cause: the server decides the algorithm, not the token. Key rotation and JWKS restriction add defense-in-depth.
+  followup_good: The attacker accessed 89,000 user profiles, 34,000 payment records, and 12,000 medical records. Payment data includes full card numbers (not tokenized). Medical records include diagnoses and prescriptions. This is a multi-regulatory breach (PCI-DSS for payments, HIPAA for medical).
+  followup_weak: |-
+    Fixes the root cause: the server decides the algorithm, not the token.
+
+    The attacker accessed 89,000 user profiles, 34,000 payment records, and 12,000 medical records. Payment data includes full card numbers (not tokenized). Medical records include diagnoses and prescriptions. This is a multi-regulatory breach (PCI-DSS for payments, HIPAA for medical).
+  next: recovery_and_validation
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. api.acmecorp.com is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return api.acmecorp.com to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return api.acmecorp.com to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: api.acmecorp.com.'
+  hints:
+  - Which backup or rebuild image is known-good for api.acmecorp.com, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore api.acmecorp.com from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: data_exposure_assessment_phase_3
+  next_weak: ''
+  mitre_tactic: Impact
+  mitre_technique: T1530 Data from Cloud Storage
+  role_prompts: {}
+- id: data_exposure_assessment_phase_3
+  phase_type: lessons
+  title: Data Exposure Assessment — Phase 3
+  situation: The attacker accessed 89,000 user profiles, 34,000 payment records, and 12,000 medical records. Payment data includes full card numbers (not tokenized). Medical records include diagnoses and prescriptions. This is a multi-regulatory breach (PCI-DSS for payments, HIPAA for medical).
+  prompt: Who must be notified about this breach?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on api.acmecorp.com.
+    action: Who must be notified about this breach?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Data Exposure Assessment — Phase 3. Asset in scope: api.acmecorp.com.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - ciso legal
+  - legal dpo
+  - dpo payment
+  - payment processor
+  - processor pci-dss
+  - pci-dss hhs
+  - hhs hipaa
+  - hipaa affected
+  reference_answer: |-
+    Notify CISO, Legal, DPO, payment processor (for PCI-DSS), HHS (for HIPAA), affected customers, and engage a forensic firm; begin card reissuance process with the payment processor
+
+    Why: Multi-regulatory breach requires simultaneous notification to payment industry, healthcare regulator, and affected individuals.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the JWT Algorithm Confusion Enables Mass Data Access incident. Your organization runs an API gateway at api.acmecorp.com (Python/Flask, behind NGINX) that uses JWT tokens for authentication. The tokens are signed with RS256 (RSA). At 06:00 today, the rate limiter detected an unusual pattern: a single IP (78.46.xx.xx) made 12,000 API calls in 10 minutes, accessing /api/v3/users, /api/v3/payments, and /api/v3/medical-records endpoints. The attacker exploited a JWT algorithm confusion vulnerability: the server accepts the 'alg' header from the token, so the at...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the JWT Algorithm Confusion Enables Mass Data Access incident. Your organization runs an API gateway at api.acmecorp.com (Python/Flask, behind NGINX) that uses JWT tokens for authentication. The tokens are signed with RS256 (RSA). At 06:00 today, the rate limiter detected an unusual pattern: a single IP (78.46.xx.xx) made 12,000 API calls in 10 minutes, accessing /api/v3/users, /api/v3/payments, and /api/v3/medical-records endpoints. The attacker exploited a JWT algorithm confusion vulnerability: the server accepts the 'alg' header from the token, so the at...
+  mitre_tactic: Impact
+  mitre_technique: T1530 Data from Cloud Storage

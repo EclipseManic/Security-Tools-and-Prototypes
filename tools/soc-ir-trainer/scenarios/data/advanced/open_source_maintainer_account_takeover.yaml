@@ -1,0 +1,211 @@
+id: open_source_maintainer_account_takeover
+name: Open Source Maintainer Account Takeover
+category: Advanced Threats
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Open Source Maintainer Account Takeover — OSS Ecosystem Attack. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Open Source Maintainer Account Takeover — OSS Ecosystem Attack. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Open Source Maintainer Account Takeover — OSS Ecosystem Attack. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Open Source Maintainer Account Takeover — OSS Ecosystem Attack incident. The software composition analysis (SCA) tool flagged a suspicious update to ''async-http-client'', a popular Python HTTP library used by 47 of the company''s microservices. The update (v3.9.0) was released 48 hours ago by a new maintainer account ''dev-team-2024'' that was added to the project 2 weeks ago. The original maintainer''s account was compromised via credential stuffing. The malicious update contained a dependency on a new package ''async-http-client-utils'' that contained a payload scanning for hardcoded secrets in the application code and environment variables. The library is used in production by 47 microservices handling customer API traffic. The malicious version was deployed to production 36 hours ago. The payload specifically targets: API keys in configuration files, database credentials in connection strings, JWT signing keys, and cloud provider tokens. The
+  company''s microservices architecture means each service has its own set of credentials. Business impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: Open Source Maintainer Account Takeover — OSS Ecosystem Attack
+  opening: The software composition analysis (SCA) tool flagged a suspicious update to 'async-http-client', a popular Python HTTP library used by 47 of the company's microservices. The update (v3.9.0) was released 48 hours ago by a new maintainer account 'dev-team-2024' that was added to the project 2 weeks ago.
+  summary: 'The software composition analysis (SCA) tool flagged a suspicious update to ''async-http-client'', a popular Python HTTP library used by 47 of the company''s microservices. The update (v3.9.0) was released 48 hours ago by a new maintainer account ''dev-team-2024'' that was added to the project 2 weeks ago. The original maintainer''s account was compromised via credential stuffing. The malicious update contained a dependency on a new package ''async-http-client-utils'' that contained a payload scanning for hardcoded secrets in the application code and environment variables. The library is used in production by 47 microservices handling customer API traffic. The malicious version was deployed to production 36 hours ago. The payload specifically targets: API keys in configuration files, database credentials in connection strings, JWT signing keys, and cloud provider tokens. The company''s microservices architecture means each service has its own set of credentials.'
+  compromised_assets:
+  - async-http-client v3.9.0 (malicious dependency)
+  - 47 production microservices
+  - API keys, database credentials, JWT keys, cloud tokens
+  - Open source project maintainership integrity
+  detected_via: SCA tool — new dependency flagged in updated package
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: 47 microservices in production are running a compromised library version with a malicious dependency. The payload scans for secrets in code and environment variables. The library has been in production for 36 hours. The attacker's infrastructure may be receiving exfiltrated credentials.
+  prompt: What is your FIRST containment action?
+  guidance:
+    what: Establish what fired on async-http-client v3.9.0, which accounts are involved, and how urgent the signal is.
+    action: What is your FIRST containment action?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: async-http-client v3.9.0.'
+  hints:
+  - Version pinning prevents future installs but doesn't affect already-running production services.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - immediately roll
+  - roll back
+  - back microservices
+  - microservices async-http-client
+  - async-http-client last
+  - last known
+  - known good
+  - good block
+  reference_answer: |-
+    Immediately roll back all 47 microservices to async-http-client v3.8.1 (last known good), block the exfiltration domain at the DNS/firewall level, rotate all API keys and database credentials for affected services, and remove the 'dev-team-2024' maintainer from the open source project
+
+    Why: Rollback stops the malicious code execution, DNS/firewall blocks exfiltration, credential rotation prevents credential misuse, and maintainer removal prevents further malicious updates.
+  followup_good: The microservices have been rolled back. The malicious package has been identified. The original maintainer's account was compromised via credential stuffing. The attacker added themselves as a maintainer and pushed the malicious update. The payload exfiltrated secrets to an external endpoint. You need to determine what was exfiltrated and how the account was compromised.
+  followup_weak: |-
+    Rollback stops the malicious code execution, DNS/firewall blocks exfiltration, credential rotation prevents credential misuse, and maintainer removal prevents further malicious updates.
+
+    The microservices have been rolled back. The malicious package has been identified. The original maintainer's account was compromised via credential stuffing. The attacker added themselves as a maintainer and pushed the malicious update. The payload exfiltrated secrets to an external endpoint. You need to determine what was exfiltrated and how the account was compromised.
+  next: evidence_collection_phase_2
+  mitre_tactic: Execution
+  mitre_technique: T1059.006 Python
+- id: evidence_collection_phase_2
+  phase_type: analysis
+  title: Evidence Collection — Phase 2
+  situation: The microservices have been rolled back. The malicious package has been identified. The original maintainer's account was compromised via credential stuffing. The attacker added themselves as a maintainer and pushed the malicious update. The payload exfiltrated secrets to an external endpoint. You need to determine what was exfiltrated and how the account was compromised.
+  prompt: How do you collect evidence from this OSS supply chain attack?
+  guidance:
+    what: Pivot from the alert to the log sources that reveal how far the attacker reached.
+    action: How do you collect evidence from this OSS supply chain attack?
+    why: Acting on an unverified scope either misses the attacker or over-contains the business.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Evidence Collection — Phase 2. Asset in scope: async-http-client v3.9.0.'
+  hints:
+  - Network traffic shows what left the company but not the full attack chain.
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - analyze malicious
+  - malicious dependency
+  - dependency async-http-client-utils
+  - async-http-client-utils payload
+  - payload exfiltration
+  - exfiltration endpoints
+  - endpoints pull
+  - git commit
+  reference_answer: |-
+    Analyze the malicious dependency (async-http-client-utils) for payload and exfiltration endpoints, pull git commit logs showing the attacker's changes, audit the original maintainer's account for credential compromise indicators, review PyPI download logs for the malicious version, and analyze network logs from all 47 microservices for exfiltration traffic
+
+    Why: Comprehensive evidence: package analysis (payload), git history (attacker changes), account forensics (compromise method), registry logs (distribution scope), and network logs (exfiltration).
+  followup_good: 'Analysis reveals the malicious package exfiltrated: 23 API keys, 12 database connection strings, 8 JWT signing keys, and 5 cloud provider tokens. The original maintainer''s account was compromised because they reused a password from a breach at a different service. The attacker pushed the malicious update 36 hours ago. The malicious package was downloaded 847 times from PyPI (including by other companies). The attacker''s exfiltration endpoint is hosted on a bulletproof provider. The git history shows the attacker also modified the library''s test suite to include a backdoor test that executes on CI.'
+  followup_weak: |-
+    Comprehensive evidence: package analysis (payload), git history (attacker changes), account forensics (compromise method), registry logs (distribution scope), and network logs (exfiltration).
+
+    Analysis reveals the malicious package exfiltrated: 23 API keys, 12 database connection strings, 8 JWT signing keys, and 5 cloud provider tokens. The original maintainer's account was compromised because they reused a password from a breach at a different service. The attacker pushed the malicious update 36 hours ago. The malicious package was downloaded 847 times from PyPI (including by other companies). The attacker's exfiltration endpoint is hosted on a bulletproof provider. The git history shows the attacker also modified the library's test suite to include a backdoor test that executes on CI.
+  next: scope_assessment_phase_3
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1070.004 File Deletion
+- id: scope_assessment_phase_3
+  phase_type: eradication
+  title: Scope Assessment — Phase 3
+  situation: 'Analysis reveals the malicious package exfiltrated: 23 API keys, 12 database connection strings, 8 JWT signing keys, and 5 cloud provider tokens. The original maintainer''s account was compromised because they reused a password from a breach at a different service. The attacker pushed the malicious update 36 hours ago. The malicious package was downloaded 847 times from PyPI (including by other companies). The attacker''s exfiltration endpoint is hosted on a bulletproof provider. The git history shows the attacker also modified the library''s test suite to include a backdoor test that executes on CI.'
+  prompt: How do you assess the full impact?
+  guidance:
+    what: Find every foothold the attacker left on async-http-client v3.9.0, including persistence and stolen credentials.
+    action: How do you assess the full impact?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Scope Assessment — Phase 3. Asset in scope: async-http-client v3.9.0.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - assess api
+  - api keys
+  - keys scope
+  - scope access
+  - access determine
+  - determine databases
+  - databases exposed
+  - exposed customer
+  reference_answer: |-
+    Assess all 23 API keys for scope of access, determine which 12 databases were exposed and what customer data they contain, evaluate JWT key compromise impact on authentication, assess cloud token exposure for resource abuse, and report to the OSS community about the compromised package
+
+    Why: Full impact: API access (scope), database exposure (customer data), authentication impact (JWT keys), cloud exposure (resource abuse), and community notification (other affected users).
+  followup_good: 'The investigation reveals: 23 API keys exposed (2 for payment processing), 12 database connection strings (including 1 with 500K customer records), 8 JWT keys (session hijacking possible for all authenticated users), and 5 cloud tokens (AWS, GCP, Azure). The original maintainer used a password from a 2019 breach. The company''s 47 microservices use 156 open source dependencies. The attacker also modified the test suite to include a backdoor that runs on CI/CD systems.'
+  followup_weak: |-
+    Full impact: API access (scope), database exposure (customer data), authentication impact (JWT keys), cloud exposure (resource abuse), and community notification (other affected users).
+
+    The investigation reveals: 23 API keys exposed (2 for payment processing), 12 database connection strings (including 1 with 500K customer records), 8 JWT keys (session hijacking possible for all authenticated users), and 5 cloud tokens (AWS, GCP, Azure). The original maintainer used a password from a 2019 breach. The company's 47 microservices use 156 open source dependencies. The attacker also modified the test suite to include a backdoor that runs on CI/CD systems.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. async-http-client v3.9.0 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return async-http-client v3.9.0 to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return async-http-client v3.9.0 to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: async-http-client v3.9.0.'
+  hints:
+  - Which backup or rebuild image is known-good for async-http-client v3.9.0, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore async-http-client v3.9.0 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: eradication_prevention_phase_4
+  next_weak: ''
+  mitre_tactic: Persistence
+  mitre_technique: T1556 Modify Authentication Process
+  role_prompts: {}
+- id: eradication_prevention_phase_4
+  phase_type: lessons
+  title: Eradication & Prevention — Phase 4
+  situation: 'The investigation reveals: 23 API keys exposed (2 for payment processing), 12 database connection strings (including 1 with 500K customer records), 8 JWT keys (session hijacking possible for all authenticated users), and 5 cloud tokens (AWS, GCP, Azure). The original maintainer used a password from a 2019 breach. The company''s 47 microservices use 156 open source dependencies. The attacker also modified the test suite to include a backdoor that runs on CI/CD systems.'
+  prompt: What comprehensive prevention measures do you implement?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What comprehensive prevention measures do you implement?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Eradication & Prevention — Phase 4. Asset in scope: async-http-client v3.9.0.'
+  hints:
+  - Lock files prevent unexpected updates but don't address secrets management, MFA, or runtime detection.
+  - Provides control but creates maintenance burden.
+  - MFA prevents credential reuse attacks but doesn't address dependency integrity, secrets management, or runtime protection.
+  ideal_concepts:
+  - implement dependency
+  - dependency lock
+  - lock files
+  - files hash
+  - hash verification
+  - verification deploy
+  - deploy automated
+  - automated dependency
+  reference_answer: |-
+    Implement dependency lock files with hash verification, deploy automated dependency update reviews (Dependabot with mandatory review), implement secrets scanning in CI/CD pipelines, migrate secrets to a centralized secrets manager, enable MFA for all developer accounts, establish a software bill of materials (SBOM) program, and implement runtime application self-protection (RASP) to detect secret exfiltration
+
+    Why: Comprehensive prevention: integrity (lock files), review process (automated updates), detection (secrets scanning), secrets management (centralized), authentication (MFA), visibility (SBOM), and runtime protection (RASP).
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Open Source Maintainer Account Takeover — OSS Ecosystem Attack incident. The software composition analysis (SCA) tool flagged a suspicious update to 'async-http-client', a popular Python HTTP library used by 47 of the company's microservices. The update (v3.9.0) was released 48 hours ago by a new maintainer account 'dev-team-2024' that was added to the project 2 weeks ago. The original maintainer's account was compromised via credential stuffing. The malicious update contained a dependency on a new package 'async-http-client-utils' that contained a payload scanning f...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Open Source Maintainer Account Takeover — OSS Ecosystem Attack incident. The software composition analysis (SCA) tool flagged a suspicious update to 'async-http-client', a popular Python HTTP library used by 47 of the company's microservices. The update (v3.9.0) was released 48 hours ago by a new maintainer account 'dev-team-2024' that was added to the project 2 weeks ago. The original maintainer's account was compromised via credential stuffing. The malicious update contained a dependency on a new package 'async-http-client-utils' that contained a payload scanning f...
+  mitre_tactic: Persistence
+  mitre_technique: T1556 Modify Authentication Process

@@ -1,0 +1,163 @@
+id: scheduled_task___cryptominer_reception
+name: Crypto-Miner — Reception Workstation
+category: Endpoint
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. EDR performance alert and scheduled-task creation event. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond WS-REC-001 (Reception workstation).
+  incident_manager: You are the Incident Manager coordinating the response to XMRig Crypto-Miner on Reception Workstation. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for XMRig Crypto-Miner on Reception Workstation. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for XMRig Crypto-Miner on Reception Workstation. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the XMRig Crypto-Miner on Reception Workstation incident. The binary is an XMRig miner installed by a fake video-codec pack. It uses the GPU and reports to a mining pool over TLS. No lateral movement is visible. Business impact: The workstation is unstable and wasting power; the same pack may have installed adware or a backdoor. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: XMRig Crypto-Miner on Reception Workstation
+  opening: The reception PC became slow and its fan ran constantly. EDR flagged a scheduled task named 'WindowsDriverHealth' launching a binary from ProgramData at every logon.
+  summary: The binary is an XMRig miner installed by a fake video-codec pack. It uses the GPU and reports to a mining pool over TLS. No lateral movement is visible.
+  compromised_assets:
+  - WS-REC-001 (Reception workstation)
+  - Scheduled task WindowsDriverHealth
+  - GPU resources
+  detected_via: EDR performance alert and scheduled-task creation event.
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: scheduled_task___cryptominer_reception_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: The reception PC became slow and its fan ran constantly. EDR flagged a scheduled task named 'WindowsDriverHealth' launching a binary from ProgramData at every logon. EDR performance alert and scheduled-task creation event.
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for WS-REC-001 (Reception workstation).
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - scheduled task
+  - binary path
+  - hash
+  - parent installer
+  - mining pool
+  - task xml
+  reference_answer: Identify the scheduled task, binary path, hash, parent installer, and network destination; preserve the task XML and EDR telemetry, and check whether other reception PCs have the same task.
+  followup_good: Triage confirms the activity is real. The task runs C:\ProgramData\WinDrvSvc\svchost.exe with a mining-pool configuration. The file is unsigned, and the task was created by a user account two days ago. Network logs show periodic TLS sessions to a mining pool.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. The task runs C:\ProgramData\WinDrvSvc\svchost.exe with a mining-pool configuration. The file is unsigned, and the task was created by a user account two days ago. Network logs show periodic TLS sessions to a mining pool.
+  next: scheduled_task___cryptominer_reception_phase_2
+  mitre_tactic: Persistence
+  mitre_technique: T1053.005 Scheduled Task
+- id: scheduled_task___cryptominer_reception_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. The task runs C:\ProgramData\WinDrvSvc\svchost.exe with a mining-pool configuration. The file is unsigned, and the task was created by a user account two days ago. Network logs show periodic TLS sessions to a mining pool.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - disable task
+  - isolate workstation
+  - block domain
+  - block hash
+  - firewall
+  reference_answer: Disable the scheduled task, isolate WS-REC-001, and block the mining-pool domain and binary hash at EDR and the firewall.
+  followup_good: Containment is in place. A user installed a fake codec pack from a pop-up ad. It created a scheduled task for persistence and a miner that runs at logon.
+  followup_weak: The activity continues while the team debates. The workstation is unstable and wasting power; the same pack may have installed adware or a backdoor.
+  next: scheduled_task___cryptominer_reception_phase_3
+  mitre_tactic: Resource Hijacking
+  mitre_technique: T1496 Resource Hijacking
+- id: scheduled_task___cryptominer_reception_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. A user installed a fake codec pack from a pop-up ad. It created a scheduled task for persistence and a miner that runs at logon.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - delete task
+  - remove programdata
+  - uninstall codec
+  - full scan
+  - additional tasks
+  reference_answer: Delete the task and ProgramData folder, uninstall the fake codec pack, run a full scan, and check for additional scheduled tasks or services created at the same time.
+  followup_good: Rebuild the workstation if the scan finds additional payloads, restore approved software, and monitor CPU and network usage for recurrence.
+  followup_weak: The visible symptom is gone, but the root cause remains. The workstation is unstable and wasting power; the same pack may have installed adware or a backdoor.
+  next: scheduled_task___cryptominer_reception_phase_4
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1562.001 Disable or Modify Tools
+- id: scheduled_task___cryptominer_reception_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Rebuild the workstation if the scan finds additional payloads, restore approved software, and monitor CPU and network usage for recurrence.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - rebuild workstation
+  - approved software
+  - monitor cpu
+  - monitor network
+  - validate clean
+  reference_answer: Rebuild WS-REC-001 if the scan finds additional payloads, restore only approved software, and monitor CPU and network usage for recurrence before returning it to the front desk.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: scheduled_task___cryptominer_reception_phase_5
+  mitre_tactic: Execution
+  mitre_technique: T1204.002 Malicious File
+- id: scheduled_task___cryptominer_reception_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Crypto-Miner — Reception Workstation.
+  prompt: What must change so Crypto-Miner — Reception Workstation is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - restrict scheduled tasks
+  - block consumer downloads
+  - unsigned binaries
+  - application control
+  - edr alert
+  reference_answer: Restrict scheduled-task creation for standard users, block consumer software downloads, and alert on unsigned binaries running from ProgramData.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Persistence
+  mitre_technique: T1547.001 Registry Run Keys

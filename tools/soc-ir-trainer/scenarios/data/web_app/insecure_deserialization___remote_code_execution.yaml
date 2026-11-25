@@ -1,0 +1,210 @@
+id: insecure_deserialization___remote_code_execution
+name: Insecure Deserialization — Remote Code Execution
+category: Web App
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Java Deserialization Vulnerability Leads to Remote Code Execution. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Java Deserialization Vulnerability Leads to Remote Code Execution. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Java Deserialization Vulnerability Leads to Remote Code Execution. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Java Deserialization Vulnerability Leads to Remote Code Execution incident. Your organization runs a legacy Java application at reporting.acmecorp.com (Java 8, Tomcat 9, Spring Framework 5.2). At 03:00 today, the endpoint detection tool on the Tomcat server flagged a suspicious process: a reverse shell connecting from the Tomcat process (PID 4521) to external IP 45.33.xx.xx:4444. Investigation revealed the attacker sent a serialized Java object to the /api/reports/export endpoint, which deserializes user input using ObjectInputStream without any filtering. The ysoserial tool was used to generate a CommonsCollections gadget chain payload. The reverse shell gave the attacker a cmd.exe shell as the ''tomcat'' user. The attacker then escalated to SYSTEM using a kernel exploit (CVE-2021-1732), installed a persistence mechanism (scheduled task), and exfiltrated the contents of the ''reports'' database (8.7 GB of financial reports). The attacker operated
+  from 02:47 to 03:15. Business impact: customer-facing service availability and data confidentiality are at risk, and customer notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties for exposed customer records.'
+incident:
+  title: Java Deserialization Vulnerability Leads to Remote Code Execution
+  opening: 'Your organization runs a legacy Java application at reporting.acmecorp.com (Java 8, Tomcat 9, Spring Framework 5.2). At 03:00 today, the endpoint detection tool on the Tomcat server flagged a suspicious process: a reverse shell connecting from the Tomcat process (PID 4521) to external IP 45.33.xx.xx:4444.'
+  summary: 'Your organization runs a legacy Java application at reporting.acmecorp.com (Java 8, Tomcat 9, Spring Framework 5.2). At 03:00 today, the endpoint detection tool on the Tomcat server flagged a suspicious process: a reverse shell connecting from the Tomcat process (PID 4521) to external IP 45.33.xx.xx:4444. Investigation revealed the attacker sent a serialized Java object to the /api/reports/export endpoint, which deserializes user input using ObjectInputStream without any filtering. The ysoserial tool was used to generate a CommonsCollections gadget chain payload. The reverse shell gave the attacker a cmd.exe shell as the ''tomcat'' user. The attacker then escalated to SYSTEM using a kernel exploit (CVE-2021-1732), installed a persistence mechanism (scheduled task), and exfiltrated the contents of the ''reports'' database (8.7 GB of financial reports). The attacker operated from 02:47 to 03:15.'
+  compromised_assets:
+  - reporting.acmecorp.com (full server compromise)
+  - reports database (8.7 GB)
+  - System-level persistence
+  detected_via: 'EDR: reverse shell from Tomcat process + suspicious scheduled task'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Privilege Escalation
+  - Persistence
+  - Collection
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Privilege Escalation
+  - Persistence
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: The attacker has SYSTEM-level access to the server, a reverse shell connection, and a persistence mechanism (scheduled task). The server is fully compromised.
+  prompt: What is the correct immediate containment approach?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on reporting.acmecorp.com, its severity, and the affected accounts.'
+    action: What is the correct immediate containment approach?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: reporting.acmecorp.com.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - isolate server
+  - server network
+  - network don
+  - don shut
+  - shut down
+  - down preserve
+  - preserve memory
+  - memory forensics
+  reference_answer: |-
+    Isolate the server from the network (don't shut down — preserve memory forensics), kill the reverse shell connection, document the scheduled task persistence, and begin memory acquisition before powering down
+
+    Why: Network isolation stops further damage while preserving volatile evidence (memory, running processes).
+  followup_good: The attacker installed a scheduled task for persistence. The server has been isolated from the network. Memory has been acquired. You need to identify all persistence mechanisms and ensure complete cleanup before reconnecting the server.
+  followup_weak: |-
+    Network isolation stops further damage while preserving volatile evidence (memory, running processes).
+
+    The attacker installed a scheduled task for persistence. The server has been isolated from the network. Memory has been acquired. You need to identify all persistence mechanisms and ensure complete cleanup before reconnecting the server.
+  next: persistence_removal_phase_2
+  mitre_tactic: Execution
+  mitre_technique: T1059.003 Windows Command Shell
+- id: persistence_removal_phase_2
+  phase_type: containment
+  title: Persistence Removal — Phase 2
+  situation: The attacker installed a scheduled task for persistence. The server has been isolated from the network. Memory has been acquired. You need to identify all persistence mechanisms and ensure complete cleanup before reconnecting the server.
+  prompt: How do you ensure complete persistence removal?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: How do you ensure complete persistence removal?
+    why: Stopping the spread is urgent, but destroying evidence makes the incident impossible to close.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Persistence Removal — Phase 2. Asset in scope: reporting.acmecorp.com.'
+  hints:
+  - Consider the affected accounts and their privilege level.
+  - Preserve evidence before disrupting anything.
+  ideal_concepts:
+  - review scheduled
+  - scheduled tasks
+  - tasks services
+  - services registry
+  - registry run
+  - keys startup
+  - startup folders
+  - folders wmi
+  reference_answer: |-
+    Review all scheduled tasks, services, registry run keys, startup folders, and WMI event subscriptions; check for hidden processes and injected DLLs; compare against a known-good baseline; rebuild the server from a clean image rather than trying to clean the compromised one
+
+    Why: Comprehensive persistence check across all common locations, plus rebuild to ensure no hidden backdoors.
+  followup_good: The /api/reports/export endpoint uses ObjectInputStream to deserialize user-supplied data without any filtering. The CommonsCollections library on the classpath provides the gadget chain. The application uses Java 8 which has limited deserialization protections.
+  followup_weak: |-
+    Comprehensive persistence check across all common locations, plus rebuild to ensure no hidden backdoors.
+
+    The /api/reports/export endpoint uses ObjectInputStream to deserialize user-supplied data without any filtering. The CommonsCollections library on the classpath provides the gadget chain. The application uses Java 8 which has limited deserialization protections.
+  next: deserialization_fix_phase_3
+  mitre_tactic: Persistence
+  mitre_technique: T1053 Scheduled Task
+- id: deserialization_fix_phase_3
+  phase_type: eradication
+  title: Deserialization Fix — Phase 3
+  situation: The /api/reports/export endpoint uses ObjectInputStream to deserialize user-supplied data without any filtering. The CommonsCollections library on the classpath provides the gadget chain. The application uses Java 8 which has limited deserialization protections.
+  prompt: How do you fix the insecure deserialization vulnerability?
+  guidance:
+    what: Find every foothold the attacker left on reporting.acmecorp.com, including persistence and stolen credentials.
+    action: How do you fix the insecure deserialization vulnerability?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Deserialization Fix — Phase 3. Asset in scope: reporting.acmecorp.com.'
+  hints:
+  - Valid long-term approach but the current vulnerability needs immediate patching.
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - replace objectinputstream
+  - objectinputstream safe
+  - safe deserialization
+  - deserialization library
+  - library like
+  - like serialkiller
+  - serialkiller notsoserial
+  - notsoserial implement
+  reference_answer: |-
+    Replace ObjectInputStream with a safe deserialization library (like SerialKiller or NotSoSerial), implement an allowlist of permitted classes, remove CommonsCollections from the classpath if unused, and add deserialization monitoring to detect future attempts
+
+    Why: Multi-layer fix: safe deserialization library, class allowlist, unnecessary library removal, and monitoring.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Java Deserialization Vulnerability Leads to Remote Code Execution incident. Your organization runs a legacy Java application at reporting.acmecorp.com (Java 8, Tomcat 9, Spring Framework 5.2). At 03:00 today, the endpoint detection tool on the Tomcat server flagged a suspicious process: a reverse shell connecting from the Tomcat process (PID 4521) to external IP 45.33.xx.xx:4444. Investigation revealed the attacker sent a serialized Java object to the /api/reports/export endpoint, which deserializes user input using ObjectInputStream without any filtering. The ysoserial...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Java Deserialization Vulnerability Leads to Remote Code Execution incident. Your organization runs a legacy Java application at reporting.acmecorp.com (Java 8, Tomcat 9, Spring Framework 5.2). At 03:00 today, the endpoint detection tool on the Tomcat server flagged a suspicious process: a reverse shell connecting from the Tomcat process (PID 4521) to external IP 45.33.xx.xx:4444. Investigation revealed the attacker sent a serialized Java object to the /api/reports/export endpoint, which deserializes user input using ObjectInputStream without any filtering. The ysoserial...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+  next: recovery_and_validation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. reporting.acmecorp.com is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return reporting.acmecorp.com to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return reporting.acmecorp.com to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: reporting.acmecorp.com.'
+  hints:
+  - Which backup or rebuild image is known-good for reporting.acmecorp.com, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore reporting.acmecorp.com from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_review
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+  role_prompts: {}
+- id: post_incident_review
+  phase_type: lessons
+  title: Post-Incident Review & Hardening
+  situation: Service has been restored and validated. Leadership wants a concise after-action review covering the root cause of Java Deserialization Vulnerability Leads to Remote Code Execution, the detection gap that let the attacker operate, and the control changes that will prevent a repeat. Findings must have owners and dates.
+  prompt: What must change so an incident like Java Deserialization Vulnerability Leads to Remote Code Execution is detected earlier and cannot recur?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What must change so an incident like Java Deserialization Vulnerability Leads to Remote Code Execution is detected earlier and cannot recur?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Review & Hardening. Asset in scope: reporting.acmecorp.com.'
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  - Who owns each improvement, and when will it be verified?
+  ideal_concepts:
+  - root cause
+  - detection gap
+  - control improvement
+  - owner and date
+  - runbook update
+  - training
+  reference_answer: |-
+    Document the root cause of Java Deserialization Vulnerability Leads to Remote Code Execution, identify the detection gap that let the attacker operate, and assign owners and dates to concrete control changes. Update detections, runbooks, and training, track the actions to completion, and report the outcome to leadership.
+
+    Why: Without durable changes, the same root cause will produce the same incident again.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated improvements, and ties them back to specific detections and controls. Leadership receives a tracked action plan.
+  followup_weak: The review retells the timeline but leaves the root cause and detection gap vague. Without owners, dates, and verification, the same incident will recur.
+  next: ''
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+  role_prompts: {}

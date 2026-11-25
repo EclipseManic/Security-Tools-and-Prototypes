@@ -1,0 +1,163 @@
+id: fake_printer_driver___it_admin_laptop
+name: Fake Printer Driver — IT Admin Laptop
+category: Endpoint
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: 'You are the Tier-1 SOC analyst on shift. EDR alert: installer spawned cmd.exe with a reverse-shell pattern. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond LT-IT-002 (IT administrator laptop).'
+  incident_manager: You are the Incident Manager coordinating the response to Trojanized Printer Driver on IT Administrator Laptop. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Trojanized Printer Driver on IT Administrator Laptop. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Trojanized Printer Driver on IT Administrator Laptop. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Trojanized Printer Driver on IT Administrator Laptop incident. The installer was a trojanized package signed with a revoked certificate. EDR blocked the reverse shell, but the installer created a local service and added a firewall rule. Business impact: The laptop has local admin tools and credentials that could be harvested if the service runs again. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Trojanized Printer Driver on IT Administrator Laptop
+  opening: An IT administrator downloaded a 'universal printer driver' from a search ad to fix a floor printer. The installer requested admin rights and then opened a reverse shell to an external IP.
+  summary: The installer was a trojanized package signed with a revoked certificate. EDR blocked the reverse shell, but the installer created a local service and added a firewall rule.
+  compromised_assets:
+  - LT-IT-002 (IT administrator laptop)
+  - Universal printer driver package
+  - Local admin credentials
+  detected_via: 'EDR alert: installer spawned cmd.exe with a reverse-shell pattern.'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: fake_printer_driver___it_admin_laptop_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: 'An IT administrator downloaded a ''universal printer driver'' from a search ad to fix a floor printer. The installer requested admin rights and then opened a reverse shell to an external IP. EDR alert: installer spawned cmd.exe with a reverse-shell pattern.'
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for LT-IT-002 (IT administrator laptop).
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - download source
+  - installer hash
+  - certificate
+  - service
+  - firewall rule
+  - process tree
+  reference_answer: Verify the download source, installer hash, certificate status, created service, and firewall rule; preserve the installer and EDR process tree, and check for outbound connections.
+  followup_good: Triage confirms the activity is real. EDR shows the installer created service 'PrintHelper' and a firewall rule allowing outbound 8443. The reverse shell was blocked, but the service binary remains in C:\Program Files\PrintHelper. The download came from a sponsored search result.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. EDR shows the installer created service 'PrintHelper' and a firewall rule allowing outbound 8443. The reverse shell was blocked, but the service binary remains in C:\Program Files\PrintHelper. The download came from a sponsored search result.
+  next: fake_printer_driver___it_admin_laptop_phase_2
+  mitre_tactic: Execution
+  mitre_technique: T1204.002 Malicious File
+- id: fake_printer_driver___it_admin_laptop_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. EDR shows the installer created service 'PrintHelper' and a firewall rule allowing outbound 8443. The reverse shell was blocked, but the service binary remains in C:\Program Files\PrintHelper. The download came from a sponsored search result.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - stop service
+  - remove firewall rule
+  - isolate laptop
+  - block hash
+  - block destination
+  reference_answer: Stop and disable the PrintHelper service, remove the firewall rule, isolate LT-IT-002, and block the installer hash and destination IP.
+  followup_good: Containment is in place. The admin downloaded an unverified driver from a search ad and approved an installer that created a service and firewall exception.
+  followup_weak: The activity continues while the team debates. The laptop has local admin tools and credentials that could be harvested if the service runs again.
+  next: fake_printer_driver___it_admin_laptop_phase_3
+  mitre_tactic: Persistence
+  mitre_technique: T1547.001 Registry Run Keys
+- id: fake_printer_driver___it_admin_laptop_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. The admin downloaded an unverified driver from a search ad and approved an installer that created a service and firewall exception.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - uninstall driver
+  - delete service
+  - revoked certificate
+  - secondary payload
+  - rotate credentials
+  reference_answer: Uninstall the fake driver, delete the service binary, remove the revoked certificate, scan for secondary payloads, and rotate credentials used on the laptop.
+  followup_good: Rebuild the laptop from a trusted image, reinstall the approved printer driver from the vendor portal, and monitor for new services.
+  followup_weak: The visible symptom is gone, but the root cause remains. The laptop has local admin tools and credentials that could be harvested if the service runs again.
+  next: fake_printer_driver___it_admin_laptop_phase_4
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1562.001 Disable or Modify Tools
+- id: fake_printer_driver___it_admin_laptop_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Rebuild the laptop from a trusted image, reinstall the approved printer driver from the vendor portal, and monitor for new services.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - rebuild laptop
+  - trusted image
+  - approved driver
+  - monitor services
+  - validate clean
+  reference_answer: Rebuild LT-IT-002 from a trusted image, install the printer driver from the approved catalog, and monitor for new services or firewall rules before returning admin access.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: fake_printer_driver___it_admin_laptop_phase_5
+  mitre_tactic: Privilege Escalation
+  mitre_technique: T1078.002 Domain Accounts
+- id: fake_printer_driver___it_admin_laptop_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Fake Printer Driver — IT Admin Laptop.
+  prompt: What must change so Fake Printer Driver — IT Admin Laptop is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - approved driver catalog
+  - block search ads
+  - new service alert
+  - firewall rule alert
+  - admin endpoint controls
+  reference_answer: Require drivers to come from the approved catalog, block sponsored search downloads on admin endpoints, and alert on new services and firewall rules.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Execution
+  mitre_technique: T1059.001 PowerShell

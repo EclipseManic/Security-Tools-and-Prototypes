@@ -1,0 +1,163 @@
+id: threat_intel___ransomware_campaign
+name: Threat Intel — Ransomware Campaign
+category: Advanced Threats
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Threat-intel feed plus vulnerability scan. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond Internet-facing VPN appliance.
+  incident_manager: You are the Incident Manager coordinating the response to Industry Ransomware Campaign Targets Unpatched VPN Appliance. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Industry Ransomware Campaign Targets Unpatched VPN Appliance. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Industry Ransomware Campaign Targets Unpatched VPN Appliance. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Industry Ransomware Campaign Targets Unpatched VPN Appliance incident. No compromise is confirmed, but the campaign is targeting the exact appliance version in use. The SOC has indicators for staging domains and a command-and-control IP. Business impact: A successful exploit would give the attacker pre-authentication access to the corporate network. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Industry Ransomware Campaign Targets Unpatched VPN Appliance
+  opening: Threat intelligence reports an active ransomware campaign against the company's industry, using a recently patched VPN flaw. The company runs the same VPN model and has not applied the patch.
+  summary: No compromise is confirmed, but the campaign is targeting the exact appliance version in use. The SOC has indicators for staging domains and a command-and-control IP.
+  compromised_assets:
+  - Internet-facing VPN appliance
+  - Industry threat intelligence
+  - SOC detection content
+  detected_via: Threat-intel feed plus vulnerability scan.
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: threat_intel___ransomware_campaign_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: Threat intelligence reports an active ransomware campaign against the company's industry, using a recently patched VPN flaw. The company runs the same VPN model and has not applied the patch. Threat-intel feed plus vulnerability scan.
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for Internet-facing VPN appliance.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - appliance version
+  - exposure
+  - indicators
+  - patch status
+  - admin interface
+  - mfa
+  reference_answer: Verify the appliance version and exposure, search logs for the indicators, and confirm patch status; preserve configuration and logs.
+  followup_good: Triage confirms the activity is real. The VPN appliance is running the vulnerable build. Egress logs show no indicators yet. The appliance's admin interface is reachable from the internet, and MFA is not enforced for local admin.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. The VPN appliance is running the vulnerable build. Egress logs show no indicators yet. The appliance's admin interface is reachable from the internet, and MFA is not enforced for local admin.
+  next: threat_intel___ransomware_campaign_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1566 Phishing
+- id: threat_intel___ransomware_campaign_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. The VPN appliance is running the vulnerable build. Egress logs show no indicators yet. The appliance's admin interface is reachable from the internet, and MFA is not enforced for local admin.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - management network
+  - mfa
+  - virtual patch
+  - waf rule
+  - restrict admin
+  reference_answer: Restrict admin access to a management network, enable MFA, and apply virtual patching or WAF rules.
+  followup_good: Containment is in place. A known exploited VPN vulnerability is unpatched, and the appliance is internet-exposed without MFA.
+  followup_weak: The activity continues while the team debates. A successful exploit would give the attacker pre-authentication access to the corporate network.
+  next: threat_intel___ransomware_campaign_phase_3
+  mitre_tactic: Persistence
+  mitre_technique: T1098 Account Manipulation
+- id: threat_intel___ransomware_campaign_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. A known exploited VPN vulnerability is unpatched, and the appliance is internet-exposed without MFA.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - patch appliance
+  - rotate credentials
+  - webshell scan
+  - new accounts
+  - vulnerable build
+  reference_answer: Patch the appliance, rotate credentials, and review for webshells or new local accounts.
+  followup_good: Validate the patch, monitor for indicators, and test remote access.
+  followup_weak: The visible symptom is gone, but the root cause remains. A successful exploit would give the attacker pre-authentication access to the corporate network.
+  next: threat_intel___ransomware_campaign_phase_4
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: threat_intel___ransomware_campaign_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Validate the patch, monitor for indicators, and test remote access.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - validate patch
+  - monitor indicators
+  - remote access
+  - mfa enrollment
+  - validate
+  reference_answer: Validate the patch and MFA enrollment, test remote access through the management network, and monitor for the campaign indicators before closing the incident.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: threat_intel___ransomware_campaign_phase_5
+  mitre_tactic: Discovery
+  mitre_technique: T1046 Network Service Discovery
+- id: threat_intel___ransomware_campaign_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Threat Intel — Ransomware Campaign.
+  prompt: What must change so Threat Intel — Ransomware Campaign is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - emergency patching
+  - mfa admin access
+  - threat intel
+  - edge device inventory
+  - exposure review
+  reference_answer: Add emergency patching for exploited edge devices, enforce MFA on all admin access, and subscribe to threat intelligence.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Initial Access
+  mitre_technique: T1566 Phishing

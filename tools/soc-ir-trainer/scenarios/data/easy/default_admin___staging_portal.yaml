@@ -1,0 +1,163 @@
+id: default_admin___staging_portal
+name: Default Admin — Staging Portal
+category: Web App
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Penetration test finding. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond Staging customer portal.
+  incident_manager: You are the Incident Manager coordinating the response to Default Administrator Credentials on Internet-Facing Staging Portal. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Default Administrator Credentials on Internet-Facing Staging Portal. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Default Administrator Credentials on Internet-Facing Staging Portal. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Default Administrator Credentials on Internet-Facing Staging Portal incident. The staging portal contains a copy of production customer records from last month. The tester logged in but did not change data. The portal has no MFA. Business impact: Anyone could access customer records or modify staging data that might sync to production. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Default Administrator Credentials on Internet-Facing Staging Portal
+  opening: The staging customer portal was reachable from the internet with the vendor's default admin password still enabled. A penetration test found the login page and guessed the credentials.
+  summary: The staging portal contains a copy of production customer records from last month. The tester logged in but did not change data. The portal has no MFA.
+  compromised_assets:
+  - Staging customer portal
+  - Default admin account
+  - Staging customer database
+  detected_via: Penetration test finding.
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: default_admin___staging_portal_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: The staging customer portal was reachable from the internet with the vendor's default admin password still enabled. A penetration test found the login page and guessed the credentials. Penetration test finding.
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for Staging customer portal.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - exposure
+  - default account
+  - data contents
+  - access logs
+  - other defaults
+  - test evidence
+  reference_answer: Confirm the exposure, default account, data contents, and access logs; preserve the test evidence and determine whether other accounts use default passwords.
+  followup_good: Triage confirms the activity is real. The admin account uses 'admin/admin', and the portal is indexed by a search engine. The tester's audit log shows a login and one page view. The staging database is a full production copy.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. The admin account uses 'admin/admin', and the portal is indexed by a search engine. The tester's audit log shows a login and one page view. The staging database is a full production copy.
+  next: default_admin___staging_portal_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1190 Exploit Public-Facing Application
+- id: default_admin___staging_portal_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. The admin account uses 'admin/admin', and the portal is indexed by a search engine. The tester's audit log shows a login and one page view. The staging database is a full production copy.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - take offline
+  - vpn only
+  - disable account
+  - firewall
+  - staging portal
+  reference_answer: Take the staging portal offline or restrict it to the VPN, disable the default account, and block public access at the firewall.
+  followup_good: Containment is in place. The staging environment was internet-facing with default credentials and no network restriction.
+  followup_weak: The activity continues while the team debates. Anyone could access customer records or modify staging data that might sync to production.
+  next: default_admin___staging_portal_phase_3
+  mitre_tactic: Persistence
+  mitre_technique: T1098 Account Manipulation
+- id: default_admin___staging_portal_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. The staging environment was internet-facing with default credentials and no network restriction.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - unique credentials
+  - mfa
+  - remove production data
+  - review accounts
+  - default passwords
+  reference_answer: Set unique admin credentials with MFA, remove production data from staging, and review all accounts for defaults.
+  followup_good: Bring staging back behind the VPN, validate access controls, and monitor for unauthorized logins.
+  followup_weak: The visible symptom is gone, but the root cause remains. Anyone could access customer records or modify staging data that might sync to production.
+  next: default_admin___staging_portal_phase_4
+  mitre_tactic: Persistence
+  mitre_technique: T1098 Account Manipulation
+- id: default_admin___staging_portal_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Bring staging back behind the VPN, validate access controls, and monitor for unauthorized logins.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - vpn access
+  - validate controls
+  - monitor logins
+  - remove production data
+  - staging
+  reference_answer: Bring staging back behind the VPN with unique MFA-protected admin access, validate that production data is removed, and monitor for unauthorized logins.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: default_admin___staging_portal_phase_5
+  mitre_tactic: Collection
+  mitre_technique: T1530 Data from Cloud Storage
+- id: default_admin___staging_portal_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Default Admin — Staging Portal.
+  prompt: What must change so Default Admin — Staging Portal is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - sso and mfa
+  - no production data
+  - default credential scan
+  - network restriction
+  - staging policy
+  reference_answer: Require SSO and MFA for all admin portals, never copy production data to staging, and scan for default credentials.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Initial Access
+  mitre_technique: T1190 Exploit Public-Facing Application

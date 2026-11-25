@@ -1,0 +1,176 @@
+id: graphql_attack___introspection_abuse___data_extraction
+name: GraphQL Attack — Introspection Abuse & Data Extraction
+category: Web App
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to GraphQL Introspection Enables Mass Data Extraction. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for GraphQL Introspection Enables Mass Data Extraction. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for GraphQL Introspection Enables Mass Data Extraction. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the GraphQL Introspection Enables Mass Data Extraction incident. Your organization runs a GraphQL API at graphql.acmecorp.com (Python/Graphene, PostgreSQL backend). At 10:00 today, the API gateway rate limiter flagged a single IP (45.134.xx.xx) making 8,000 GraphQL queries in 15 minutes. Investigation revealed the attacker first performed an introspection query (__schema { types { fields { name } } }) which returned the complete API schema including all types, queries, mutations, and field descriptions. The schema revealed 47 query types, 12 mutations, and 4 types with the description ''admin-only''. Using the discovered schema, the attacker crafted targeted queries to extract: all user accounts (67,000), financial reports (Q1-Q4 2024), employee salary data, and internal API keys stored in the ''systemConfig'' type. The GraphQL server has no query depth limiting, no query cost analysis, and introspection is enabled in production. Business impact: customer-facing
+  service availability and data confidentiality are at risk, and customer notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties for exposed customer records.'
+incident:
+  title: GraphQL Introspection Enables Mass Data Extraction
+  opening: Your organization runs a GraphQL API at graphql.acmecorp.com (Python/Graphene, PostgreSQL backend). At 10:00 today, the API gateway rate limiter flagged a single IP (45.134.xx.xx) making 8,000 GraphQL queries in 15 minutes.
+  summary: 'Your organization runs a GraphQL API at graphql.acmecorp.com (Python/Graphene, PostgreSQL backend). At 10:00 today, the API gateway rate limiter flagged a single IP (45.134.xx.xx) making 8,000 GraphQL queries in 15 minutes. Investigation revealed the attacker first performed an introspection query (__schema { types { fields { name } } }) which returned the complete API schema including all types, queries, mutations, and field descriptions. The schema revealed 47 query types, 12 mutations, and 4 types with the description ''admin-only''. Using the discovered schema, the attacker crafted targeted queries to extract: all user accounts (67,000), financial reports (Q1-Q4 2024), employee salary data, and internal API keys stored in the ''systemConfig'' type. The GraphQL server has no query depth limiting, no query cost analysis, and introspection is enabled in production.'
+  compromised_assets:
+  - graphql.acmecorp.com
+  - 67,000 user accounts
+  - Financial reports
+  - Salary data
+  - Internal API keys
+  detected_via: Rate limiter anomaly (8K queries in 15 min from single IP)
+  kill_chain:
+  - Reconnaissance
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Reconnaissance
+  - Collection
+  - Credential Access
+phases:
+- id: introspection_and_rate_limiting_phase_1
+  phase_type: triage
+  title: Introspection and Rate Limiting — Phase 1
+  situation: The attacker has the full API schema and has extracted sensitive data. The GraphQL API has no query depth limiting, no cost analysis, and introspection is enabled. The attacker may still be querying.
+  prompt: How do you immediately protect the GraphQL API?
+  guidance:
+    what: Establish what fired on graphql.acmecorp.com, which accounts are involved, and how urgent the signal is.
+    action: How do you immediately protect the GraphQL API?
+    why: Every later decision depends on an accurate picture of graphql.acmecorp.com and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Introspection and Rate Limiting — Phase 1. Asset in scope: graphql.acmecorp.com.'
+  hints:
+  - Stops schema discovery but the attacker already has the schema.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - introspection production
+  - production implement
+  - implement query
+  - query depth
+  - depth limiting
+  - limiting max
+  - max depth
+  - depth add
+  reference_answer: |-
+    Disable introspection in production, implement query depth limiting (max depth 5), add query cost analysis/complexity limits, and apply per-user rate limiting on the GraphQL endpoint
+
+    Why: Stops schema discovery, limits query complexity, and prevents mass data extraction.
+  followup_good: The attacker extracted 67,000 user accounts, financial reports, salary data, and internal API keys. You need to determine exactly which records were accessed and what the attacker did with the API keys.
+  followup_weak: |-
+    Stops schema discovery, limits query complexity, and prevents mass data extraction.
+
+    The attacker extracted 67,000 user accounts, financial reports, salary data, and internal API keys. You need to determine exactly which records were accessed and what the attacker did with the API keys.
+  next: data_exposure_assessment_phase_2
+  mitre_tactic: Collection
+  mitre_technique: T1213 Data from Information Repositories
+- id: data_exposure_assessment_phase_2
+  phase_type: containment
+  title: Data Exposure Assessment — Phase 2
+  situation: The attacker extracted 67,000 user accounts, financial reports, salary data, and internal API keys. You need to determine exactly which records were accessed and what the attacker did with the API keys.
+  prompt: How do you assess the full impact?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: How do you assess the full impact?
+    why: The first containment action sets the blast radius for everything that follows.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Data Exposure Assessment — Phase 2. Asset in scope: graphql.acmecorp.com.'
+  hints:
+  - Keys are important but you also need to know what user/financial data was exposed for breach notification.
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - analyze graphql
+  - graphql query
+  - query logs
+  - logs identify
+  - identify exactly
+  - exactly queries
+  - queries executed
+  - executed review
+  reference_answer: |-
+    Analyze GraphQL query logs to identify exactly which queries were executed, review PostgreSQL query logs for the data accessed, check API key usage logs for any calls made with the extracted keys, and rotate all exposed API keys immediately
+
+    Why: Complete impact assessment: which queries ran, what data was accessed, whether API keys were used, and key rotation.
+  followup_good: The GraphQL server has no authorization layer — all queries return data regardless of the user's role. The 'admin-only' types have no server-side enforcement. Introspection is enabled in production. No query complexity limits exist.
+  followup_weak: |-
+    Complete impact assessment: which queries ran, what data was accessed, whether API keys were used, and key rotation.
+
+    The GraphQL server has no authorization layer — all queries return data regardless of the user's role. The 'admin-only' types have no server-side enforcement. Introspection is enabled in production. No query complexity limits exist.
+  next: recovery_and_validation
+  mitre_tactic: Discovery
+  mitre_technique: T1580 Cloud Infrastructure Discovery
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. graphql.acmecorp.com is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return graphql.acmecorp.com to production?
+  guidance:
+    what: 'Define what ''clean'' means for graphql.acmecorp.com: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return graphql.acmecorp.com to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: graphql.acmecorp.com.'
+  hints:
+  - Which backup or rebuild image is known-good for graphql.acmecorp.com, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore graphql.acmecorp.com from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: graphql_security_architecture_phase_3
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+  role_prompts: {}
+- id: graphql_security_architecture_phase_3
+  phase_type: lessons
+  title: GraphQL Security Architecture — Phase 3
+  situation: The GraphQL server has no authorization layer — all queries return data regardless of the user's role. The 'admin-only' types have no server-side enforcement. Introspection is enabled in production. No query complexity limits exist.
+  prompt: How do you build proper GraphQL security controls?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: How do you build proper GraphQL security controls?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: GraphQL Security Architecture — Phase 3. Asset in scope: graphql.acmecorp.com.'
+  hints:
+  - Authorization is critical but also need introspection control, complexity limits, and monitoring for defense-in-depth.
+  - Valid approach but doesn't address the root issue.
+  ideal_concepts:
+  - implement field-level
+  - field-level authorization
+  - authorization field
+  - field checks
+  - user role
+  - role disable
+  - introspection production
+  - production add
+  reference_answer: |-
+    Implement field-level authorization (each field checks user role), disable introspection in production, add query depth and complexity limits, implement persisted/allowlisted queries for production, and add query logging with anomaly detection
+
+    Why: Comprehensive GraphQL security: authorization, introspection control, complexity limits, query allowlisting, and monitoring.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the GraphQL Introspection Enables Mass Data Extraction incident. Your organization runs a GraphQL API at graphql.acmecorp.com (Python/Graphene, PostgreSQL backend). At 10:00 today, the API gateway rate limiter flagged a single IP (45.134.xx.xx) making 8,000 GraphQL queries in 15 minutes. Investigation revealed the attacker first performed an introspection query (__schema { types { fields { name } } }) which returned the complete API schema including all types, queries, mutations, and field descriptions. The schema revealed 47 query types, 12 mutations, and 4 ...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the GraphQL Introspection Enables Mass Data Extraction incident. Your organization runs a GraphQL API at graphql.acmecorp.com (Python/Graphene, PostgreSQL backend). At 10:00 today, the API gateway rate limiter flagged a single IP (45.134.xx.xx) making 8,000 GraphQL queries in 15 minutes. Investigation revealed the attacker first performed an introspection query (__schema { types { fields { name } } }) which returned the complete API schema including all types, queries, mutations, and field descriptions. The schema revealed 47 query types, 12 mutations, and 4 ...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation

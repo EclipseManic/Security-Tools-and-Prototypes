@@ -1,0 +1,210 @@
+id: multi-cloud_lateral_movement_-_cross-provider_attack
+name: Multi-Cloud Lateral Movement - Cross-Provider Attack
+category: Cloud
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Multi-Cloud Lateral Movement — Cross-Provider Attack. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Multi-Cloud Lateral Movement — Cross-Provider Attack. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Multi-Cloud Lateral Movement — Cross-Provider Attack. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Multi-Cloud Lateral Movement — Cross-Provider Attack incident. At 07:15 UTC, a coordinated attack was detected across AWS and Azure. The attacker: (1) compromised an Azure AD service principal via a stored credential in a Terraform state file on an S3 bucket, (2) used the Azure credential to access Azure Key Vault and retrieve a database connection string, (3) pivoted back to AWS using a credential found in the database, (4) created an IAM user attacker-admin in AWS, and (5) began enumerating AWS resources. The Terraform state file was in a public S3 bucket (misconfigured for 2 weeks). The Azure SP had Contributor role on the subscription. The database contained hardcoded AWS credentials for a cross-account role. The attack chain spans both clouds and may still be active. Business impact: cloud-hosted data and service availability are at risk, and provider notification plus key rotation may be required. Immediate decisions: authorize containment
+  that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy and cloud counsel should assess notification duties and contractual reporting obligations.'
+incident:
+  title: Multi-Cloud Lateral Movement — Cross-Provider Attack
+  opening: 'At 07:15 UTC, a coordinated attack was detected across AWS and Azure. The attacker: (1) compromised an Azure AD service principal via a stored credential in a Terraform state file on an S3 bucket, (2) used the Azure credential to access Azure Key Vault and retrieve a database connection string, (3) pivoted back to AWS using a credential found in the database, (4) created an IAM user attacker-admin in AWS, and (5)…'
+  summary: 'At 07:15 UTC, a coordinated attack was detected across AWS and Azure. The attacker: (1) compromised an Azure AD service principal via a stored credential in a Terraform state file on an S3 bucket, (2) used the Azure credential to access Azure Key Vault and retrieve a database connection string, (3) pivoted back to AWS using a credential found in the database, (4) created an IAM user attacker-admin in AWS, and (5) began enumerating AWS resources. The Terraform state file was in a public S3 bucket (misconfigured for 2 weeks). The Azure SP had Contributor role on the subscription. The database contained hardcoded AWS credentials for a cross-account role. The attack chain spans both clouds and may still be active.'
+  compromised_assets:
+  - 'S3 bucket: terraform-state-prod (public, contains state files)'
+  - 'Azure service principal: sp-terraform-deploy (Contributor role)'
+  - 'Azure Key Vault: prod-secrets (database credentials)'
+  - 'PostgreSQL: prod-db-01 (contains AWS credentials)'
+  - 'AWS IAM user: attacker-admin (new, unknown permissions)'
+  detected_via: Azure AD sign-in logs — unusual login from AWS IP range + AWS CloudTrail — new IAM user creation
+  kill_chain:
+  - Initial Access (Public Terraform state)
+  - Credential Access (Azure SP from state → Key Vault → DB → AWS)
+  - Persistence (New AWS IAM user)
+  - Collection (Multi-cloud resource enumeration)
+  mitre_tactics:
+  - Initial Access
+  - Credential Access
+  - Lateral Movement
+  - Persistence
+phases:
+- id: multi_cloud_containment_stop_all_active_attack_paths
+  phase_type: triage
+  title: Multi-Cloud Containment — Stop All Active Attack Paths
+  situation: The attacker has credentials across AWS and Azure and may still be active. You have identified 5 compromised assets across both clouds. You need to contain all attack paths simultaneously.
+  prompt: What is your next action?
+  guidance:
+    what: 'Establish what fired on S3 bucket: terraform-state-prod, which accounts are involved, and how urgent the signal is.'
+    action: What is your next action?
+    why: 'Every later decision depends on an accurate picture of S3 bucket: terraform-state-prod and the accounts involved.'
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Multi-Cloud Containment — Stop All Active Attack Paths. Asset in scope: S3 bucket: terraform-state-prod.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - revoke azure
+  - azure credentials
+  - credentials delete
+  - aws attacker-admin
+  - attacker-admin iam
+  - iam user
+  - user rotate
+  - database credentials
+  reference_answer: |-
+    Revoke the Azure SP credentials, delete the AWS attacker-admin IAM user, rotate the database credentials in both clouds, make the Terraform state bucket private, and enable emergency access controls on both cloud consoles
+
+    Why: Simultaneous multi-cloud containment: revoking SP credentials stops Azure access, deleting the IAM user stops AWS persistence, rotating DB credentials stops the pivot path, and bucket remediation closes the initial vector.
+  followup_good: 'The attacker''s path spans two clouds: AWS S3 → Azure SP → Azure Key Vault → PostgreSQL → AWS IAM user. You need to reconstruct the full attack chain to understand timing, actions taken at each step, and any additional compromise points.'
+  followup_weak: |-
+    Simultaneous multi-cloud containment: revoking SP credentials stops Azure access, deleting the IAM user stops AWS persistence, rotating DB credentials stops the pivot path, and bucket remediation closes the initial vector.
+
+    The attacker's path spans two clouds: AWS S3 → Azure SP → Azure Key Vault → PostgreSQL → AWS IAM user. You need to reconstruct the full attack chain to understand timing, actions taken at each step, and any additional compromise points.
+  next: attack_chain_reconstruction_mapping_the_full_kill_chain
+  mitre_tactic: Lateral Movement
+  mitre_technique: 'T1078.004 — Valid Accounts: Cloud Accounts'
+- id: attack_chain_reconstruction_mapping_the_full_kill_chain
+  phase_type: analysis
+  title: Attack Chain Reconstruction — Mapping the Full Kill Chain
+  situation: 'The attacker''s path spans two clouds: AWS S3 → Azure SP → Azure Key Vault → PostgreSQL → AWS IAM user. You need to reconstruct the full attack chain to understand timing, actions taken at each step, and any additional compromise points.'
+  prompt: What is your next action?
+  guidance:
+    what: 'Determine what the evidence says about scope, access, and privilege on S3 bucket: terraform-state-prod.'
+    action: What is your next action?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Attack Chain Reconstruction — Mapping the Full Kill Chain. Asset in scope: S3 bucket: terraform-state-prod.'
+  hints:
+  - Ignoring AWS logs misses the initial access vector (public S3) and the final persistence (IAM user).
+  - Assumptions without evidence are dangerous.
+  ideal_concepts:
+  - correlate access
+  - access logs
+  - logs azure
+  - azure audit
+  - audit logs
+  - logs key
+  - key vault
+  - vault access
+  reference_answer: |-
+    Correlate S3 access logs, Azure AD audit logs, Key Vault access logs, database query logs, and CloudTrail across the full timeline to reconstruct each step of the attack chain
+
+    Why: Cross-cloud log correlation provides a complete timeline. Each log source covers a different segment of the attack chain. Together they reveal the full scope.
+  followup_good: The attacker accessed Azure Key Vault (database credentials), the PostgreSQL database (unknown scope), and enumerated both clouds. You need to determine what data was actually exposed across the multi-cloud environment.
+  followup_weak: |-
+    Cross-cloud log correlation provides a complete timeline.
+
+    The attacker accessed Azure Key Vault (database credentials), the PostgreSQL database (unknown scope), and enumerated both clouds. You need to determine what data was actually exposed across the multi-cloud environment.
+  next: cross_cloud_data_exposure_what_was_stolen
+  mitre_tactic: Discovery
+  mitre_technique: T1087 — Account Discovery, T1082 — System Information Discovery
+- id: cross_cloud_data_exposure_what_was_stolen
+  phase_type: eradication
+  title: Cross-Cloud Data Exposure — What Was Stolen?
+  situation: The attacker accessed Azure Key Vault (database credentials), the PostgreSQL database (unknown scope), and enumerated both clouds. You need to determine what data was actually exposed across the multi-cloud environment.
+  prompt: What is your next action?
+  guidance:
+    what: 'Find every foothold the attacker left on S3 bucket: terraform-state-prod, including persistence and stolen credentials.'
+    action: What is your next action?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Cross-Cloud Data Exposure — What Was Stolen?. Asset in scope: S3 bucket: terraform-state-prod.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - audit key
+  - key vault
+  - vault access
+  - access secrets
+  - secrets accessed
+  - accessed review
+  - review database
+  - database query
+  reference_answer: |-
+    Audit Key Vault access for all secrets the SP accessed, review database query logs for data retrieval, check if the attacker downloaded any S3 objects beyond the state file, and assess whether the AWS enumeration produced any data access
+
+    Why: Comprehensive data exposure assessment across all compromised points. Each access point may have yielded different data. Full audit ensures nothing is missed.
+  followup_good: 'The root cause is a chain of misconfigurations across both clouds: public Terraform state, overly permissive Azure SP, hardcoded credentials in the database, and no cross-cloud monitoring. You need to implement a multi-cloud security architecture.'
+  followup_weak: |-
+    Comprehensive data exposure assessment across all compromised points.
+
+    The root cause is a chain of misconfigurations across both clouds: public Terraform state, overly permissive Azure SP, hardcoded credentials in the database, and no cross-cloud monitoring. You need to implement a multi-cloud security architecture.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1530 — Data from Cloud Storage, T1213 — Data from Information Repositories
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: 'Containment is holding and the attacker''s active access has been removed. S3 bucket: terraform-state-prod is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.'
+  prompt: 'What must be true before you return S3 bucket: terraform-state-prod to production?'
+  guidance:
+    what: 'Define what ''clean'' means for S3 bucket: terraform-state-prod: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: 'What must be true before you return S3 bucket: terraform-state-prod to production?'
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: S3 bucket: terraform-state-prod.'
+  hints:
+  - 'Which backup or rebuild image is known-good for S3 bucket: terraform-state-prod, and when was it validated?'
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore S3 bucket: terraform-state-prod from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: multi_cloud_governance_preventing_cross_cloud_pivoting
+  next_weak: ''
+  mitre_tactic: Recovery
+  mitre_technique: 'T1562.008 — Impair Defenses: Disable or Modify Cloud Logs'
+  role_prompts: {}
+- id: multi_cloud_governance_preventing_cross_cloud_pivoting
+  phase_type: lessons
+  title: Multi-Cloud Governance — Preventing Cross-Cloud Pivoting
+  situation: 'The root cause is a chain of misconfigurations across both clouds: public Terraform state, overly permissive Azure SP, hardcoded credentials in the database, and no cross-cloud monitoring. You need to implement a multi-cloud security architecture.'
+  prompt: What is your next action?
+  guidance:
+    what: 'Summarize what happened, what was missed, and which controls failed on S3 bucket: terraform-state-prod.'
+    action: What is your next action?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Multi-Cloud Governance — Preventing Cross-Cloud Pivoting. Asset in scope: S3 bucket: terraform-state-prod.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - implement cross-cloud
+  - cross-cloud siem
+  - siem integration
+  - integration enforce
+  - enforce terraform
+  - terraform state
+  - state encryption
+  - encryption access
+  reference_answer: |-
+    Implement cross-cloud SIEM integration, enforce Terraform state encryption and access controls, use Azure Managed Identity instead of stored credentials, eliminate hardcoded credentials via Secrets Manager, and deploy cross-cloud anomaly detection
+
+    Why: Systemic multi-cloud security: SIEM integration provides visibility, Terraform controls prevent initial access, Managed Identity eliminates SP storage, Secrets Manager removes hardcoded credentials, and anomaly detection catches future cross-cloud attacks.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Multi-Cloud Lateral Movement — Cross-Provider Attack incident. At 07:15 UTC, a coordinated attack was detected across AWS and Azure. The attacker: (1) compromised an Azure AD service principal via a stored credential in a Terraform state file on an S3 bucket, (2) used the Azure credential to access Azure Key Vault and retrieve a database connection string, (3) pivoted back to AWS using a credential found in the database, (4) created an IAM user attacker-admin in AWS, and (5) began enumerating AWS resources. The Terraform state file was in a public S3 bucket...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Multi-Cloud Lateral Movement — Cross-Provider Attack incident. At 07:15 UTC, a coordinated attack was detected across AWS and Azure. The attacker: (1) compromised an Azure AD service principal via a stored credential in a Terraform state file on an S3 bucket, (2) used the Azure credential to access Azure Key Vault and retrieve a database connection string, (3) pivoted back to AWS using a credential found in the database, (4) created an IAM user attacker-admin in AWS, and (5) began enumerating AWS resources. The Terraform state file was in a public S3 bucket...
+  mitre_tactic: Recovery
+  mitre_technique: 'T1562.008 — Impair Defenses: Disable or Modify Cloud Logs'

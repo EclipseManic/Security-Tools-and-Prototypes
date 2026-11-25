@@ -1,0 +1,211 @@
+id: prompt_injection
+name: Prompt Injection
+category: AI & ML
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Prompt Injection — LLM Security Attack. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Prompt Injection — LLM Security Attack. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Prompt Injection — LLM Security Attack. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Prompt Injection — LLM Security Attack incident. The application security team discovered that the company''s customer service chatbot (powered by a fine-tuned GPT-4 model deployed on Azure OpenAI) was manipulated into disclosing internal system prompts and customer data. The attack was identified when a customer reported receiving a response containing the chatbot''s system prompt, which includes: API endpoint configurations, database schema references, escalation procedures, and internal employee email addresses. The attacker used a multi-turn prompt injection technique across 15 messages, gradually building context to bypass the chatbot''s safety filters. The chatbot also executed a function call that retrieved 847 customer records including names, email addresses, and subscription details. The attacker then used the disclosed API endpoints to make unauthorized calls to the customer database API, accessing an additional 2,340 customer records.
+  The chatbot is deployed on the company''s public website and handles 12,000 customer interactions per day. Business impact: model integrity and data confidentiality are at risk, and AI output should be treated as untrustworthy until validated. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel should assess notification duties for any personal or proprietary data exposed to the model.'
+incident:
+  title: Prompt Injection — LLM Security Attack
+  opening: 'The application security team discovered that the company''s customer service chatbot (powered by a fine-tuned GPT-4 model deployed on Azure OpenAI) was manipulated into disclosing internal system prompts and customer data. The attack was identified when a customer reported receiving a response containing the chatbot''s system prompt, which includes: API endpoint configurations, database schema references, escalation…'
+  summary: 'The application security team discovered that the company''s customer service chatbot (powered by a fine-tuned GPT-4 model deployed on Azure OpenAI) was manipulated into disclosing internal system prompts and customer data. The attack was identified when a customer reported receiving a response containing the chatbot''s system prompt, which includes: API endpoint configurations, database schema references, escalation procedures, and internal employee email addresses. The attacker used a multi-turn prompt injection technique across 15 messages, gradually building context to bypass the chatbot''s safety filters. The chatbot also executed a function call that retrieved 847 customer records including names, email addresses, and subscription details. The attacker then used the disclosed API endpoints to make unauthorized calls to the customer database API, accessing an additional 2,340 customer records. The chatbot is deployed on the company''s public website and handles 12,000 customer
+    interactions per day.'
+  compromised_assets:
+  - Customer service chatbot (GPT-4 fine-tuned model)
+  - System prompt with API configurations
+  - 847 customer records (via chatbot function call)
+  - 2,340 customer records (via unauthorized API calls)
+  - Internal employee email addresses
+  detected_via: Customer report — chatbot disclosed system prompt in response
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Collection
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: The chatbot is actively vulnerable to prompt injection. The attacker has already extracted the system prompt and 3,187 customer records. The chatbot is live on the public website handling 12,000 interactions per day. The disclosed API endpoints may be exploited by others who see the chatbot's response. The system prompt contains internal configurations.
+  prompt: What is your FIRST containment action?
+  guidance:
+    what: 'Frame the decision for ''Immediate Containment — Phase 1'': the asset at risk, the evidence available, and the time pressure.'
+    action: What is your FIRST containment action?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: Customer service chatbot.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - immediately take
+  - chatbot offline
+  - offline revoke
+  - revoke api
+  - api keys
+  - keys referenced
+  - referenced disclosed
+  - disclosed system
+  reference_answer: |-
+    Immediately take the chatbot offline, revoke all API keys referenced in the disclosed system prompt, implement rate limiting on the customer database API, and begin logging all recent API access for the past 24 hours
+
+    Why: Taking the chatbot offline stops ongoing exploitation, API key revocation prevents unauthorized access, rate limiting slows abuse, and logging preserves evidence of API exploitation.
+  followup_good: The chatbot is offline. API keys have been rotated. You need to determine the full scope of the prompt injection attack. The chatbot's conversation logs contain the attacker's 15-message injection sequence. The system prompt was disclosed in the chatbot's response. The API access logs show the unauthorized customer data retrieval.
+  followup_weak: |-
+    Taking the chatbot offline stops ongoing exploitation, API key revocation prevents unauthorized access, rate limiting slows abuse, and logging preserves evidence of API exploitation.
+
+    The chatbot is offline. API keys have been rotated. You need to determine the full scope of the prompt injection attack. The chatbot's conversation logs contain the attacker's 15-message injection sequence. The system prompt was disclosed in the chatbot's response. The API access logs show the unauthorized customer data retrieval.
+  next: evidence_collection_phase_2
+  mitre_tactic: Execution
+  mitre_technique: T1059 Command and Scripting Interpreter
+- id: evidence_collection_phase_2
+  phase_type: analysis
+  title: Evidence Collection — Phase 2
+  situation: The chatbot is offline. API keys have been rotated. You need to determine the full scope of the prompt injection attack. The chatbot's conversation logs contain the attacker's 15-message injection sequence. The system prompt was disclosed in the chatbot's response. The API access logs show the unauthorized customer data retrieval.
+  prompt: How do you collect evidence from this prompt injection attack?
+  guidance:
+    what: Pivot from the alert to the log sources that reveal how far the attacker reached.
+    action: How do you collect evidence from this prompt injection attack?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Evidence Collection — Phase 2. Asset in scope: Customer service chatbot.'
+  hints:
+  - Conversation logs show the attack but don't capture the full impact (API exploitation) or help with defensive improvements.
+  - API logs show unauthorized access but don't show the prompt injection technique or the chatbot's function call execution.
+  ideal_concepts:
+  - export full
+  - full conversation
+  - conversation logs
+  - logs showing
+  - showing injection
+  - injection sequence
+  - sequence preserve
+  - preserve disclosed
+  reference_answer: |-
+    Export the full conversation logs showing the injection sequence, preserve the disclosed system prompt for impact assessment, audit all API calls made using the disclosed endpoints, pull chatbot model inference logs to determine what function calls were executed, and analyze the attacker's injection techniques for defensive improvements
+
+    Why: Comprehensive evidence: conversation logs (attack sequence), system prompt (impact scope), API logs (unauthorized access), inference logs (function call execution), and technique analysis (defense improvement).
+  followup_good: 'The conversation logs reveal the attacker used a multi-turn injection that gradually escalated: first asking about the chatbot''s capabilities, then requesting ''help debugging'' the system, then asking for the system prompt as a ''configuration reference'', then using disclosed API endpoints to query customer data. The attacker retrieved 847 records via function calls and 2,340 via direct API exploitation. The system prompt contained: Azure OpenAI endpoint URL, function call schemas, database table names, and internal employee emails. The attacker''s session originated from a VPN in a foreign country. 3 other suspicious sessions in the past week show similar injection patterns but were partially blocked by safety filters.'
+  followup_weak: |-
+    Comprehensive evidence: conversation logs (attack sequence), system prompt (impact scope), API logs (unauthorized access), inference logs (function call execution), and technique analysis (defense improvement).
+
+    The conversation logs reveal the attacker used a multi-turn injection that gradually escalated: first asking about the chatbot's capabilities, then requesting 'help debugging' the system, then asking for the system prompt as a 'configuration reference', then using disclosed API endpoints to query customer data. The attacker retrieved 847 records via function calls and 2,340 via direct API exploitation. The system prompt contained: Azure OpenAI endpoint URL, function call schemas, database table names, and internal employee emails. The attacker's session originated from a VPN in a foreign country. 3 other suspicious sessions in the past week show similar injection patterns but were partially blocked by safety filters.
+  next: scope_assessment_phase_3
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1070.004 File Deletion
+- id: scope_assessment_phase_3
+  phase_type: eradication
+  title: Scope Assessment — Phase 3
+  situation: 'The conversation logs reveal the attacker used a multi-turn injection that gradually escalated: first asking about the chatbot''s capabilities, then requesting ''help debugging'' the system, then asking for the system prompt as a ''configuration reference'', then using disclosed API endpoints to query customer data. The attacker retrieved 847 records via function calls and 2,340 via direct API exploitation. The system prompt contained: Azure OpenAI endpoint URL, function call schemas, database table names, and internal employee emails. The attacker''s session originated from a VPN in a foreign country. 3 other suspicious sessions in the past week show similar injection patterns but were partially blocked by safety filters.'
+  prompt: How do you assess the full scope and impact?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: How do you assess the full scope and impact?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Scope Assessment — Phase 3. Asset in scope: Customer service chatbot.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - assess customer
+  - customer data
+  - data exposure
+  - exposure records
+  - records determine
+  - determine regulatory
+  - regulatory implications
+  - implications gdpr
+  reference_answer: |-
+    Assess customer data exposure (3,187 records), determine regulatory implications (GDPR/CCPA for PII), analyze the 3 other suspicious sessions for data exfiltration, evaluate the impact of disclosed internal configurations, and assess the chatbot model's vulnerability to similar attacks
+
+    Why: Full impact: data breach (customer records), regulatory (PII protection), broader attack scope (3 other sessions), configuration exposure (internal systems), and model security (vulnerability assessment).
+  followup_good: 'Investigation reveals: 3,187 customer records exposed (names, emails, subscription details), system prompt with internal configurations disclosed, 3 additional injection attempts partially succeeded, and the chatbot''s safety filters were bypassed using gradual context building. The chatbot uses Azure OpenAI with function calling enabled. The company plans to expand the chatbot to handle billing inquiries and account management.'
+  followup_weak: |-
+    Full impact: data breach (customer records), regulatory (PII protection), broader attack scope (3 other sessions), configuration exposure (internal systems), and model security (vulnerability assessment).
+
+    Investigation reveals: 3,187 customer records exposed (names, emails, subscription details), system prompt with internal configurations disclosed, 3 additional injection attempts partially succeeded, and the chatbot's safety filters were bypassed using gradual context building. The chatbot uses Azure OpenAI with function calling enabled. The company plans to expand the chatbot to handle billing inquiries and account management.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Customer service chatbot is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Customer service chatbot to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return Customer service chatbot to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Customer service chatbot.'
+  hints:
+  - Which backup or rebuild image is known-good for Customer service chatbot, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Customer service chatbot from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: hardening_prevention_phase_4
+  next_weak: ''
+  mitre_tactic: Persistence
+  mitre_technique: T1556 Modify Authentication Process
+  role_prompts: {}
+- id: hardening_prevention_phase_4
+  phase_type: lessons
+  title: Hardening & Prevention — Phase 4
+  situation: 'Investigation reveals: 3,187 customer records exposed (names, emails, subscription details), system prompt with internal configurations disclosed, 3 additional injection attempts partially succeeded, and the chatbot''s safety filters were bypassed using gradual context building. The chatbot uses Azure OpenAI with function calling enabled. The company plans to expand the chatbot to handle billing inquiries and account management.'
+  prompt: What comprehensive LLM security improvements do you implement?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What comprehensive LLM security improvements do you implement?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Hardening & Prevention — Phase 4. Asset in scope: Customer service chatbot.'
+  hints:
+  - Removes one attack surface but doesn't address input filtering, output sanitization, or function call security.
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - implement input
+  - input output
+  - output filtering
+  - filtering dedicated
+  - dedicated prompt
+  - prompt injection
+  - injection detection
+  - detection model
+  reference_answer: |-
+    Implement input/output filtering with a dedicated prompt injection detection model, remove sensitive data from system prompts entirely (use backend API abstraction), implement conversation-level rate limiting and anomaly detection, deploy output sanitization to prevent data leakage, add multi-factor authentication for API access, establish an LLM red team program for continuous testing, and implement function call approval workflows for sensitive operations
+
+    Why: Defense-in-depth: input filtering (injection detection), architecture (no secrets in prompts), rate limiting (abuse prevention), output sanitization (data leakage), authentication (API security), red teaming (continuous testing), and approval workflows (human-in-the-loop).
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Prompt Injection — LLM Security Attack incident. The application security team discovered that the company's customer service chatbot (powered by a fine-tuned GPT-4 model deployed on Azure OpenAI) was manipulated into disclosing internal system prompts and customer data. The attack was identified when a customer reported receiving a response containing the chatbot's system prompt, which includes: API endpoint configurations, database schema references, escalation procedures, and internal employee email addresses. The attacker used a multi-turn...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Prompt Injection — LLM Security Attack incident. The application security team discovered that the company's customer service chatbot (powered by a fine-tuned GPT-4 model deployed on Azure OpenAI) was manipulated into disclosing internal system prompts and customer data. The attack was identified when a customer reported receiving a response containing the chatbot's system prompt, which includes: API endpoint configurations, database schema references, escalation procedures, and internal employee email addresses. The attacker used a multi-turn...
+  mitre_tactic: Persistence
+  mitre_technique: T1556 Modify Authentication Process

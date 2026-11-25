@@ -1,0 +1,163 @@
+id: wildcard_iam___lambda_role
+name: Wildcard IAM — Lambda Role
+category: Cloud
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Cloud security posture management finding. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond Lambda function contact-form.
+  incident_manager: You are the Incident Manager coordinating the response to Lambda Execution Role Grants Full AWS Account Access. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Lambda Execution Role Grants Full AWS Account Access. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Lambda Execution Role Grants Full AWS Account Access. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Lambda Execution Role Grants Full AWS Account Access incident. The role can read all S3 buckets, write to DynamoDB, and create IAM users. If the function is exploited, the attacker inherits full account access. Business impact: A code flaw or injection in the function could compromise the entire AWS account. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Lambda Execution Role Grants Full AWS Account Access
+  opening: 'A cloud security review found a Lambda execution role with ''Action: *'' and ''Resource: *''. The function processes public contact-form submissions.'
+  summary: The role can read all S3 buckets, write to DynamoDB, and create IAM users. If the function is exploited, the attacker inherits full account access.
+  compromised_assets:
+  - Lambda function contact-form
+  - Wildcard IAM role
+  - AWS account
+  detected_via: Cloud security posture management finding.
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: wildcard_iam___lambda_role_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: 'A cloud security review found a Lambda execution role with ''Action: *'' and ''Resource: *''. The function processes public contact-form submissions. Cloud security posture management finding.'
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for Lambda function contact-form.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - role permissions
+  - attached resources
+  - recent use
+  - function changes
+  - iam logs
+  - lambda logs
+  reference_answer: Confirm the role permissions, attached resources, recent use, and whether the function has been modified; preserve IAM and Lambda logs.
+  followup_good: Triage confirms the activity is real. The role policy is wildcard and has been attached since the function was created. The function's public API endpoint is reachable, and logs show malformed input attempts.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. The role policy is wildcard and has been attached since the function was created. The function's public API endpoint is reachable, and logs show malformed input attempts.
+  next: wildcard_iam___lambda_role_phase_2
+  mitre_tactic: Valid Accounts
+  mitre_technique: T1078.004 Cloud Accounts
+- id: wildcard_iam___lambda_role_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. The role policy is wildcard and has been attached since the function was created. The function's public API endpoint is reachable, and logs show malformed input attempts.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - disable endpoint
+  - scoped role
+  - wildcard policy
+  - restrict function
+  - least privilege
+  reference_answer: Disable the function's public endpoint or restrict it, and replace the wildcard role with a scoped role.
+  followup_good: Containment is in place. A convenience role was created with full account permissions instead of least privilege.
+  followup_weak: The activity continues while the team debates. A code flaw or injection in the function could compromise the entire AWS account.
+  next: wildcard_iam___lambda_role_phase_3
+  mitre_tactic: Collection
+  mitre_technique: T1530 Data from Cloud Storage
+- id: wildcard_iam___lambda_role_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. A convenience role was created with full account permissions instead of least privilege.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - update code
+  - dependencies
+  - cloudtrail
+  - unused permissions
+  - iam policy
+  reference_answer: Update the function code and dependencies, review CloudTrail for role misuse, and remove unused permissions.
+  followup_good: Redeploy with the least-privilege role, test the contact form, and monitor IAM activity.
+  followup_weak: The visible symptom is gone, but the root cause remains. A code flaw or injection in the function could compromise the entire AWS account.
+  next: wildcard_iam___lambda_role_phase_4
+  mitre_tactic: Discovery
+  mitre_technique: T1087 Account Discovery
+- id: wildcard_iam___lambda_role_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Redeploy with the least-privilege role, test the contact form, and monitor IAM activity.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - redeploy function
+  - least privilege
+  - test contact form
+  - monitor iam
+  - validate
+  reference_answer: Redeploy the function with the least-privilege role, test the contact form end to end, and monitor IAM and CloudTrail activity for misuse.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: wildcard_iam___lambda_role_phase_5
+  mitre_tactic: Discovery
+  mitre_technique: T1087 Account Discovery
+- id: wildcard_iam___lambda_role_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Wildcard IAM — Lambda Role.
+  prompt: What must change so Wildcard IAM — Lambda Role is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - least privilege
+  - iam scanning
+  - lambda role review
+  - ci policy check
+  - quarterly review
+  reference_answer: Enforce least privilege in CI, scan IAM policies, and review Lambda roles quarterly.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Valid Accounts
+  mitre_technique: T1078.004 Cloud Accounts

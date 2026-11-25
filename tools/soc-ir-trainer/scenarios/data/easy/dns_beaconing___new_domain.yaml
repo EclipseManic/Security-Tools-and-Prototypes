@@ -1,0 +1,163 @@
+id: dns_beaconing___new_domain
+name: DNS Beaconing — New Domain
+category: Network
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: 'You are the Tier-1 SOC analyst on shift. DNS anomaly detection: periodic queries to a new domain. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond WS-REC-009.'
+  incident_manager: You are the Incident Manager coordinating the response to Periodic DNS Queries to a Newly Registered Domain. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Periodic DNS Queries to a Newly Registered Domain. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Periodic DNS Queries to a Newly Registered Domain. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Periodic DNS Queries to a Newly Registered Domain incident. The pattern is consistent with DNS beaconing. The workstation has no business reason to contact the domain, and the endpoint shows a scheduled task running a small PowerShell script. Business impact: The host is beaconing and could receive commands without HTTP traffic. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Periodic DNS Queries to a Newly Registered Domain
+  opening: DNS logs show a reception workstation making a query every 60 seconds to a domain registered four days ago. The query name changes slightly each time, but the domain is the same.
+  summary: The pattern is consistent with DNS beaconing. The workstation has no business reason to contact the domain, and the endpoint shows a scheduled task running a small PowerShell script.
+  compromised_assets:
+  - WS-REC-009
+  - DNS resolver
+  - Newly registered domain sync-update[.]top
+  detected_via: 'DNS anomaly detection: periodic queries to a new domain.'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: dns_beaconing___new_domain_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: 'DNS logs show a reception workstation making a query every 60 seconds to a domain registered four days ago. The query name changes slightly each time, but the domain is the same. DNS anomaly detection: periodic queries to a new domain.'
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for WS-REC-009.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - scheduled task
+  - powershell
+  - domain
+  - dns queries
+  - other hosts
+  - resolver logs
+  reference_answer: Identify the process and scheduled task generating the queries, the domain and resolver logs, and whether other hosts query the same domain.
+  followup_good: Triage confirms the activity is real. Queries occur every 60 seconds with random subdomains under sync-update[.]top. The endpoint has a scheduled task running an encoded PowerShell command that builds the query. No payload download is visible.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. Queries occur every 60 seconds with random subdomains under sync-update[.]top. The endpoint has a scheduled task running an encoded PowerShell command that builds the query. No payload download is visible.
+  next: dns_beaconing___new_domain_phase_2
+  mitre_tactic: Command and Control
+  mitre_technique: T1071 Application Layer Protocol
+- id: dns_beaconing___new_domain_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. Queries occur every 60 seconds with random subdomains under sync-update[.]top. The endpoint has a scheduled task running an encoded PowerShell command that builds the query. No payload download is visible.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - isolate host
+  - block domain
+  - disable task
+  - dns resolver
+  - firewall
+  reference_answer: Isolate the host, block the domain at the DNS resolver and firewall, and disable the scheduled task.
+  followup_good: Containment is in place. A malicious script established DNS-based command and control, likely from a fake software update.
+  followup_weak: The activity continues while the team debates. The host is beaconing and could receive commands without HTTP traffic.
+  next: dns_beaconing___new_domain_phase_3
+  mitre_tactic: Exfiltration
+  mitre_technique: T1048.003 Exfiltration Over Unencrypted Non-C2 Protocol
+- id: dns_beaconing___new_domain_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. A malicious script established DNS-based command and control, likely from a fake software update.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - remove script
+  - remove task
+  - full scan
+  - persistence
+  - random subdomains
+  reference_answer: Remove the script and task, run a full scan, and check for additional persistence.
+  followup_good: Rebuild the host if needed, restore approved software, and monitor DNS for the domain.
+  followup_weak: The visible symptom is gone, but the root cause remains. The host is beaconing and could receive commands without HTTP traffic.
+  next: dns_beaconing___new_domain_phase_4
+  mitre_tactic: Collection
+  mitre_technique: T1040 Network Sniffing
+- id: dns_beaconing___new_domain_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Rebuild the host if needed, restore approved software, and monitor DNS for the domain.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - rebuild host
+  - approved software
+  - monitor dns
+  - domain block
+  - validate
+  reference_answer: Rebuild the host if the scan finds additional payloads, restore approved software, and monitor DNS and endpoint traffic for the domain.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: dns_beaconing___new_domain_phase_5
+  mitre_tactic: Command and Control
+  mitre_technique: T1071 Application Layer Protocol
+- id: dns_beaconing___new_domain_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for DNS Beaconing — New Domain.
+  prompt: What must change so DNS Beaconing — New Domain is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - dns beacon detection
+  - newly registered domains
+  - scheduled task restriction
+  - dns logging
+  - application control
+  reference_answer: Add DNS beacon detection, block newly registered domains for workstations, and restrict scheduled-task creation.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Command and Control
+  mitre_technique: T1071 Application Layer Protocol

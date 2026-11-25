@@ -1,0 +1,188 @@
+id: wifi_evil_twin_attack
+name: WiFi Evil Twin Attack
+category: Network
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to WiFi Evil Twin AP — Credential Harvesting on Corporate SSID. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for WiFi Evil Twin AP — Credential Harvesting on Corporate SSID. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for WiFi Evil Twin AP — Credential Harvesting on Corporate SSID. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: |-
+  Executive summary of the WiFi Evil Twin AP — Credential Harvesting on Corporate SSID incident. On 2025-10-28 at 11:15 UTC, the wireless IDS (Cisco WIPS) detected a rogue access point broadcasting SSID 'ACME-CORP' (the corporate SSID) on channel 6, 2.4 GHz. The rogue AP (MAC de:ad:be:ef:00:42) was operating from within the building, detected at -42 dBm signal strength from AP sensor WIPS-03 on floor 3.
+
+  The rogue AP uses a hostapd-based evil twin with a Karma SSL captive portal that mimics the corporate NAC login page (https://login.acme.internal). The portal serves a self-signed certificate for login.acme.internal (SHA256: 7a8b9c0d...). Between 11:15 and 12:03 UTC, 34 employees connected to the evil twin and submitted credentials through the fake portal. Captured credentials include: 8 active directory accounts, 3 VPN service accounts, and 23 personal email/password combinations.
+
+  The rogue AP also performed SSL stripping on captive portal traffic and captured session cookies from 12 users who authenticated to the real portal before being redirected to the fake one. Physical security cameras show an unknown individual in the 3rd floor conference room (meeting room 3B) at 10:47 UTC, 28 minutes before the AP was detected. Business impact: network availability and traffic confidentiality are at risk, and perimeter and segmentation controls are under scrutiny. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel should assess contractual and regulatory notification duties if traffic or data was exposed.
+incident:
+  title: WiFi Evil Twin AP — Credential Harvesting on Corporate SSID
+  opening: On 2025-10-28 at 11:15 UTC, the wireless IDS (Cisco WIPS) detected a rogue access point broadcasting SSID 'ACME-CORP' (the corporate SSID) on channel 6, 2.4 GHz. The rogue AP (MAC de:ad:be:ef:00:42) was operating from within the building, detected at -42 dBm signal strength from AP sensor WIPS-03 on floor 3.
+  summary: |-
+    On 2025-10-28 at 11:15 UTC, the wireless IDS (Cisco WIPS) detected a rogue access point broadcasting SSID 'ACME-CORP' (the corporate SSID) on channel 6, 2.4 GHz. The rogue AP (MAC de:ad:be:ef:00:42) was operating from within the building, detected at -42 dBm signal strength from AP sensor WIPS-03 on floor 3.
+
+    The rogue AP uses a hostapd-based evil twin with a Karma SSL captive portal that mimics the corporate NAC login page (https://login.acme.internal). The portal serves a self-signed certificate for login.acme.internal (SHA256: 7a8b9c0d...). Between 11:15 and 12:03 UTC, 34 employees connected to the evil twin and submitted credentials through the fake portal. Captured credentials include: 8 active directory accounts, 3 VPN service accounts, and 23 personal email/password combinations.
+
+    The rogue AP also performed SSL stripping on captive portal traffic and captured session cookies from 12 users who authenticated to the real portal before being redirected to the fake one. Physical security cameras show an unknown individual in the 3rd floor conference room (meeting room 3B) at 10:47 UTC, 28 minutes before the AP was detected.
+  compromised_assets:
+  - Corporate SSID 'ACME-CORP' — credential harvesting
+  - 34 employee credentials (AD, VPN, personal email)
+  - 12 session cookies via SSL stripping
+  - Rogue AP hardware (floor 3, conference room 3B)
+  detected_via: Cisco WIPS rogue AP detection + SSL certificate anomaly
+  kill_chain:
+  - Initial Access
+  - Credential Access
+  - Collection
+  mitre_tactics:
+  - Initial Access
+  - Credential Access
+  - Collection
+phases:
+- id: rogue_ap_detection_and_containment
+  phase_type: triage
+  title: Phase 1 — Rogue AP Detection and Containment
+  situation: Cisco WIPS has classified the rogue AP as 'Malicious' based on SSID matching. The AP is detected at -42 dBm on WIPS sensor 03 (floor 3). Your Cisco WLC shows no rogue AP entries in the managed list. The evil twin is actively serving a captive portal. 34 clients have associated in the last 48 minutes. You need to contain the rogue AP and protect affected users.
+  prompt: What is your first action?
+  guidance:
+    what: 'Frame the decision for ''Phase 1 — Rogue AP Detection and Containment'': the asset at risk, the evidence available, and the time pressure.'
+    action: What is your first action?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Phase 1 — Rogue AP Detection and Containment. Asset in scope: Corporate SSID ''ACME-CORP''.'
+  hints:
+  - Changing the SSID passphrase does not disconnect clients from the evil twin (which uses an open or different PSK).
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - wlc rogue
+  - rogue containment
+  - containment feature
+  - feature send
+  - deauthentication frames
+  - frames clients
+  - clients associated
+  - associated rogue
+  reference_answer: |-
+    Use the WLC's rogue AP containment feature to send deauthentication frames to all clients associated with the rogue AP's BSSID (de:ad:be:ef:00:42). Simultaneously dispatch physical security to floor 3 conference room 3B to locate and remove the rogue AP hardware. While containment is in progress, push a WIPS alert to all corporate devices warning about the evil twin.
+
+    Why: Deauth frames disconnect clients from the evil twin, stopping credential harvesting. Physical removal eliminates the threat. The WIPS alert prevents further connections. This three-pronged approach (logical containment, physical removal, user notification) is the correct containment strategy.
+  followup_good: 'Post-incident analysis of the captive portal logs (recovered from the rogue AP''s Raspberry Pi SD card) shows: 8 AD accounts (CORP\t.nguyen, CORP\s.patel, CORP\r.garcia, CORP\l.johnson, CORP\k.williams, CORP\m.brown, CORP\a.davis, CORP\c.wilson), 3 VPN service accounts (CORP\svc-vpn-01, CORP\svc-vpn-02, CORP\svc-monitor), and 23 personal email/password combos. The AD accounts have varying privilege levels: 2 are standard users, 4 are department managers, 1 is an IT admin (c.wilson, member of Domain Admins group), and 1 is a C-suite exec (k.williams, CFO).'
+  followup_weak: |-
+    Deauth frames disconnect clients from the evil twin, stopping credential harvesting.
+
+    Post-incident analysis of the captive portal logs (recovered from the rogue AP's Raspberry Pi SD card) shows: 8 AD accounts (CORP\t.nguyen, CORP\s.patel, CORP\r.garcia, CORP\l.johnson, CORP\k.williams, CORP\m.brown, CORP\a.davis, CORP\c.wilson), 3 VPN service accounts (CORP\svc-vpn-01, CORP\svc-vpn-02, CORP\svc-monitor), and 23 personal email/password combos. The AD accounts have varying privilege levels: 2 are standard users, 4 are department managers, 1 is an IT admin (c.wilson, member of Domain Admins group), and 1 is a C-suite exec (k.williams, CFO).
+  next: credential_impact_assessment
+  mitre_tactic: Initial Access
+  mitre_technique: T1557.003 — DHCP Spoofing
+- id: credential_impact_assessment
+  phase_type: containment
+  title: Phase 2 — Credential Impact Assessment
+  situation: 'Post-incident analysis of the captive portal logs (recovered from the rogue AP''s Raspberry Pi SD card) shows: 8 AD accounts (CORP\t.nguyen, CORP\s.patel, CORP\r.garcia, CORP\l.johnson, CORP\k.williams, CORP\m.brown, CORP\a.davis, CORP\c.wilson), 3 VPN service accounts (CORP\svc-vpn-01, CORP\svc-vpn-02, CORP\svc-monitor), and 23 personal email/password combos. The AD accounts have varying privilege levels: 2 are standard users, 4 are department managers, 1 is an IT admin (c.wilson, member of Domain Admins group), and 1 is a C-suite exec (k.williams, CFO).'
+  prompt: What credential remediation do you execute?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: What credential remediation do you execute?
+    why: Stopping the spread is urgent, but destroying evidence makes the incident impossible to close.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Phase 2 — Credential Impact Assessment. Asset in scope: Corporate SSID ''ACME-CORP''.'
+  hints:
+  - A company-wide reset is disruptive and does not prioritize the highest-risk accounts.
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - priority credential
+  - credential rotation
+  - rotation immediately
+  - immediately disable
+  - wilson domain
+  - domain admin
+  - admin svc-vpn-01
+  - svc-vpn-01 accounts
+  reference_answer: |-
+    Priority credential rotation: (1) Immediately disable c.wilson (Domain Admin) and svc-vpn-01/02 accounts, (2) Force password reset for k.williams (CFO) and all department managers, (3) Reset VPN service account credentials and rotate certificates, (4) Revoke all active sessions for the 8 AD accounts, (5) Enable MFA enforcement on all 8 accounts if not already active, (6) Audit all actions taken by these accounts in the last 24 hours for unauthorized access.
+
+    Why: Domain admin and service accounts are highest priority because they enable lateral movement. The CFO account has financial access that could be exploited. Session revoation prevents use of captured credentials. MFA enforcement provides ongoing protection. Audit determines if the attacker already used any captured credentials.
+  followup_good: 'The evil twin attack exploited several weaknesses: (1) The corporate SSID uses WPA2-PSK (shared key for all employees), (2) No 802.1X EAP authentication is configured, (3) No wireless certificate pinning on client devices, (4) No wireless IDS containment automation, (5) The NAC portal accepts credentials over the network without validating the server certificate. The CISO wants a hardened wireless architecture.'
+  followup_weak: |-
+    Domain admin and service accounts are highest priority because they enable lateral movement.
+
+    The evil twin attack exploited several weaknesses: (1) The corporate SSID uses WPA2-PSK (shared key for all employees), (2) No 802.1X EAP authentication is configured, (3) No wireless certificate pinning on client devices, (4) No wireless IDS containment automation, (5) The NAC portal accepts credentials over the network without validating the server certificate. The CISO wants a hardened wireless architecture.
+  next: recovery_and_validation
+  mitre_tactic: Credential Access
+  mitre_technique: T1557.001 — LLMNR/NBT-NS Poisoning
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Corporate SSID 'ACME-CORP' is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Corporate SSID 'ACME-CORP' to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return Corporate SSID 'ACME-CORP' to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Corporate SSID ''ACME-CORP''.'
+  hints:
+  - Which backup or rebuild image is known-good for Corporate SSID 'ACME-CORP', and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Corporate SSID 'ACME-CORP' from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: wireless_security_hardening
+  next_weak: ''
+  mitre_tactic: Credential Access
+  mitre_technique: T1557 — Adversary-in-the-Middle
+  role_prompts: {}
+- id: wireless_security_hardening
+  phase_type: lessons
+  title: Phase 3 — Wireless Security Hardening
+  situation: 'The evil twin attack exploited several weaknesses: (1) The corporate SSID uses WPA2-PSK (shared key for all employees), (2) No 802.1X EAP authentication is configured, (3) No wireless certificate pinning on client devices, (4) No wireless IDS containment automation, (5) The NAC portal accepts credentials over the network without validating the server certificate. The CISO wants a hardened wireless architecture.'
+  prompt: What wireless security improvements do you recommend?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What wireless security improvements do you recommend?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Phase 3 — Wireless Security Hardening. Asset in scope: Corporate SSID ''ACME-CORP''.'
+  hints:
+  - A stronger PSK still uses shared credentials that can be captured by evil twin attacks.
+  - A WIDS appliance helps detection but does not address the underlying authentication weakness.
+  ideal_concepts:
+  - migrate wpa3-enterprise
+  - wpa3-enterprise eap-tls
+  - eap-tls certificate-based
+  - certificate-based authentication
+  - authentication deploy
+  - deploy internal
+  - internal wireless
+  - wireless client
+  reference_answer: |-
+    Migrate to WPA3-Enterprise with 802.1X/EAP-TLS (certificate-based authentication): (1) Deploy internal CA for wireless client certificates, (2) Configure WPA3-Enterprise-SAE on the WLC, (3) Implement certificate pinning on all managed devices via MDM (Jamf/Intune), (4) Configure WIPS with automated rogue AP containment, (5) Enable wireless network segmentation with per-VLAN RADIUS attributes, (6) Deploy DNS-based threat protection on the wireless controller.
+
+    Why: WPA3-Enterprise with EAP-TLS eliminates shared key risks — each device has a unique certificate, making evil twin attacks ineffective because clients validate the server certificate. Certificate pinning prevents captive portal bypass. Automated WIPS containment detects future rogue APs faster.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the WiFi Evil Twin AP — Credential Harvesting on Corporate SSID incident. On 2025-10-28 at 11:15 UTC, the wireless IDS (Cisco WIPS) detected a rogue access point broadcasting SSID 'ACME-CORP' (the corporate SSID) on channel 6, 2.4 GHz. The rogue AP (MAC de:ad:be:ef:00:42) was operating from within the building, detected at -42 dBm signal strength from AP sensor WIPS-03 on floor 3.
+
+    The rogue AP uses a hostapd-based evil twin with a Karma SSL captive portal that mimics the corporate NAC login page (https://login.acme.internal). The portal serves a self-signed certifica...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the WiFi Evil Twin AP — Credential Harvesting on Corporate SSID incident. On 2025-10-28 at 11:15 UTC, the wireless IDS (Cisco WIPS) detected a rogue access point broadcasting SSID 'ACME-CORP' (the corporate SSID) on channel 6, 2.4 GHz. The rogue AP (MAC de:ad:be:ef:00:42) was operating from within the building, detected at -42 dBm signal strength from AP sensor WIPS-03 on floor 3.
+
+    The rogue AP uses a hostapd-based evil twin with a Karma SSL captive portal that mimics the corporate NAC login page (https://login.acme.internal). The portal serves a self-signed certifica...
+  mitre_tactic: Credential Access
+  mitre_technique: T1557 — Adversary-in-the-Middle

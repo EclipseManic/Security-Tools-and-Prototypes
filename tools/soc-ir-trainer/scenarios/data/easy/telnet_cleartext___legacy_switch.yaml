@@ -1,0 +1,163 @@
+id: telnet_cleartext___legacy_switch
+name: Telnet Cleartext — Legacy Switch
+category: Network
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: 'You are the Tier-1 SOC analyst on shift. Network monitoring alert: cleartext Telnet credentials. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond Legacy branch switch.'
+  incident_manager: You are the Incident Manager coordinating the response to Cleartext Telnet Credentials on Unmanaged Branch Switch. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Cleartext Telnet Credentials on Unmanaged Branch Switch. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Cleartext Telnet Credentials on Unmanaged Branch Switch. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Cleartext Telnet Credentials on Unmanaged Branch Switch incident. The switch uses a shared admin password and Telnet is enabled. A junior technician logs in weekly to check port status. Business impact: Anyone on the branch network can capture admin credentials and reconfigure the switch. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Cleartext Telnet Credentials on Unmanaged Branch Switch
+  opening: A network capture on the branch uplink shows Telnet sessions to a legacy switch carrying credentials in clear text. The switch is managed by the facilities team and was not in the asset inventory.
+  summary: The switch uses a shared admin password and Telnet is enabled. A junior technician logs in weekly to check port status.
+  compromised_assets:
+  - Legacy branch switch
+  - Telnet management
+  - Facilities network
+  detected_via: 'Network monitoring alert: cleartext Telnet credentials.'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: telnet_cleartext___legacy_switch_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: 'A network capture on the branch uplink shows Telnet sessions to a legacy switch carrying credentials in clear text. The switch is managed by the facilities team and was not in the asset inventory. Network monitoring alert: cleartext Telnet credentials.'
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for Legacy branch switch.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - switch
+  - management vlan
+  - users
+  - packet capture
+  - credentials
+  - asset inventory
+  reference_answer: Identify the switch, management VLAN, users, and exposure; preserve the capture and confirm whether the credentials are reused elsewhere.
+  followup_good: Triage confirms the activity is real. Packet capture shows the username and password for the switch. The switch is reachable from the branch user VLAN and has no ACL. The credentials are shared among three technicians.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. Packet capture shows the username and password for the switch. The switch is reachable from the branch user VLAN and has no ACL. The credentials are shared among three technicians.
+  next: telnet_cleartext___legacy_switch_phase_2
+  mitre_tactic: Collection
+  mitre_technique: T1040 Network Sniffing
+- id: telnet_cleartext___legacy_switch_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. Packet capture shows the username and password for the switch. The switch is reachable from the branch user VLAN and has no ACL. The credentials are shared among three technicians.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - disable telnet
+  - management acl
+  - admin vlan
+  - change password
+  - shared credential
+  reference_answer: Disable Telnet, restrict management access to an admin VLAN or ACL, and change the shared password.
+  followup_good: Containment is in place. A legacy switch outside the IT asset inventory still uses Telnet and a shared password.
+  followup_weak: The activity continues while the team debates. Anyone on the branch network can capture admin credentials and reconfigure the switch.
+  next: telnet_cleartext___legacy_switch_phase_3
+  mitre_tactic: Lateral Movement
+  mitre_technique: T1021.002 SMB/Windows Admin Shares
+- id: telnet_cleartext___legacy_switch_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. A legacy switch outside the IT asset inventory still uses Telnet and a shared password.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - enable ssh
+  - update firmware
+  - asset inventory
+  - default accounts
+  - switch config
+  reference_answer: Enable SSH, update firmware, add the switch to the asset inventory, and remove default accounts.
+  followup_good: Validate SSH access, confirm the switch configuration, and monitor management logins.
+  followup_weak: The visible symptom is gone, but the root cause remains. Anyone on the branch network can capture admin credentials and reconfigure the switch.
+  next: telnet_cleartext___legacy_switch_phase_4
+  mitre_tactic: Command and Control
+  mitre_technique: T1071 Application Layer Protocol
+- id: telnet_cleartext___legacy_switch_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Validate SSH access, confirm the switch configuration, and monitor management logins.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - validate ssh
+  - admin vlan
+  - switch configuration
+  - monitor logins
+  - support access
+  reference_answer: Validate SSH access from the admin VLAN, confirm the switch configuration, and monitor management logins before returning the device to normal support.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: telnet_cleartext___legacy_switch_phase_5
+  mitre_tactic: Initial Access
+  mitre_technique: T1133 External Remote Services
+- id: telnet_cleartext___legacy_switch_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Telnet Cleartext — Legacy Switch.
+  prompt: What must change so Telnet Cleartext — Legacy Switch is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - device inventory
+  - disable cleartext
+  - unique credentials
+  - ssh
+  - network device hardening
+  reference_answer: Inventory all network devices, disable cleartext protocols, and enforce unique admin credentials.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Collection
+  mitre_technique: T1040 Network Sniffing

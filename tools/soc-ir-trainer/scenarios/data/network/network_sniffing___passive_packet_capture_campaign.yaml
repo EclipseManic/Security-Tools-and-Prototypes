@@ -1,0 +1,186 @@
+id: network_sniffing___passive_packet_capture_campaign
+name: Network Sniffing — Passive Packet Capture Campaign
+category: Network
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Passive Network Sniffing — ARP-Based Promiscuous Mode Detection. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Passive Network Sniffing — ARP-Based Promiscuous Mode Detection. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Passive Network Sniffing — ARP-Based Promiscuous Mode Detection. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: |-
+  Executive summary of the Passive Network Sniffing — ARP-Based Promiscuous Mode Detection incident. On 2025-09-28 at 14:07 UTC, the network security monitoring platform (ExtraHop Reveal(x)) flagged host dev-ws-031 (10.10.30.31, assigned to security analyst k.larsen, AD: CORP\k.larsen) for abnormal network behavior: the host was responding to ARP requests for IP addresses outside its subnet (10.10.10.0/24 — the Server VLAN), indicating the NIC was in promiscuous mode and accepting all Ethernet frames.
+
+  Deep packet inspection showed the host was running Wireshark (tshark.exe PID 8832) capturing all traffic on the VLAN 30 trunk span. The capture had been running for 6 days (since Sep 22 at 09:41 UTC) and had written 47 GB of pcap data to C:\Users\k.larsen\captures\full_capture.pcap. The capture includes traffic from VLAN 30 (Finance), VLAN 20 (Engineering), and VLAN 10 (Servers) due to a misconfigured SPAN session on core-switch-01 that mirrors all VLAN traffic to port Gi0/24.
+
+  Analysis of the pcap reveals k.larsen used Wireshark display filters to isolate: (1) HTTP POST requests containing form data (1,247 captured, including payroll login credentials), (2) SNMP community strings (6 devices using 'public', 2 using 'acme-snmp-v2'), (3) FTP credentials in plaintext (3 transfers to external FTP server ftp.collab.vendor.com), (4) database connection strings in application traffic (PostgreSQL, MySQL credentials for 4 application databases). Business impact: network availability and traffic confidentiality are at risk, and perimeter and segmentation controls are under scrutiny. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel should assess contractual and regulatory notification duties if traffic or data was exposed.
+incident:
+  title: Passive Network Sniffing — ARP-Based Promiscuous Mode Detection
+  opening: 'On 2025-09-28 at 14:07 UTC, the network security monitoring platform (ExtraHop Reveal(x)) flagged host dev-ws-031 (10.10.30.31, assigned to security analyst k.larsen, AD: CORP\k.larsen) for abnormal network behavior: the host was responding to ARP requests for IP addresses outside its subnet (10.10.10.0/24 — the Server VLAN), indicating the NIC was in promiscuous mode and accepting all Ethernet frames. Deep packet…'
+  summary: |-
+    On 2025-09-28 at 14:07 UTC, the network security monitoring platform (ExtraHop Reveal(x)) flagged host dev-ws-031 (10.10.30.31, assigned to security analyst k.larsen, AD: CORP\k.larsen) for abnormal network behavior: the host was responding to ARP requests for IP addresses outside its subnet (10.10.10.0/24 — the Server VLAN), indicating the NIC was in promiscuous mode and accepting all Ethernet frames.
+
+    Deep packet inspection showed the host was running Wireshark (tshark.exe PID 8832) capturing all traffic on the VLAN 30 trunk span. The capture had been running for 6 days (since Sep 22 at 09:41 UTC) and had written 47 GB of pcap data to C:\Users\k.larsen\captures\full_capture.pcap. The capture includes traffic from VLAN 30 (Finance), VLAN 20 (Engineering), and VLAN 10 (Servers) due to a misconfigured SPAN session on core-switch-01 that mirrors all VLAN traffic to port Gi0/24.
+
+    Analysis of the pcap reveals k.larsen used Wireshark display filters to isolate: (1) HTTP POST requests containing form data (1,247 captured, including payroll login credentials), (2) SNMP community strings (6 devices using 'public', 2 using 'acme-snmp-v2'), (3) FTP credentials in plaintext (3 transfers to external FTP server ftp.collab.vendor.com), (4) database connection strings in application traffic (PostgreSQL, MySQL credentials for 4 application databases).
+  compromised_assets:
+  - dev-ws-031 (10.10.30.31) — k.larsen's workstation
+  - SPAN session on core-switch-01 — full VLAN traffic mirror
+  - 47 GB pcap — 6 days of captured network traffic
+  - 'Credentials: payroll logins, SNMP strings, FTP creds, DB connection strings'
+  detected_via: ExtraHop Reveal(x) — promiscuous mode detection + ARP anomaly
+  kill_chain:
+  - Collection
+  - Credential Access
+  mitre_tactics:
+  - Collection
+  - Credential Access
+phases:
+- id: promiscuous_mode_detection
+  phase_type: triage
+  title: Phase 1 — Promiscuous Mode Detection
+  situation: ExtraHop flagged dev-ws-031 at 14:07 UTC for responding to ARP requests for IPs outside its subnet (10.10.10.x). The host's NIC is in promiscuous mode. tshark.exe PID 8832 has been running since Sep 22 at 09:41 UTC. The SPAN session on core-switch-01 port Gi0/24 mirrors ALL VLAN traffic (10, 20, 30) to this port. k.larsen is a security analyst with legitimate access to the monitoring console. The capture file is 47 GB. What do you do?
+  prompt: What is your first response?
+  guidance:
+    what: Establish what fired on dev-ws-031, which accounts are involved, and how urgent the signal is.
+    action: What is your first response?
+    why: Every later decision depends on an accurate picture of dev-ws-031 and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Phase 1 — Promiscuous Mode Detection. Asset in scope: dev-ws-031.'
+  hints:
+  - Reconfiguring the SPAN session does not address the active capture of 47 GB of multi-VLAN traffic.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - immediately disable
+  - span session
+  - session core-switch-01
+  - core-switch-01 gi0
+  - gi0 stop
+  - traffic mirror
+  - mirror terminate
+  - terminate tshark
+  reference_answer: |-
+    Immediately: (1) Disable the SPAN session on core-switch-01 Gi0/24 to stop the traffic mirror, (2) Terminate tshark.exe PID 8832 on dev-ws-031, (3) Preserve the 47 GB pcap file as forensic evidence (copy to write-protected storage), (4) Isolate dev-ws-031 for forensic analysis, (5) Notify the CISO and HR — this may be unauthorized surveillance by a security analyst.
+
+    Why: Stopping the SPAN session cuts off the data source. Terminating tshark stops ongoing capture. Preserving the pcap is essential for determining scope of data exposure. Involving CISO and HR is necessary because the actor is an internal security analyst with legitimate-looking access.
+  followup_good: 'Forensic analysis of the 47 GB pcap (Sep 22–28) reveals: (1) 1,247 HTTP POST requests with plaintext form data including payroll system logins (15 unique accounts, including CFO k.chen), (2) 6 devices using SNMP community string ''public'' and 2 using ''acme-snmp-v2'', (3) 3 FTP transfers to ftp.collab.vendor.com with plaintext credentials (user: vendor-export, password: AcmeV3nd0r!), (4) 4 database connection strings in application traffic (PostgreSQL: db_admin/Pr0dP@ssw0rd!, MySQL: app_svc/AppC0nn3ct!), (5) k.larsen''s workstation shows Wireshark display filters specifically targeting ''http.request.method == POST'', ''snmp'', ''ftp.request.command == PASS'', and ''pgsql.message''. This indicates deliberate, targeted credential harvesting rather than passive monitoring.'
+  followup_weak: |-
+    Stopping the SPAN session cuts off the data source.
+
+    Forensic analysis of the 47 GB pcap (Sep 22–28) reveals: (1) 1,247 HTTP POST requests with plaintext form data including payroll system logins (15 unique accounts, including CFO k.chen), (2) 6 devices using SNMP community string 'public' and 2 using 'acme-snmp-v2', (3) 3 FTP transfers to ftp.collab.vendor.com with plaintext credentials (user: vendor-export, password: AcmeV3nd0r!), (4) 4 database connection strings in application traffic (PostgreSQL: db_admin/Pr0dP@ssw0rd!, MySQL: app_svc/AppC0nn3ct!), (5) k.larsen's workstation shows Wireshark display filters specifically targeting 'http.request.method == POST', 'snmp', 'ftp.request.command == PASS', and 'pgsql.message'. This indicates deliberate, targeted credential harvesting rather than passive monitoring.
+  next: captured_data_impact_assessment
+  mitre_tactic: Collection
+  mitre_technique: T1040 — Network Sniffing
+- id: captured_data_impact_assessment
+  phase_type: containment
+  title: Phase 2 — Captured Data Impact Assessment
+  situation: 'Forensic analysis of the 47 GB pcap (Sep 22–28) reveals: (1) 1,247 HTTP POST requests with plaintext form data including payroll system logins (15 unique accounts, including CFO k.chen), (2) 6 devices using SNMP community string ''public'' and 2 using ''acme-snmp-v2'', (3) 3 FTP transfers to ftp.collab.vendor.com with plaintext credentials (user: vendor-export, password: AcmeV3nd0r!), (4) 4 database connection strings in application traffic (PostgreSQL: db_admin/Pr0dP@ssw0rd!, MySQL: app_svc/AppC0nn3ct!), (5) k.larsen''s workstation shows Wireshark display filters specifically targeting ''http.request.method == POST'', ''snmp'', ''ftp.request.command == PASS'', and ''pgsql.message''. This indicates deliberate, targeted credential harvesting rather than passive monitoring.'
+  prompt: What is your investigation priority?
+  guidance:
+    what: Decide how to stop the spread from dev-ws-031 while preserving the evidence trail.
+    action: What is your investigation priority?
+    why: The first containment action sets the blast radius for everything that follows.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Phase 2 — Captured Data Impact Assessment. Asset in scope: dev-ws-031.'
+  hints:
+  - Fixing the SPAN session is important but secondary to the 15+ compromised credentials that are actively at risk.
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - prioritize credential
+  - credential rotation
+  - rotation insider
+  - insider investigation
+  - investigation force
+  - password reset
+  - payroll accounts
+  - accounts rotate
+  reference_answer: |-
+    Prioritize credential rotation and insider investigation: (1) Force password reset for all 15 payroll accounts, (2) Rotate SNMP community strings to SNMPv3 with authentication/encryption, (3) Rotate FTP credentials and migrate to SFTP, (4) Rotate all 4 database connection strings, (5) Audit k.larsen's activity: email, file access, badge logs, browser history for the 6-day window, (6) Engage HR and legal for potential insider threat investigation, (7) Check if the captured data was copied to external media.
+
+    Why: The targeted Wireshark filters indicate deliberate credential harvesting. All captured credentials must be rotated immediately. The insider investigation must determine motive and whether data was exfiltrated. Checking for external media copies determines if the data left the organization.
+  followup_good: 'Post-incident, you need a secure network monitoring architecture. Current issues: (1) SPAN sessions mirror all VLANs to a single port (no segmentation), (2) No access controls on SPAN destination ports, (3) No DLP monitoring for pcap file creation, (4) Network monitoring tools (Wireshark) are available to all analysts without audit logging, (5) No network TAP appliances for out-of-band monitoring. The CISO wants a secure monitoring architecture that provides visibility without creating attack vectors.'
+  followup_weak: |-
+    The targeted Wireshark filters indicate deliberate credential harvesting.
+
+    Post-incident, you need a secure network monitoring architecture. Current issues: (1) SPAN sessions mirror all VLANs to a single port (no segmentation), (2) No access controls on SPAN destination ports, (3) No DLP monitoring for pcap file creation, (4) Network monitoring tools (Wireshark) are available to all analysts without audit logging, (5) No network TAP appliances for out-of-band monitoring. The CISO wants a secure monitoring architecture that provides visibility without creating attack vectors.
+  next: recovery_and_validation
+  mitre_tactic: Credential Access
+  mitre_technique: T1040 — Network Sniffing
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. dev-ws-031 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return dev-ws-031 to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return dev-ws-031 to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: dev-ws-031.'
+  hints:
+  - Which backup or rebuild image is known-good for dev-ws-031, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore dev-ws-031 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: network_monitoring_architecture
+  next_weak: ''
+  mitre_tactic: Collection
+  mitre_technique: T1040 — Network Sniffing
+  role_prompts: {}
+- id: network_monitoring_architecture
+  phase_type: lessons
+  title: Phase 3 — Network Monitoring Architecture
+  situation: 'Post-incident, you need a secure network monitoring architecture. Current issues: (1) SPAN sessions mirror all VLANs to a single port (no segmentation), (2) No access controls on SPAN destination ports, (3) No DLP monitoring for pcap file creation, (4) Network monitoring tools (Wireshark) are available to all analysts without audit logging, (5) No network TAP appliances for out-of-band monitoring. The CISO wants a secure monitoring architecture that provides visibility without creating attack vectors.'
+  prompt: What network monitoring architecture do you recommend?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What network monitoring architecture do you recommend?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Phase 3 — Network Monitoring Architecture. Asset in scope: dev-ws-031.'
+  hints:
+  - SIEM provides log analysis but cannot replace deep packet inspection for troubleshooting.
+  - Encrypting all traffic (TLS everywhere) protects data in transit but does not prevent metadata analysis or protect non-encrypted protocols (DNS, SNMP, FTP).
+  ideal_concepts:
+  - secure monitoring
+  - monitoring architecture
+  - architecture deploy
+  - deploy dedicated
+  - dedicated network
+  - network tap
+  - tap appliances
+  - appliances out-of-band
+  reference_answer: |-
+    Secure monitoring architecture: (1) Deploy dedicated network TAP appliances for out-of-band monitoring (Gigamon, Ixia) instead of SPAN sessions, (2) Centralize packet capture on a hardened monitoring server with role-based access control, (3) Implement file integrity monitoring (FIM) on capture directories, (4) Deploy DLP rules to detect pcap file creation and transfer, (5) Require two-person authorization for packet captures exceeding 1 GB, (6) Implement audit logging for all Wireshark/tshark usage via endpoint monitoring, (7) Segment monitoring infrastructure on a dedicated management VLAN with strict access controls.
+
+    Why: TAPs provide clean traffic copies without VLAN cross-contamination. Centralized capture with RBAC prevents individual analysts from running unauthorized captures. FIM and DLP detect data exfiltration. Two-person authorization prevents single-analyst abuse. Audit logging provides accountability. Management VLAN segmentation limits access.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Passive Network Sniffing — ARP-Based Promiscuous Mode Detection incident. On 2025-09-28 at 14:07 UTC, the network security monitoring platform (ExtraHop Reveal(x)) flagged host dev-ws-031 (10.10.30.31, assigned to security analyst k.larsen, AD: CORP\k.larsen) for abnormal network behavior: the host was responding to ARP requests for IP addresses outside its subnet (10.10.10.0/24 — the Server VLAN), indicating the NIC was in promiscuous mode and accepting all Ethernet frames.
+
+    Deep packet inspection showed the host was running Wireshark (tshark.exe PID 8832) capturing ...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Passive Network Sniffing — ARP-Based Promiscuous Mode Detection incident. On 2025-09-28 at 14:07 UTC, the network security monitoring platform (ExtraHop Reveal(x)) flagged host dev-ws-031 (10.10.30.31, assigned to security analyst k.larsen, AD: CORP\k.larsen) for abnormal network behavior: the host was responding to ARP requests for IP addresses outside its subnet (10.10.10.0/24 — the Server VLAN), indicating the NIC was in promiscuous mode and accepting all Ethernet frames.
+
+    Deep packet inspection showed the host was running Wireshark (tshark.exe PID 8832) capturing ...
+  mitre_tactic: Collection
+  mitre_technique: T1040 — Network Sniffing

@@ -1,0 +1,163 @@
+id: impossible_travel___executive_account
+name: Impossible Travel — Executive Account
+category: Identity & Access
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: 'You are the Tier-1 SOC analyst on shift. Azure AD risk detection: impossible travel. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond CFO account.'
+  incident_manager: You are the Incident Manager coordinating the response to Impossible-Travel Alert on CFO Account. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Impossible-Travel Alert on CFO Account. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Impossible-Travel Alert on CFO Account. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the Impossible-Travel Alert on CFO Account incident. The Singapore sign-in came from a hosting provider, passed MFA, and accessed the finance SharePoint site. The CFO''s phone was offline during the second sign-in. Business impact: Board-level financial data may be exposed, and the attacker may still have a valid session. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: Impossible-Travel Alert on CFO Account
+  opening: 'Azure AD flagged impossible travel for the CFO: a sign-in from London followed 30 minutes later by a sign-in from Singapore. The CFO is on a UK business trip and says the second sign-in is not theirs.'
+  summary: The Singapore sign-in came from a hosting provider, passed MFA, and accessed the finance SharePoint site. The CFO's phone was offline during the second sign-in.
+  compromised_assets:
+  - CFO account
+  - Finance SharePoint
+  - MFA authenticator
+  detected_via: 'Azure AD risk detection: impossible travel.'
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: impossible_travel___executive_account_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: 'Azure AD flagged impossible travel for the CFO: a sign-in from London followed 30 minutes later by a sign-in from Singapore. The CFO is on a UK business trip and says the second sign-in is not theirs. Azure AD risk detection: impossible travel.'
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for CFO account.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - cfo location
+  - sign-ins
+  - mfa methods
+  - sharepoint access
+  - session token
+  - audit logs
+  reference_answer: Confirm the CFO's location and devices, review both sign-ins, MFA methods, and SharePoint access; preserve sign-in and audit logs.
+  followup_good: Triage confirms the activity is real. The London sign-in matches the CFO's hotel IP. The Singapore sign-in used a valid session token and an MFA method registered two days earlier. SharePoint audit logs show a download of the board pack.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. The London sign-in matches the CFO's hotel IP. The Singapore sign-in used a valid session token and an MFA method registered two days earlier. SharePoint audit logs show a download of the board pack.
+  next: impossible_travel___executive_account_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1078 Valid Accounts
+- id: impossible_travel___executive_account_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. The London sign-in matches the CFO's hotel IP. The Singapore sign-in used a valid session token and an MFA method registered two days earlier. SharePoint audit logs show a download of the board pack.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - revoke sessions
+  - reset password
+  - remove mfa
+  - block hosting provider
+  - refresh tokens
+  reference_answer: Revoke all sessions and refresh tokens, reset the password, remove unfamiliar MFA methods, and block the hosting provider range.
+  followup_good: Containment is in place. An attacker obtained a session token or MFA method, likely through a phishing page, and used it from a hosting provider.
+  followup_weak: The activity continues while the team debates. Board-level financial data may be exposed, and the attacker may still have a valid session.
+  next: impossible_travel___executive_account_phase_3
+  mitre_tactic: Initial Access
+  mitre_technique: T1133 External Remote Services
+- id: impossible_travel___executive_account_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. An attacker obtained a session token or MFA method, likely through a phishing page, and used it from a hosting provider.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - mailbox rules
+  - oauth grants
+  - device registrations
+  - downloaded files
+  - shared links
+  reference_answer: Check mailbox rules, OAuth grants, and device registrations; review downloaded files and shared links.
+  followup_good: Re-register MFA on the CFO's trusted phone, require a password reset from a known device, and monitor sign-ins for 72 hours.
+  followup_weak: The visible symptom is gone, but the root cause remains. Board-level financial data may be exposed, and the attacker may still have a valid session.
+  next: impossible_travel___executive_account_phase_4
+  mitre_tactic: Credential Access
+  mitre_technique: T1110 Brute Force
+- id: impossible_travel___executive_account_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Re-register MFA on the CFO's trusted phone, require a password reset from a known device, and monitor sign-ins for 72 hours.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - re-register mfa
+  - trusted phone
+  - password reset
+  - monitor sign-ins
+  - validate access
+  reference_answer: Re-register MFA on the CFO's trusted phone, require a password reset from a known device, and monitor sign-ins for 72 hours before restoring normal access.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: impossible_travel___executive_account_phase_5
+  mitre_tactic: Credential Access
+  mitre_technique: T1539 Steal Web Session Cookie
+- id: impossible_travel___executive_account_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Impossible Travel — Executive Account.
+  prompt: What must change so Impossible Travel — Executive Account is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - phishing-resistant mfa
+  - token protection
+  - conditional access
+  - mfa registration alert
+  - executive protection
+  reference_answer: Use phishing-resistant MFA for executives, enforce token protection and conditional access, and alert on new MFA method registration.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Persistence
+  mitre_technique: T1556 Modify Authentication Process

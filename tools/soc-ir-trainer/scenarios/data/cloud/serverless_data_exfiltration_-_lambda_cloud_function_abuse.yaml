@@ -1,0 +1,208 @@
+id: serverless_data_exfiltration_-_lambda_cloud_function_abuse
+name: Serverless Data Exfiltration - Lambda/Cloud Function Abuse
+category: Cloud
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Serverless Data Exfiltration — Lambda Function Abuse. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Serverless Data Exfiltration — Lambda Function Abuse. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Serverless Data Exfiltration — Lambda Function Abuse. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Serverless Data Exfiltration — Lambda Function Abuse incident. At 19:47 UTC, the Lambda function ''process-uploads'' in account 123456789012 was invoked 47 times in rapid succession from an unusual source (CloudWatch Logs show invocation from a new API Gateway stage). Investigation revealed: (1) the Lambda was triggered by S3 events on the ''uploads'' bucket, (2) an attacker uploaded 47 specially crafted files that triggered the Lambda, (3) the Lambda''s code contained a dependency on a compromised npm package (''data-utils@2.1.0'') that included a data exfiltration module, (4) the exfiltration module copied all processed data to an external S3 bucket (attacker-controlled), and (5) the Lambda''s IAM role had s3:GetObject on all buckets in the account. The compromised package was introduced 5 days ago via an automated dependency update bot (Dependabot). Business impact: cloud-hosted data and service availability are at risk, and provider notification
+  plus key rotation may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy and cloud counsel should assess notification duties and contractual reporting obligations.'
+incident:
+  title: Serverless Data Exfiltration — Lambda Function Abuse
+  opening: 'At 19:47 UTC, the Lambda function ''process-uploads'' in account 123456789012 was invoked 47 times in rapid succession from an unusual source (CloudWatch Logs show invocation from a new API Gateway stage). Investigation revealed: (1) the Lambda was triggered by S3 events on the ''uploads'' bucket, (2) an attacker uploaded 47 specially crafted files that triggered the Lambda, (3) the Lambda''s code contained a dependency…'
+  summary: 'At 19:47 UTC, the Lambda function ''process-uploads'' in account 123456789012 was invoked 47 times in rapid succession from an unusual source (CloudWatch Logs show invocation from a new API Gateway stage). Investigation revealed: (1) the Lambda was triggered by S3 events on the ''uploads'' bucket, (2) an attacker uploaded 47 specially crafted files that triggered the Lambda, (3) the Lambda''s code contained a dependency on a compromised npm package (''data-utils@2.1.0'') that included a data exfiltration module, (4) the exfiltration module copied all processed data to an external S3 bucket (attacker-controlled), and (5) the Lambda''s IAM role had s3:GetObject on all buckets in the account. The compromised package was introduced 5 days ago via an automated dependency update bot (Dependabot).'
+  compromised_assets:
+  - 'Lambda function: process-uploads (123456789012)'
+  - 'npm package: data-utils@2.1.0 (compromised)'
+  - 'S3 bucket: uploads (47 files processed)'
+  - 'IAM role: lambda-process-uploads (s3:GetObject on all buckets)'
+  detected_via: CloudWatch Logs — unusual invocation pattern + S3 access from Lambda to unknown bucket
+  kill_chain:
+  - Initial Access (Compromised dependency)
+  - Execution (Malicious code in Lambda)
+  - Collection (Data copied during processing)
+  - Exfiltration (External S3 bucket)
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_stop_active_exfiltration
+  phase_type: triage
+  title: Immediate Containment — Stop Active Exfiltration
+  situation: The Lambda function is actively processing malicious files and exfiltrating data. 47 invocations have occurred, and the function has an overly permissive IAM role that can access all S3 buckets. You need to stop the exfiltration immediately.
+  prompt: What is your next action?
+  guidance:
+    what: 'Frame the decision for ''Immediate Containment — Stop Active Exfiltration'': the asset at risk, the evidence available, and the time pressure.'
+    action: What is your next action?
+    why: 'Every later decision depends on an accurate picture of Lambda function: process-uploads and the accounts involved.'
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Stop Active Exfiltration. Asset in scope: Lambda function: process-uploads.'
+  hints:
+  - Updating the package addresses the root cause but doesn't stop the current exfiltration.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - lambda function
+  - function event
+  - event source
+  - source mapping
+  - mapping revoke
+  - revoke iam
+  - iam role
+  - role permissions
+  reference_answer: |-
+    Disable the Lambda function's event source mapping, revoke the IAM role's S3 permissions, add a bucket policy blocking writes to the attacker's S3 bucket, and delete the compromised npm package from the Lambda deployment
+
+    Why: Multi-layer containment: disabling the event source stops new invocations, revoking IAM permissions stops data access, bucket policy blocks exfiltration path, and removing the package stops malicious code execution.
+  followup_good: 'The compromised package ''data-utils@2.1.0'' was introduced by Dependabot 5 days ago. The package has 12,000 weekly downloads. You need to determine: (1) what data the exfiltration module accessed, (2) whether other Lambda functions use this package, and (3) whether the attacker exfiltrated more than just the upload data.'
+  followup_weak: |-
+    Multi-layer containment: disabling the event source stops new invocations, revoking IAM permissions stops data access, bucket policy blocks exfiltration path, and removing the package stops malicious code execution.
+
+    The compromised package 'data-utils@2.1.0' was introduced by Dependabot 5 days ago. The package has 12,000 weekly downloads. You need to determine: (1) what data the exfiltration module accessed, (2) whether other Lambda functions use this package, and (3) whether the attacker exfiltrated more than just the upload data.
+  next: dependency_analysis_scope_of_npm_compromise
+  mitre_tactic: Exfiltration
+  mitre_technique: T1537 — Transfer Data to Cloud Account
+- id: dependency_analysis_scope_of_npm_compromise
+  phase_type: analysis
+  title: Dependency Analysis — Scope of npm Compromise
+  situation: 'The compromised package ''data-utils@2.1.0'' was introduced by Dependabot 5 days ago. The package has 12,000 weekly downloads. You need to determine: (1) what data the exfiltration module accessed, (2) whether other Lambda functions use this package, and (3) whether the attacker exfiltrated more than just the upload data.'
+  prompt: What is your next action?
+  guidance:
+    what: 'Determine what the evidence says about scope, access, and privilege on Lambda function: process-uploads.'
+    action: What is your next action?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Dependency Analysis — Scope of npm Compromise. Asset in scope: Lambda function: process-uploads.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - search lambda
+  - lambda functions
+  - functions deployments
+  - deployments compromised
+  - compromised package
+  - package version
+  - version review
+  - review lambda
+  reference_answer: |-
+    Search all Lambda functions and deployments for the compromised package version, review Lambda environment variables and IAM roles for credential exposure, and analyze the exfiltration module's code to determine what data it targeted
+
+    Why: Comprehensive dependency audit: finding all affected functions determines the full blast radius, checking env vars and IAM roles identifies credential exposure, and analyzing the exfiltration module reveals the attacker's data targets.
+  followup_good: 'The exfiltration module targets data processed by the Lambda. The ''uploads'' bucket contains: user profile images, document uploads, and CSV data exports. The Lambda''s IAM role can access all S3 buckets in the account. You need to determine exactly what data was exfiltrated.'
+  followup_weak: |-
+    Comprehensive dependency audit: finding all affected functions determines the full blast radius, checking env vars and IAM roles identifies credential exposure, and analyzing the exfiltration module reveals the attacker's data targets.
+
+    The exfiltration module targets data processed by the Lambda. The 'uploads' bucket contains: user profile images, document uploads, and CSV data exports. The Lambda's IAM role can access all S3 buckets in the account. You need to determine exactly what data was exfiltrated.
+  next: data_exposure_assessment_what_was_exfiltrated
+  mitre_tactic: Collection
+  mitre_technique: T1195.002 — Supply Chain Compromise
+- id: data_exposure_assessment_what_was_exfiltrated
+  phase_type: eradication
+  title: Data Exposure Assessment — What Was Exfiltrated?
+  situation: 'The exfiltration module targets data processed by the Lambda. The ''uploads'' bucket contains: user profile images, document uploads, and CSV data exports. The Lambda''s IAM role can access all S3 buckets in the account. You need to determine exactly what data was exfiltrated.'
+  prompt: What is your next action?
+  guidance:
+    what: 'Find every foothold the attacker left on Lambda function: process-uploads, including persistence and stolen credentials.'
+    action: What is your next action?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Data Exposure Assessment — What Was Exfiltrated?. Asset in scope: Lambda function: process-uploads.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - analyze cloudtrail
+  - cloudtrail logs
+  - logs getobject
+  - getobject calls
+  - lambda iam
+  - iam role
+  - role invocations
+  - invocations cross-reference
+  reference_answer: |-
+    Analyze CloudTrail logs for all S3 GetObject calls from the Lambda's IAM role during the 47 invocations, cross-reference with the attacker's S3 bucket to confirm what was written, and assess whether any PII or regulated data was included
+
+    Why: CloudTrail provides the most accurate record of what the Lambda accessed. Cross-referencing with the attacker's bucket confirms actual exfiltration. PII assessment determines regulatory requirements.
+  followup_good: 'The root causes are: (1) compromised npm package via automated dependency updates, (2) overly permissive Lambda IAM role, (3) no dependency pinning or lock file verification, and (4) no runtime monitoring for Lambda data exfiltration. You need to implement a secure serverless architecture.'
+  followup_weak: |-
+    CloudTrail provides the most accurate record of what the Lambda accessed.
+
+    The root causes are: (1) compromised npm package via automated dependency updates, (2) overly permissive Lambda IAM role, (3) no dependency pinning or lock file verification, and (4) no runtime monitoring for Lambda data exfiltration. You need to implement a secure serverless architecture.
+  next: recovery_and_validation
+  mitre_tactic: Exfiltration
+  mitre_technique: T1530 — Data from Cloud Storage
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: 'Containment is holding and the attacker''s active access has been removed. Lambda function: process-uploads is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.'
+  prompt: 'What must be true before you return Lambda function: process-uploads to production?'
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: 'What must be true before you return Lambda function: process-uploads to production?'
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Lambda function: process-uploads.'
+  hints:
+  - 'Which backup or rebuild image is known-good for Lambda function: process-uploads, and when was it validated?'
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Lambda function: process-uploads from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: supply_chain_and_serverless_hardening
+  next_weak: ''
+  mitre_tactic: Recovery
+  mitre_technique: 'T1562.008 — Impair Defenses: Disable or Modify Cloud Logs'
+  role_prompts: {}
+- id: supply_chain_and_serverless_hardening
+  phase_type: lessons
+  title: Supply Chain and Serverless Hardening
+  situation: 'The root causes are: (1) compromised npm package via automated dependency updates, (2) overly permissive Lambda IAM role, (3) no dependency pinning or lock file verification, and (4) no runtime monitoring for Lambda data exfiltration. You need to implement a secure serverless architecture.'
+  prompt: What is your next action?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What is your next action?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Supply Chain and Serverless Hardening. Asset in scope: Lambda function: process-uploads.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - pin dependencies
+  - dependencies integrity
+  - integrity hashes
+  - hashes implement
+  - implement iam
+  - iam least-privilege
+  - least-privilege lambda
+  - lambda roles
+  reference_answer: |-
+    Pin all dependencies with integrity hashes, implement IAM least-privilege for Lambda roles (per-bucket access), deploy Lambda runtime monitoring (e.g., GuardDuty Lambda Monitoring), and require manual review for dependency updates in production
+
+    Why: Defense-in-depth: dependency pinning prevents supply chain attacks, least-privilege IAM limits blast radius, runtime monitoring detects exfiltration, and manual review catches suspicious updates.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Serverless Data Exfiltration — Lambda Function Abuse incident. At 19:47 UTC, the Lambda function 'process-uploads' in account 123456789012 was invoked 47 times in rapid succession from an unusual source (CloudWatch Logs show invocation from a new API Gateway stage). Investigation revealed: (1) the Lambda was triggered by S3 events on the 'uploads' bucket, (2) an attacker uploaded 47 specially crafted files that triggered the Lambda, (3) the Lambda's code contained a dependency on a compromised npm package ('data-utils@2.1.0') that included a data exfiltrati...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Serverless Data Exfiltration — Lambda Function Abuse incident. At 19:47 UTC, the Lambda function 'process-uploads' in account 123456789012 was invoked 47 times in rapid succession from an unusual source (CloudWatch Logs show invocation from a new API Gateway stage). Investigation revealed: (1) the Lambda was triggered by S3 events on the 'uploads' bucket, (2) an attacker uploaded 47 specially crafted files that triggered the Lambda, (3) the Lambda's code contained a dependency on a compromised npm package ('data-utils@2.1.0') that included a data exfiltrati...
+  mitre_tactic: Recovery
+  mitre_technique: 'T1562.008 — Impair Defenses: Disable or Modify Cloud Logs'

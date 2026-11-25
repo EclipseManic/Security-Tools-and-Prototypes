@@ -1,0 +1,254 @@
+id: exchange_server___proxyshell_proxylogon
+name: Exchange Server — ProxyShell/ProxyLogon
+category: Endpoint
+format_version: 2
+difficulty: Critical
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to ProxyShell Chain Compromises Exchange and Domain Environment. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for ProxyShell Chain Compromises Exchange and Domain Environment. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for ProxyShell Chain Compromises Exchange and Domain Environment. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the ProxyShell Chain Compromises Exchange and Domain Environment incident. An attacker exploited the ProxyShell vulnerability chain (CVE-2021-34473, CVE-2021-34523, CVE-2021-31207) on an unpatched Microsoft Exchange Server 2019 (EXCH-01, 10.10.1.20, Exchange CU11) to achieve pre-authentication remote code execution and full domain compromise. The attack chain: (1) CVE-2021-34473 (pre-auth path confusion) bypasses authentication, (2) CVE-2021-34523 (Elevation of Privilege) gains Exchange admin permissions via /autodiscover/autodiscover.json with X-Exchange-ESMS-AutoDiscoverType=Organization, (3) CVE-2021-31207 (Post-Authentication File Write) writes a web shell to the Exchange Frontend at /owa/auth/x.aspx. Through the web shell, the attacker executed Exchange PowerShell commands to export all mailboxes (CEO, CFO, legal department — totaling 4.7 GB of email data) to PST files staged at C:\ProgramData\export\PST\. The attacker used the Exchange Server''s
+  machine account (EXCH-01$, SID S-1-5-21-...-1104) to perform a DCSync attack, extracting the KRBTGT hash and creating a Golden Ticket. A HAFNIUM-attributed web shell (chopper.aspx) was found alongside the attacker''s custom web shell. The compromise affected 3 Exchange servers (EXCH-01, EXCH-02, EXCH-03) and was detected 11 days after initial exploitation (March 3-14) when Microsoft threat intelligence feed identified the C2 infrastructure communicating with the Exchange servers. Business impact: endpoint availability and integrity are at risk, and affected hosts may need reimaging before normal work resumes. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed.'
+incident:
+  title: ProxyShell Chain Compromises Exchange and Domain Environment
+  opening: 'An attacker exploited the ProxyShell vulnerability chain (CVE-2021-34473, CVE-2021-34523, CVE-2021-31207) on an unpatched Microsoft Exchange Server 2019 (EXCH-01, 10.10.1.20, Exchange CU11) to achieve pre-authentication remote code execution and full domain compromise. The attack chain: (1) CVE-2021-34473 (pre-auth path confusion) bypasses authentication, (2) CVE-2021-34523 (Elevation of Privilege) gains Exchange…'
+  summary: 'An attacker exploited the ProxyShell vulnerability chain (CVE-2021-34473, CVE-2021-34523, CVE-2021-31207) on an unpatched Microsoft Exchange Server 2019 (EXCH-01, 10.10.1.20, Exchange CU11) to achieve pre-authentication remote code execution and full domain compromise. The attack chain: (1) CVE-2021-34473 (pre-auth path confusion) bypasses authentication, (2) CVE-2021-34523 (Elevation of Privilege) gains Exchange admin permissions via /autodiscover/autodiscover.json with X-Exchange-ESMS-AutoDiscoverType=Organization, (3) CVE-2021-31207 (Post-Authentication File Write) writes a web shell to the Exchange Frontend at /owa/auth/x.aspx. Through the web shell, the attacker executed Exchange PowerShell commands to export all mailboxes (CEO, CFO, legal department — totaling 4.7 GB of email data) to PST files staged at C:\ProgramData\export\PST\. The attacker used the Exchange Server''s machine account (EXCH-01$, SID S-1-5-21-...-1104) to perform a DCSync attack, extracting the KRBTGT
+    hash and creating a Golden Ticket. A HAFNIUM-attributed web shell (chopper.aspx) was found alongside the attacker''s custom web shell. The compromise affected 3 Exchange servers (EXCH-01, EXCH-02, EXCH-03) and was detected 11 days after initial exploitation (March 3-14) when Microsoft threat intelligence feed identified the C2 infrastructure communicating with the Exchange servers.'
+  compromised_assets:
+  - EXCH-01 (10.10.1.20) — Exchange Server 2019 CU11 (ProxyShell exploited)
+  - EXCH-02 (10.10.1.21), EXCH-03 (10.10.1.22) — web shells planted
+  - All Exchange mailboxes (4.7 GB email data — CEO, CFO, legal)
+  - Exchange machine account (EXCH-01$ — DCSync capable)
+  - 'KRBTGT hash (Golden Ticket enablement: b1607d7b...)'
+  - 'Web shells: x.aspx (attacker custom), chopper.aspx (HAFNIUM-attributed)'
+  detected_via: Microsoft threat intelligence C2 feed (IP 198.51.100.66 associated with known APT); web shell file detection (x.aspx, chopper.aspx in /owa/auth/); anomalous Exchange PowerShell commands (New-MailboxExportRequest)
+  kill_chain:
+  - CVE-2021-34473 pre-auth path confusion bypasses authentication
+  - CVE-2021-34523 Elevation to Exchange Organization Admin
+  - CVE-2021-31207 file write to web shell (/owa/auth/x.aspx)
+  - Exchange PowerShell mailbox export (4.7 GB — CEO, CFO, legal)
+  - DCSync via Exchange machine account (EXCH-01$)
+  - Golden Ticket creation for persistent domain-wide access
+  - 3 Exchange servers with planted web shells (EXCH-01, 02, 03)
+  mitre_tactics:
+  - TA0001 — Initial Access
+  - TA0004 — Privilege Escalation
+  - TA0009 — Collection
+  - TA0006 — Credential Access
+  - TA0003 — Persistence
+phases:
+- id: proxyshell_exploitation_chain
+  phase_type: triage
+  title: ProxyShell Exploitation Chain
+  situation: 'The threat intelligence feed has identified C2 infrastructure (198.51.100.66) communicating with EXCH-01 (10.10.1.20). Investigation reveals a web shell at /owa/auth/x.aspx (SHA256: 7d2f...) planted on March 3 at 02:15 AM. The web shell was created via the ProxyShell chain: CVE-2021-34473 (pre-auth path confusion) + CVE-2021-34523 (Org Admin EoP) + CVE-2021-31207 (file write). The web shell provides command execution as the Exchange Server machine account (EXCH-01$). A second HAFNIUM-attributed web shell (chopper.aspx) was found at /owa/auth/chopper.aspx. The Exchange server had not been patched for any of the three CVEs.'
+  prompt: How do you respond to the ProxyShell exploitation?
+  guidance:
+    what: Establish what fired on EXCH-01, which accounts are involved, and how urgent the signal is.
+    action: How do you respond to the ProxyShell exploitation?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: ProxyShell Exploitation Chain. Asset in scope: EXCH-01.'
+  hints:
+  - EOMT provides temporary mitigation but does not replace proper patching.
+  - Isolation stops C2 but leaves the web shells in place.
+  - User notification is important but secondary to containment.
+  ideal_concepts:
+  - immediately remove
+  - web shells
+  - shells aspx
+  - aspx chopper
+  - chopper aspx
+  - aspx patch
+  - patch exchange
+  - exchange servers
+  reference_answer: |-
+    Immediately remove all web shells (x.aspx, chopper.aspx), patch all Exchange servers for CVE-2021-34473/34523/31207, disable external PowerShell access on Exchange, block C2 IP 198.51.100.66, and audit all 3 Exchange servers for additional web shells and modifications
+
+    Why: Web shell removal eliminates active attacker access. Patching closes all three CVEs. External PowerShell disablement prevents future exploitation. IP blocking stops C2. Full audit identifies all compromise.
+  followup_good: 'Exchange PowerShell logs reveal that the attacker executed New-MailboxExportRequest commands via the web shell to export all mailboxes including: CEO (ceo@corp.local), CFO (cfo@corp.local), legal department (legal-team@corp.local), and 847 other mailboxes. Total export: 4.7 GB of email data staged at C:\ProgramData\export\PST\. The exported PST files were then exfiltrated via the web shell to attacker infrastructure (198.51.100.66:443). The exports included emails, calendar entries, and attachments containing confidential business plans, M&A documents, and financial projections. The export occurred over 3 days (March 5-7) with exports scheduled during off-hours (10 PM - 6 AM).'
+  followup_weak: |-
+    Web shell removal eliminates active attacker access.
+
+    Exchange PowerShell logs reveal that the attacker executed New-MailboxExportRequest commands via the web shell to export all mailboxes including: CEO (ceo@corp.local), CFO (cfo@corp.local), legal department (legal-team@corp.local), and 847 other mailboxes. Total export: 4.7 GB of email data staged at C:\ProgramData\export\PST\. The exported PST files were then exfiltrated via the web shell to attacker infrastructure (198.51.100.66:443). The exports included emails, calendar entries, and attachments containing confidential business plans, M&A documents, and financial projections. The export occurred over 3 days (March 5-7) with exports scheduled during off-hours (10 PM - 6 AM).
+  next: mailbox_data_exfiltration
+  mitre_tactic: TA0001 — Initial Access
+  mitre_technique: T1190 — Exploit Public-Facing Application
+- id: mailbox_data_exfiltration
+  phase_type: analysis
+  title: Mailbox Data Exfiltration
+  situation: 'Exchange PowerShell logs reveal that the attacker executed New-MailboxExportRequest commands via the web shell to export all mailboxes including: CEO (ceo@corp.local), CFO (cfo@corp.local), legal department (legal-team@corp.local), and 847 other mailboxes. Total export: 4.7 GB of email data staged at C:\ProgramData\export\PST\. The exported PST files were then exfiltrated via the web shell to attacker infrastructure (198.51.100.66:443). The exports included emails, calendar entries, and attachments containing confidential business plans, M&A documents, and financial projections. The export occurred over 3 days (March 5-7) with exports scheduled during off-hours (10 PM - 6 AM).'
+  prompt: How do you respond to the mailbox data exfiltration?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on EXCH-01.
+    action: How do you respond to the mailbox data exfiltration?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Mailbox Data Exfiltration. Asset in scope: EXCH-01.'
+  hints:
+  - DCSync permission revocation is important but does not address the ongoing mailbox export.
+  - Email encryption protects future communications but does not address the 4.7 GB already exfiltrated.
+  ideal_concepts:
+  - web shells
+  - shells immediately
+  - immediately block
+  - exfiltration implement
+  - implement exchange
+  - exchange powershell
+  - powershell command
+  - command monitoring
+  reference_answer: |-
+    Remove all web shells immediately, block exfiltration IP 198.51.100.66, implement Exchange PowerShell command monitoring with alerting on New-MailboxExportRequest, deploy DLP policies for email data, and notify legal counsel about the breach involving CEO, CFO, and legal communications
+
+    Why: Web shell removal stops ongoing exports. IP blocking prevents exfiltration. PowerShell monitoring detects future commands. DLP prevents data leakage. Legal notification addresses breach notification requirements for executive communications.
+  followup_good: The attacker leveraged the Exchange Server's machine account (EXCH-01$, SID S-1-5-21-1234567890-1234567890-1234567890-1104) Replicating Directory Changes permission to perform DCSync, extracting the KRBTGT hash (b1607d7b68f53e26328264664081fd2e) from DC-01 (10.10.1.10). The DCSync was executed at 04:30 AM on March 8 using mimikatz 'lsadump::dcsync /user:krbtgt' run from the Exchange server context. The KRBTGT hash enables Golden Ticket creation for persistent domain-wide access. The Exchange machine account has Replicating Directory Changes permission by default — this permission was never reviewed or restricted.
+  followup_weak: |-
+    Web shell removal stops ongoing exports.
+
+    The attacker leveraged the Exchange Server's machine account (EXCH-01$, SID S-1-5-21-1234567890-1234567890-1234567890-1104) Replicating Directory Changes permission to perform DCSync, extracting the KRBTGT hash (b1607d7b68f53e26328264664081fd2e) from DC-01 (10.10.1.10). The DCSync was executed at 04:30 AM on March 8 using mimikatz 'lsadump::dcsync /user:krbtgt' run from the Exchange server context. The KRBTGT hash enables Golden Ticket creation for persistent domain-wide access. The Exchange machine account has Replicating Directory Changes permission by default — this permission was never reviewed or restricted.
+  next: domain_compromise_via_dcsync
+  mitre_tactic: TA0009 — Collection
+  mitre_technique: T1114 — Email Collection
+- id: domain_compromise_via_dcsync
+  phase_type: eradication
+  title: Domain Compromise via DCSync
+  situation: The attacker leveraged the Exchange Server's machine account (EXCH-01$, SID S-1-5-21-1234567890-1234567890-1234567890-1104) Replicating Directory Changes permission to perform DCSync, extracting the KRBTGT hash (b1607d7b68f53e26328264664081fd2e) from DC-01 (10.10.1.10). The DCSync was executed at 04:30 AM on March 8 using mimikatz 'lsadump::dcsync /user:krbtgt' run from the Exchange server context. The KRBTGT hash enables Golden Ticket creation for persistent domain-wide access. The Exchange machine account has Replicating Directory Changes permission by default — this permission was never reviewed or restricted.
+  prompt: How do you respond to the DCSync via Exchange machine account?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: How do you respond to the DCSync via Exchange machine account?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Domain Compromise via DCSync. Asset in scope: EXCH-01.'
+  hints:
+  - Without removing the Exchange account's DCSync permissions, the attacker can re-extract the KRBTGT hash after reset.
+  - MDI is excellent for detection but the existing DCSync permissions must be removed.
+  - Exchange migration is a valid long-term strategy but does not address the immediate DCSync permission issue.
+  ideal_concepts:
+  - exchange machine
+  - machine account
+  - account exch-01
+  - exch-01 replicating
+  - replicating directory
+  - directory changes
+  - changes replicating
+  - changes permission
+  reference_answer: |-
+    Remove the Exchange machine account (EXCH-01$) from the Replicating Directory Changes and Replicating Directory Changes All permission groups, reset the KRBTGT password twice, implement monitoring for DCSync attempts from non-DC accounts, and audit Exchange machine account permissions across the environment
+
+    Why: Removing DCSync permissions prevents future KRBTGT extraction. KRBTGT double reset invalidates any Golden Tickets. DCSync monitoring detects future attempts. Permission audit identifies any other accounts with unnecessary replication rights.
+  followup_good: 'The attacker has used the KRBTGT hash to create Golden Tickets for persistent domain-wide access. The forged tickets grant Domain Admin privileges with a 10-year lifetime. All three Exchange servers (EXCH-01, EXCH-02, EXCH-03) have web shells planted. The scope of the compromise includes: email data exfiltration (4.7 GB), domain credential extraction (all 4,200 accounts via DCSync), and Golden Ticket persistence. The CISO has requested a comprehensive remediation plan covering web shell removal, credential rotation, Exchange hardening, and domain-wide security improvements.'
+  followup_weak: |-
+    Removing DCSync permissions prevents future KRBTGT extraction.
+
+    The attacker has used the KRBTGT hash to create Golden Tickets for persistent domain-wide access. The forged tickets grant Domain Admin privileges with a 10-year lifetime. All three Exchange servers (EXCH-01, EXCH-02, EXCH-03) have web shells planted. The scope of the compromise includes: email data exfiltration (4.7 GB), domain credential extraction (all 4,200 accounts via DCSync), and Golden Ticket persistence. The CISO has requested a comprehensive remediation plan covering web shell removal, credential rotation, Exchange hardening, and domain-wide security improvements.
+  next: golden_ticket_full_remediation
+  mitre_tactic: TA0006 — Credential Access
+  mitre_technique: T1003.006 — DCSync
+- id: golden_ticket_full_remediation
+  phase_type: eradication
+  title: Golden Ticket & Full Remediation
+  situation: 'The attacker has used the KRBTGT hash to create Golden Tickets for persistent domain-wide access. The forged tickets grant Domain Admin privileges with a 10-year lifetime. All three Exchange servers (EXCH-01, EXCH-02, EXCH-03) have web shells planted. The scope of the compromise includes: email data exfiltration (4.7 GB), domain credential extraction (all 4,200 accounts via DCSync), and Golden Ticket persistence. The CISO has requested a comprehensive remediation plan covering web shell removal, credential rotation, Exchange hardening, and domain-wide security improvements.'
+  prompt: How do you execute the comprehensive Exchange and domain remediation?
+  guidance:
+    what: Find every foothold the attacker left on EXCH-01, including persistence and stolen credentials.
+    action: How do you execute the comprehensive Exchange and domain remediation?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Golden Ticket & Full Remediation. Asset in scope: EXCH-01.'
+  hints:
+  - Without patching, the ProxyShell vulnerability remains exploitable.
+  - Cloud migration is valid but complex and time-consuming.
+  - SIEM integration is valuable for detection but does not address the active web shells, unpatched vulnerabilities, or compromised credentials.
+  ideal_concepts:
+  - web shells
+  - shells exchange
+  - exchange servers
+  - servers patch
+  - patch exchange
+  - servers reset
+  - krbtgt password
+  - password twice
+  reference_answer: |-
+    Remove all web shells from all 3 Exchange servers, patch all Exchange servers, reset KRBTGT password twice, remove Exchange machine account DCSync permissions, enable Exchange Extended Protection, deploy web application firewall rules for Exchange, implement Exchange logging to SIEM, and conduct full domain audit for additional compromise
+
+    Why: Complete remediation addresses all attack vectors: web shell removal, patching, credential rotation, permission hardening, logging, and audit. This provides defense in depth against both the current and future attacks.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the ProxyShell Chain Compromises Exchange and Domain Environment incident. An attacker exploited the ProxyShell vulnerability chain (CVE-2021-34473, CVE-2021-34523, CVE-2021-31207) on an unpatched Microsoft Exchange Server 2019 (EXCH-01, 10.10.1.20, Exchange CU11) to achieve pre-authentication remote code execution and full domain compromise. The attack chain: (1) CVE-2021-34473 (pre-auth path confusion) bypasses authentication, (2) CVE-2021-34523 (Elevation of Privilege) gains Exchange admin permissions via /autodiscover/autodiscover.json with X-Exchange-ESMS-AutoDisc...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the ProxyShell Chain Compromises Exchange and Domain Environment incident. An attacker exploited the ProxyShell vulnerability chain (CVE-2021-34473, CVE-2021-34523, CVE-2021-31207) on an unpatched Microsoft Exchange Server 2019 (EXCH-01, 10.10.1.20, Exchange CU11) to achieve pre-authentication remote code execution and full domain compromise. The attack chain: (1) CVE-2021-34473 (pre-auth path confusion) bypasses authentication, (2) CVE-2021-34523 (Elevation of Privilege) gains Exchange admin permissions via /autodiscover/autodiscover.json with X-Exchange-ESMS-AutoDisc...
+  mitre_tactic: TA0003 — Persistence
+  mitre_technique: T1558.001 — Golden Ticket
+  next: recovery_and_validation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. EXCH-01 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return EXCH-01 to production?
+  guidance:
+    what: 'Define what ''clean'' means for EXCH-01: trusted backups, rebuilt hosts, rotated credentials, and validated controls.'
+    action: What must be true before you return EXCH-01 to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: EXCH-01.'
+  hints:
+  - Which backup or rebuild image is known-good for EXCH-01, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore EXCH-01 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_review
+  next_weak: ''
+  mitre_tactic: TA0003 — Persistence
+  mitre_technique: T1558.001 — Golden Ticket
+  role_prompts: {}
+- id: post_incident_review
+  phase_type: lessons
+  title: Post-Incident Review & Hardening
+  situation: Service has been restored and validated. Leadership wants a concise after-action review covering the root cause of ProxyShell Chain Compromises Exchange and Domain Environment, the detection gap that let the attacker operate, and the control changes that will prevent a repeat. Findings must have owners and dates.
+  prompt: What must change so an incident like ProxyShell Chain Compromises Exchange and Domain Environment is detected earlier and cannot recur?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What must change so an incident like ProxyShell Chain Compromises Exchange and Domain Environment is detected earlier and cannot recur?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Review & Hardening. Asset in scope: EXCH-01.'
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  - Who owns each improvement, and when will it be verified?
+  ideal_concepts:
+  - root cause
+  - detection gap
+  - control improvement
+  - owner and date
+  - runbook update
+  - training
+  reference_answer: |-
+    Document the root cause of ProxyShell Chain Compromises Exchange and Domain Environment, identify the detection gap that let the attacker operate, and assign owners and dates to concrete control changes. Update detections, runbooks, and training, track the actions to completion, and report the outcome to leadership.
+
+    Why: Without durable changes, the same root cause will produce the same incident again.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated improvements, and ties them back to specific detections and controls. Leadership receives a tracked action plan.
+  followup_weak: The review retells the timeline but leaves the root cause and detection gap vague. Without owners, dates, and verification, the same incident will recur.
+  next: ''
+  next_weak: ''
+  mitre_tactic: TA0003 — Persistence
+  mitre_technique: T1558.001 — Golden Ticket
+  role_prompts: {}

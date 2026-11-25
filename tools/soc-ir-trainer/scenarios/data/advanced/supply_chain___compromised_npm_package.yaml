@@ -1,0 +1,247 @@
+id: supply_chain___compromised_npm_package
+name: Supply Chain — Compromised NPM Package
+category: Advanced Threats
+format_version: 2
+difficulty: Expert
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Typosquatted NPM Package Exfiltrates Build Secrets. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Typosquatted NPM Package Exfiltrates Build Secrets. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Typosquatted NPM Package Exfiltrates Build Secrets. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Typosquatted NPM Package Exfiltrates Build Secrets incident. A developer (k.chen@corp.local, workstation WS-KCHEN-12, 10.10.10.112) accidentally installed ''colour-utils'' (npm package, version 2.3.1) instead of the intended ''color-utils'' package. The typosquatted package contained a postinstall script (scripts/postinstall.js) that executed a Node.js payload harvesting environment variables, SSH keys, and AWS credentials from the developer''s machine. The payload read: ~/.ssh/id_rsa, ~/.aws/credentials, ~/.env, and process.env, encoding all data as hex and exfiltrating via DNS-over-HTTPS queries to dns.dnslog.cn (resolved via 1.1.1.1:443 to hide from proxy inspection). Within hours, the attacker used the stolen AWS access keys (AKIAIOSFODNN7EXAMPLE) to spin up 47 GPU EC2 instances (p3.2xlarge, us-east-1) for Ethereum mining, costing $127,000 before CloudWatch billing alerts triggered at the $100K threshold. The compromised package had been downloaded
+  14,000 times over its 3-week window before identification. The attacker also modified the developer''s git config (~/.gitconfig) to inject a pre-commit hook that embeds backdoors into any repositories the developer committed to, creating a secondary supply chain vector affecting 3 internal repositories. Business impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: Typosquatted NPM Package Exfiltrates Build Secrets
+  opening: A developer (k.chen@corp.local, workstation WS-KCHEN-12, 10.10.10.112) accidentally installed 'colour-utils' (npm package, version 2.3.1) instead of the intended 'color-utils' package. The typosquatted package contained a postinstall script (scripts/postinstall.js) that executed a Node.js payload harvesting environment variables, SSH keys, and AWS credentials from the developer's machine.
+  summary: 'A developer (k.chen@corp.local, workstation WS-KCHEN-12, 10.10.10.112) accidentally installed ''colour-utils'' (npm package, version 2.3.1) instead of the intended ''color-utils'' package. The typosquatted package contained a postinstall script (scripts/postinstall.js) that executed a Node.js payload harvesting environment variables, SSH keys, and AWS credentials from the developer''s machine. The payload read: ~/.ssh/id_rsa, ~/.aws/credentials, ~/.env, and process.env, encoding all data as hex and exfiltrating via DNS-over-HTTPS queries to dns.dnslog.cn (resolved via 1.1.1.1:443 to hide from proxy inspection). Within hours, the attacker used the stolen AWS access keys (AKIAIOSFODNN7EXAMPLE) to spin up 47 GPU EC2 instances (p3.2xlarge, us-east-1) for Ethereum mining, costing $127,000 before CloudWatch billing alerts triggered at the $100K threshold. The compromised package had been downloaded 14,000 times over its 3-week window before identification. The attacker also modified
+    the developer''s git config (~/.gitconfig) to inject a pre-commit hook that embeds backdoors into any repositories the developer committed to, creating a secondary supply chain vector affecting 3 internal repositories.'
+  compromised_assets:
+  - WS-KCHEN-12 (10.10.10.112) — Developer workstation (all credentials exposed)
+  - AWS account (47 GPU p3.2xlarge instances spawned, $127K cost)
+  - SSH private keys (~/.ssh/id_rsa exfiltrated)
+  - AWS credentials (AKIAIOSFODNN7EXAMPLE exfiltrated)
+  - Git repositories (3 repos with pre-commit hook backdoor)
+  - NPM package 'colour-utils' (14K downloads affected across ecosystem)
+  detected_via: AWS CloudWatch billing anomaly alert ($100K threshold breached); DNS-over-HTTPS exfiltration detection via network security appliance; package name similarity alert from Snyk dependency scanner
+  kill_chain:
+  - Developer installs typosquatted NPM package 'colour-utils' v2.3.1
+  - Postinstall script executes credential harvester (postinstall.js)
+  - SSH keys, AWS creds, env vars exfiltrated via DoH to dns.dnslog.cn
+  - Attacker provisions 47 GPU p3.2xlarge instances for mining ($127K)
+  - Git pre-commit hook injected into ~/.gitconfig (secondary vector)
+  - 3 internal repositories affected by poisoned commits
+  mitre_tactics:
+  - TA0001 — Initial Access (supply chain)
+  - TA0006 — Credential Access
+  - TA0010 — Exfiltration
+  - TA0040 — Impact (resource hijacking)
+phases:
+- id: typosquat_installation
+  phase_type: triage
+  title: Typosquat Installation
+  situation: Developer k.chen ran 'npm install colour-utils' (typo) on WS-KCHEN-12 at 14:23 PM on March 12. The package's postinstall script immediately executed the credential harvester. The package name 'colour-utils' is a typosquat of the legitimate 'color-utils' package (different spelling). The malicious package was published by npm user 'devtools-official' 3 weeks ago and has accumulated 14,000 downloads. No package-lock.json was in use for this project. The project's CI/CD pipeline (GitHub Actions) does not validate new dependencies before build.
+  prompt: How do you address the typosquat installation and prevent future supply chain attacks?
+  guidance:
+    what: 'Frame the decision for ''Typosquat Installation'': the asset at risk, the evidence available, and the time pressure.'
+    action: How do you address the typosquat installation and prevent future supply chain attacks?
+    why: Every later decision depends on an accurate picture of WS-KCHEN-12 and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Typosquat Installation. Asset in scope: WS-KCHEN-12.'
+  hints:
+  - Code review is a good long-term measure but does not address the immediate credential exposure.
+  - Blocking DoH prevents future exfiltration through this channel but does not address the already-exfiltrated credentials or the pre-commit hook backdoor.
+  ideal_concepts:
+  - immediately remove
+  - malicious package
+  - package rotate
+  - exposed credentials
+  - credentials ssh
+  - ssh keys
+  - keys aws
+  - aws access
+  reference_answer: |-
+    Immediately remove the malicious package, rotate all exposed credentials (SSH keys, AWS access keys), implement package-lock.json enforcement, enable npm audit signatures, and deploy a private npm registry with an allowlist of approved packages
+
+    Why: Removing the package stops ongoing credential harvesting. Credential rotation invalidates stolen secrets. Package-lock.json and audit signatures prevent typosquats. A private registry eliminates public package risk entirely.
+  followup_good: The postinstall.js payload read ~/.ssh/id_rsa (SSH private key with comment k.chen@corp.local), ~/.aws/credentials (containing AKIAIOSFODNN7EXAMPLE with FullAccess policy), ~/.env (containing DATABASE_URL and STRIPE_API_KEY), and process.env. All data was hex-encoded and exfiltrated via DoH queries to dns.dnslog.cn using encoded subdomains like aGVsbG8gd29ybGQ.dnslog.cn. The exfiltration completed in 90 seconds. The SSH key provides access to GitHub repos and production servers. The AWS key has FullAccess IAM permissions.
+  followup_weak: |-
+    Removing the package stops ongoing credential harvesting.
+
+    The postinstall.js payload read ~/.ssh/id_rsa (SSH private key with comment k.chen@corp.local), ~/.aws/credentials (containing AKIAIOSFODNN7EXAMPLE with FullAccess policy), ~/.env (containing DATABASE_URL and STRIPE_API_KEY), and process.env. All data was hex-encoded and exfiltrated via DoH queries to dns.dnslog.cn using encoded subdomains like aGVsbG8gd29ybGQ.dnslog.cn. The exfiltration completed in 90 seconds. The SSH key provides access to GitHub repos and production servers. The AWS key has FullAccess IAM permissions.
+  next: credential_exfiltration
+  mitre_tactic: TA0001 — Initial Access
+  mitre_technique: T1195.002 — Compromise Software Supply Chain
+- id: credential_exfiltration
+  phase_type: analysis
+  title: Credential Exfiltration
+  situation: The postinstall.js payload read ~/.ssh/id_rsa (SSH private key with comment k.chen@corp.local), ~/.aws/credentials (containing AKIAIOSFODNN7EXAMPLE with FullAccess policy), ~/.env (containing DATABASE_URL and STRIPE_API_KEY), and process.env. All data was hex-encoded and exfiltrated via DoH queries to dns.dnslog.cn using encoded subdomains like aGVsbG8gd29ybGQ.dnslog.cn. The exfiltration completed in 90 seconds. The SSH key provides access to GitHub repos and production servers. The AWS key has FullAccess IAM permissions.
+  prompt: How do you respond to the credential exfiltration?
+  guidance:
+    what: Determine what the evidence says about scope, access, and privilege on WS-KCHEN-12.
+    action: How do you respond to the credential exfiltration?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Credential Exfiltration. Asset in scope: WS-KCHEN-12.'
+  hints:
+  - Stopping mining addresses the immediate cost impact but does not secure the compromised credentials.
+  - HSMs are a good long-term solution but require significant infrastructure changes.
+  ideal_concepts:
+  - immediately rotate
+  - exposed credentials
+  - credentials ssh
+  - ssh keys
+  - keys aws
+  - aws access
+  - access keys
+  - keys stripe
+  reference_answer: |-
+    Immediately rotate all exposed credentials (SSH keys, AWS access keys, Stripe API key, database URL), implement AWS IAM policies limiting instance types and regions, block DoH at the network proxy, and audit all systems accessible with the stolen credentials
+
+    Why: Credential rotation invalidates all stolen secrets. IAM policies prevent GPU instance spawning. DoH blocking stops future exfiltration. System audit identifies any additional compromises.
+  followup_good: The attacker has used the stolen AWS access key (AKIAIOSFODNN7EXAMPLE) to provision 47 p3.2xlarge GPU instances in us-east-1 for Ethereum mining. Total cost has reached $127,000 and is increasing at approximately $2,800/hour. The instances are running the lolminer binary. The AWS account has no Service Control Policies restricting instance types or regions. The billing alert was set at $100K (monthly threshold). CloudTrail logs show the RunInstances API calls originating from IP 198.51.100.67 (the attacker's infrastructure).
+  followup_weak: |-
+    Credential rotation invalidates all stolen secrets.
+
+    The attacker has used the stolen AWS access key (AKIAIOSFODNN7EXAMPLE) to provision 47 p3.2xlarge GPU instances in us-east-1 for Ethereum mining. Total cost has reached $127,000 and is increasing at approximately $2,800/hour. The instances are running the lolminer binary. The AWS account has no Service Control Policies restricting instance types or regions. The billing alert was set at $100K (monthly threshold). CloudTrail logs show the RunInstances API calls originating from IP 198.51.100.67 (the attacker's infrastructure).
+  next: resource_hijacking
+  mitre_tactic: TA0006 — Credential Access
+  mitre_technique: T1552.001 — Credentials In Files
+- id: resource_hijacking
+  phase_type: eradication
+  title: Resource Hijacking
+  situation: The attacker has used the stolen AWS access key (AKIAIOSFODNN7EXAMPLE) to provision 47 p3.2xlarge GPU instances in us-east-1 for Ethereum mining. Total cost has reached $127,000 and is increasing at approximately $2,800/hour. The instances are running the lolminer binary. The AWS account has no Service Control Policies restricting instance types or regions. The billing alert was set at $100K (monthly threshold). CloudTrail logs show the RunInstances API calls originating from IP 198.51.100.67 (the attacker's infrastructure).
+  prompt: How do you contain the resource hijacking and prevent recurrence?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: How do you contain the resource hijacking and prevent recurrence?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Resource Hijacking. Asset in scope: WS-KCHEN-12.'
+  hints:
+  - Without SCPs or additional controls, the attacker (if they have other credentials) can simply provision more instances with a new key.
+  - AWS may provide billing credits for compromised accounts, but this does not prevent recurrence.
+  - CloudTrail alerting is useful for detection but does not prevent the resource hijacking.
+  ideal_concepts:
+  - terminate gpu
+  - gpu instances
+  - instances immediately
+  - immediately implement
+  - implement scps
+  - scps limiting
+  - limiting instance
+  - instance types
+  reference_answer: |-
+    Terminate all 47 GPU instances immediately, implement SCPs limiting instance types to t3.medium maximum and restricting to approved regions, enable AWS Config rules for instance type compliance, and set billing alerts at $1K
+
+    Why: Terminating instances stops ongoing cost accumulation. SCPs prevent future GPU instance provisioning. Config rules provide continuous compliance monitoring. Lower billing alerts catch anomalies faster.
+  followup_good: "Investigation of the developer's git configuration reveals that the payload modified ~/.gitconfig to add a global pre-commit hook: [core]\n\thooksPath = /home/k.chen/.git-hooks\nThe hook script (.git-hooks/pre-commit) embeds a base64-encoded backdoor into any JavaScript file staged for commit. The hook has been active since March 12 and affected 3 internal repositories: corp/webapp-frontend (12 commits), corp/api-gateway (8 commits), and corp/shared-utils (5 commits). The poisoned commits are in the develop branches and have not yet been merged to production. 23 developer workstations use shared repositories that may have pulled these commits."
+  followup_weak: "Terminating instances stops ongoing cost accumulation.\n\nInvestigation of the developer's git configuration reveals that the payload modified ~/.gitconfig to add a global pre-commit hook: [core]\n\thooksPath = /home/k.chen/.git-hooks\nThe hook script (.git-hooks/pre-commit) embeds a base64-encoded backdoor into any JavaScript file staged for commit. The hook has been active since March 12 and affected 3 internal repositories: corp/webapp-frontend (12 commits), corp/api-gateway (8 commits), and corp/shared-utils (5 commits). The poisoned commits are in the develop branches and have not yet been merged to production. 23 developer workstations use shared repositories that may have pulled these commits."
+  next: secondary_supply_chain_poisoning
+  mitre_tactic: TA0040 — Impact
+  mitre_technique: T1496 — Resource Hijacking
+- id: secondary_supply_chain_poisoning
+  phase_type: eradication
+  title: Secondary Supply Chain Poisoning
+  situation: "Investigation of the developer's git configuration reveals that the payload modified ~/.gitconfig to add a global pre-commit hook: [core]\n\thooksPath = /home/k.chen/.git-hooks\nThe hook script (.git-hooks/pre-commit) embeds a base64-encoded backdoor into any JavaScript file staged for commit. The hook has been active since March 12 and affected 3 internal repositories: corp/webapp-frontend (12 commits), corp/api-gateway (8 commits), and corp/shared-utils (5 commits). The poisoned commits are in the develop branches and have not yet been merged to production. 23 developer workstations use shared repositories that may have pulled these commits."
+  prompt: How do you address the secondary supply chain poisoning?
+  guidance:
+    what: Find every foothold the attacker left on WS-KCHEN-12, including persistence and stolen credentials.
+    action: How do you address the secondary supply chain poisoning?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Secondary Supply Chain Poisoning. Asset in scope: WS-KCHEN-12.'
+  hints:
+  - Removing the hook from one workstation does not address the 23 other workstations that may have pulled poisoned commits.
+  - Branch protection prevents future poisoned code from reaching production but does not address the existing backdoor in the develop branches that developers are currently using.
+  ideal_concepts:
+  - git hooks
+  - hooks affected
+  - affected workstations
+  - workstations force-push
+  - force-push clean
+  - clean versions
+  - versions affected
+  - affected repositories
+  reference_answer: |-
+    Remove the git hooks from all affected workstations, force-push clean versions of the 3 affected repositories, implement signed commits requirement, scan all code in the affected branches for embedded backdoors, and notify all developers who pulled from these repositories
+
+    Why: Removing hooks stops ongoing poisoning. Force-pushing clean code removes the backdoor from repository history. Signed commits prevent future hook injection. Developer notification ensures all pulled copies are cleaned.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Typosquatted NPM Package Exfiltrates Build Secrets incident. A developer (k.chen@corp.local, workstation WS-KCHEN-12, 10.10.10.112) accidentally installed 'colour-utils' (npm package, version 2.3.1) instead of the intended 'color-utils' package. The typosquatted package contained a postinstall script (scripts/postinstall.js) that executed a Node.js payload harvesting environment variables, SSH keys, and AWS credentials from the developer's machine. The payload read: ~/.ssh/id_rsa, ~/.aws/credentials, ~/.env, and process.env, encoding all data as hex and e...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Typosquatted NPM Package Exfiltrates Build Secrets incident. A developer (k.chen@corp.local, workstation WS-KCHEN-12, 10.10.10.112) accidentally installed 'colour-utils' (npm package, version 2.3.1) instead of the intended 'color-utils' package. The typosquatted package contained a postinstall script (scripts/postinstall.js) that executed a Node.js payload harvesting environment variables, SSH keys, and AWS credentials from the developer's machine. The payload read: ~/.ssh/id_rsa, ~/.aws/credentials, ~/.env, and process.env, encoding all data as hex and e...
+  mitre_tactic: TA0001 — Initial Access
+  mitre_technique: T1554 — Compromise Client Software Binary
+  next: recovery_and_validation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. WS-KCHEN-12 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return WS-KCHEN-12 to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return WS-KCHEN-12 to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: WS-KCHEN-12.'
+  hints:
+  - Which backup or rebuild image is known-good for WS-KCHEN-12, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore WS-KCHEN-12 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_review
+  next_weak: ''
+  mitre_tactic: TA0001 — Initial Access
+  mitre_technique: T1554 — Compromise Client Software Binary
+  role_prompts: {}
+- id: post_incident_review
+  phase_type: lessons
+  title: Post-Incident Review & Hardening
+  situation: Service has been restored and validated. Leadership wants a concise after-action review covering the root cause of Typosquatted NPM Package Exfiltrates Build Secrets, the detection gap that let the attacker operate, and the control changes that will prevent a repeat. Findings must have owners and dates.
+  prompt: What must change so an incident like Typosquatted NPM Package Exfiltrates Build Secrets is detected earlier and cannot recur?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What must change so an incident like Typosquatted NPM Package Exfiltrates Build Secrets is detected earlier and cannot recur?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Review & Hardening. Asset in scope: WS-KCHEN-12.'
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  - Who owns each improvement, and when will it be verified?
+  ideal_concepts:
+  - root cause
+  - detection gap
+  - control improvement
+  - owner and date
+  - runbook update
+  - training
+  reference_answer: |-
+    Document the root cause of Typosquatted NPM Package Exfiltrates Build Secrets, identify the detection gap that let the attacker operate, and assign owners and dates to concrete control changes. Update detections, runbooks, and training, track the actions to completion, and report the outcome to leadership.
+
+    Why: Without durable changes, the same root cause will produce the same incident again.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated improvements, and ties them back to specific detections and controls. Leadership receives a tracked action plan.
+  followup_weak: The review retells the timeline but leaves the root cause and detection gap vague. Without owners, dates, and verification, the same incident will recur.
+  next: ''
+  next_weak: ''
+  mitre_tactic: TA0001 — Initial Access
+  mitre_technique: T1554 — Compromise Client Software Binary
+  role_prompts: {}

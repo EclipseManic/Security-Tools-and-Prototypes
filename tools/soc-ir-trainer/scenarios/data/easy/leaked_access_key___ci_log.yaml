@@ -1,0 +1,163 @@
+id: leaked_access_key___ci_log
+name: Leaked Access Key — CI Log
+category: Cloud
+format_version: 2
+difficulty: Easy
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Developer report plus secret-scanning alert. Triage the alert, identify the account and asset in scope, preserve evidence, and contain the activity before it spreads beyond CI pipeline logs.
+  incident_manager: You are the Incident Manager coordinating the response to AWS Deployment Key Printed in Shared CI Log. Drive containment, evidence preservation, escalation, and cross-team communications; keep the bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for AWS Deployment Key Printed in Shared CI Log. Weigh business impact, legal and regulatory duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for AWS Deployment Key Printed in Shared CI Log. Focus on business continuity, budget and resource approval, customer communications, and the timing of disclosure.
+executive_brief: 'Executive summary of the AWS Deployment Key Printed in Shared CI Log incident. The key belongs to a deployment user with ECR and ECS permissions. The log has been visible for five days; CloudTrail shows only expected CI calls. Business impact: Any developer with pipeline access could deploy malicious images or alter ECS services. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed. Recovery must be validated from a trusted source before normal service resumes.'
+incident:
+  title: AWS Deployment Key Printed in Shared CI Log
+  opening: A CI log printed an AWS access key and secret during a failed deployment. The log is visible to all developers in the pipeline UI.
+  summary: The key belongs to a deployment user with ECR and ECS permissions. The log has been visible for five days; CloudTrail shows only expected CI calls.
+  compromised_assets:
+  - CI pipeline logs
+  - AWS deployment user
+  - ECR and ECS
+  detected_via: Developer report plus secret-scanning alert.
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Impact
+phases:
+- id: leaked_access_key___ci_log_phase_1
+  phase_type: triage
+  title: Triage the Alert — Phase 1
+  situation: A CI log printed an AWS access key and secret during a failed deployment. The log is visible to all developers in the pipeline UI. Developer report plus secret-scanning alert.
+  prompt: What should you verify first, and what evidence must you preserve?
+  guidance:
+    what: Confirm the alert is real, identify the account and asset in scope, and establish the time window.
+    action: Validate the alert and preserve volatile evidence.
+    why: Accurate scoping keeps a single-asset event from becoming a wider incident.
+  hint: Start with the alert source and the asset named in it. Preserve the email, log, or alert before changing anything.
+  hints:
+  - Review authentication, endpoint, and network logs for CI pipeline logs.
+  - Record what you find before you change anything.
+  ideal_concepts:
+  - access key
+  - permissions
+  - log visibility
+  - cloudtrail
+  - deployment user
+  - ci runner
+  reference_answer: Identify the key, permissions, log visibility, and CloudTrail activity; preserve the log and revoke access if misuse is suspected.
+  followup_good: Triage confirms the activity is real. The log contains the key in clear text. The deployment user has long-lived credentials and no MFA. CloudTrail shows pulls from the CI runner IP only.
+  followup_weak: The alert is treated as noise and the team acts on assumptions. The log contains the key in clear text. The deployment user has long-lived credentials and no MFA. CloudTrail shows pulls from the CI runner IP only.
+  next: leaked_access_key___ci_log_phase_2
+  mitre_tactic: Credential Access
+  mitre_technique: T1552.004 Private Keys
+- id: leaked_access_key___ci_log_phase_2
+  phase_type: containment
+  title: Contain the Incident — Phase 2
+  situation: Triage confirms the activity is real. The log contains the key in clear text. The deployment user has long-lived credentials and no MFA. CloudTrail shows pulls from the CI runner IP only.
+  prompt: What is the correct containment action?
+  guidance:
+    what: Stop the activity without destroying the evidence needed to prove scope.
+    action: Contain the account, session, host, or public exposure.
+    why: Every minute of continued access increases impact and cleanup cost.
+  hint: 'Contain the smallest thing that stops the activity and keeps the evidence: account, session, host, or public exposure.'
+  hints:
+  - Choose the containment action that is reversible and preserves logs.
+  - Confirm the containment actually took effect before moving on.
+  ideal_concepts:
+  - disable key
+  - rotate credentials
+  - purge log
+  - deployment user
+  - secret scanning
+  reference_answer: Disable the key, rotate the deployment credentials, and purge the log.
+  followup_good: Containment is in place. A debug statement printed environment variables, and the CI system does not mask secrets.
+  followup_weak: The activity continues while the team debates. Any developer with pipeline access could deploy malicious images or alter ECS services.
+  next: leaked_access_key___ci_log_phase_3
+  mitre_tactic: Valid Accounts
+  mitre_technique: T1078.004 Cloud Accounts
+- id: leaked_access_key___ci_log_phase_3
+  phase_type: eradication
+  title: Remove the Root Cause — Phase 3
+  situation: Containment is holding. A debug statement printed environment variables, and the CI system does not mask secrets.
+  prompt: What must be removed or corrected before this asset returns to service?
+  guidance:
+    what: Find and remove the root cause, not just the visible symptom.
+    action: Eradicate the artifact and close the entry path.
+    why: Cleaning the symptom while leaving persistence invites a second incident.
+  hint: Remove the root cause and check for persistence. Rotate anything the attacker could reuse.
+  hints:
+  - Check for scheduled tasks, services, startup entries, and new accounts.
+  - Rotate every credential or token the attacker could have touched.
+  ideal_concepts:
+  - oidc
+  - secret masking
+  - ecr images
+  - ecs services
+  - review changes
+  reference_answer: Move CI to OIDC, add secret masking, and review ECR images and ECS services for changes.
+  followup_good: Run a clean deployment with the new role, verify images, and monitor CloudTrail.
+  followup_weak: The visible symptom is gone, but the root cause remains. Any developer with pipeline access could deploy malicious images or alter ECS services.
+  next: leaked_access_key___ci_log_phase_4
+  mitre_tactic: Collection
+  mitre_technique: T1530 Data from Cloud Storage
+- id: leaked_access_key___ci_log_phase_4
+  phase_type: recovery
+  title: Recover Safely — Phase 4
+  situation: The root cause has been removed. Run a clean deployment with the new role, verify images, and monitor CloudTrail.
+  prompt: What must be true before service resumes?
+  guidance:
+    what: Restore from a trusted source and prove the environment is clean.
+    action: Validate integrity, rotate exposed credentials, and monitor for reinfection.
+    why: A fast restore that reintroduces the attacker is worse than a slower verified recovery.
+  hint: Recovery needs a trusted source, validation, and monitoring. Do not restore on top of an unresolved root cause.
+  hints:
+  - Identify the known-good backup or rebuild image and when it was validated.
+  - Decide what monitoring proves the attacker has not returned.
+  ideal_concepts:
+  - clean deployment
+  - verify images
+  - monitor cloudtrail
+  - oidc role
+  - validate
+  reference_answer: Run a clean deployment with the OIDC role, verify the running images and ECS services, and monitor CloudTrail for old-key attempts.
+  followup_good: The asset returns from a trusted source, validation passes, and monitoring shows no reinfection.
+  followup_weak: The asset is back online without full validation, and the same weakness remains.
+  next: leaked_access_key___ci_log_phase_5
+  mitre_tactic: Collection
+  mitre_technique: T1005 Data from Local System
+- id: leaked_access_key___ci_log_phase_5
+  phase_type: lessons
+  title: Post-Incident Review — Phase 5
+  situation: Service has been restored and validated. Leadership wants a concise after-action review for Leaked Access Key — CI Log.
+  prompt: What must change so Leaked Access Key — CI Log is detected earlier and cannot recur?
+  guidance:
+    what: Identify the root cause, detection gap, and control that failed.
+    action: Assign owned and dated improvements.
+    why: Without durable changes, the same cause will produce the same incident.
+  hint: Turn the incident into one detection improvement and one preventive control with an owner and date.
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  ideal_concepts:
+  - mask secrets
+  - oidc
+  - log scanning
+  - short-lived credentials
+  - ci security
+  reference_answer: Mask secrets in CI logs, use OIDC, and scan logs for credentials.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated actions, and tracks them to completion.
+  followup_weak: The review retells the timeline but leaves ownership and verification vague, so the same incident can recur.
+  next: ''
+  mitre_tactic: Credential Access
+  mitre_technique: T1552.004 Private Keys

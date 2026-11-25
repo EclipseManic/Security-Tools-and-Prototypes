@@ -1,0 +1,240 @@
+id: sql_injection___customer_database_breach
+name: SQL Injection — Customer Database Breach
+category: Web App
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Customer PII Exfiltration via SQL Injection. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Customer PII Exfiltration via SQL Injection. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Customer PII Exfiltration via SQL Injection. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Customer PII Exfiltration via SQL Injection incident. Your organization runs a customer-facing web portal at portal.acmecorp.com (IIS on Windows Server 2019, backend: Microsoft SQL Server 2019). At 09:30 the WAF (Cloudflare) triggered an alert for repeated SQL injection patterns in the /api/v2/customers/search endpoint. The WAF logged 23 blocked requests, but at 09:33 the attacker bypassed the WAF by encoding payloads in double-URL-encoding and successfully executed a UNION-based injection. By 09:41 the attacker extracted the full customers table (147,000 records: name, email, phone, address, date of birth, last 4 digits of credit card). The DBA noticed high CPU on the SQL server at 09:38 but did not escalate. The attacker''s IP is 45.155.205.xx (hosting provider). The SOC was not alerted until 10:15 when a customer complained about receiving a phishing email using their full name and address from your database. Business impact: customer-facing
+  service availability and data confidentiality are at risk, and customer notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties for exposed customer records.'
+incident:
+  title: Customer PII Exfiltration via SQL Injection
+  opening: 'Your organization runs a customer-facing web portal at portal.acmecorp.com (IIS on Windows Server 2019, backend: Microsoft SQL Server 2019). At 09:30 the WAF (Cloudflare) triggered an alert for repeated SQL injection patterns in the /api/v2/customers/search endpoint.'
+  summary: 'Your organization runs a customer-facing web portal at portal.acmecorp.com (IIS on Windows Server 2019, backend: Microsoft SQL Server 2019). At 09:30 the WAF (Cloudflare) triggered an alert for repeated SQL injection patterns in the /api/v2/customers/search endpoint. The WAF logged 23 blocked requests, but at 09:33 the attacker bypassed the WAF by encoding payloads in double-URL-encoding and successfully executed a UNION-based injection. By 09:41 the attacker extracted the full customers table (147,000 records: name, email, phone, address, date of birth, last 4 digits of credit card). The DBA noticed high CPU on the SQL server at 09:38 but did not escalate. The attacker''s IP is 45.155.205.xx (hosting provider). The SOC was not alerted until 10:15 when a customer complained about receiving a phishing email using their full name and address from your database.'
+  compromised_assets:
+  - portal.acmecorp.com (web server)
+  - SQL Server (customer DB)
+  - 147,000 customer PII records
+  detected_via: Customer complaint + WAF alert retrospective + DBA CPU spike
+  kill_chain:
+  - Initial Access
+  - Exfiltration
+  - Impact
+  mitre_tactics:
+  - Initial Access
+  - Collection
+  - Impact
+phases:
+- id: emergency_containment_phase_1
+  phase_type: triage
+  title: Emergency Containment — Phase 1
+  situation: The attacker has already exfiltrated 147K customer records. The SQL injection endpoint (/api/v2/customers/search) is still live. The WAF is partially blocking but was bypassed via encoding. Customer complaints are starting to arrive.
+  prompt: What do you do RIGHT NOW to stop the bleeding?
+  guidance:
+    what: 'Frame the decision for ''Emergency Containment — Phase 1'': the asset at risk, the evidence available, and the time pressure.'
+    action: What do you do RIGHT NOW to stop the bleeding?
+    why: Every later decision depends on an accurate picture of portal.acmecorp.com and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Emergency Containment — Phase 1. Asset in scope: portal.acmecorp.com.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - api customers
+  - customers search
+  - search endpoint
+  - endpoint web
+  - web server
+  - server tighten
+  - tighten waf
+  - waf rule
+  reference_answer: |-
+    Disable the /api/v2/customers/search endpoint on the web server AND tighten the WAF rule to block double-URL-encoding
+
+    Why: Stops the active injection vector at both the application and WAF layers simultaneously.
+  followup_good: The vulnerable endpoint is disabled. Now you need to understand the full scope of what the attacker did. The WAF logs show 23 blocked + 4 successful requests. The SQL Server transaction logs may show the actual queries. IIS logs show the full request/response cycle.
+  followup_weak: |-
+    Stops the active injection vector at both the application and WAF layers simultaneously.
+
+    The vulnerable endpoint is disabled. Now you need to understand the full scope of what the attacker did. The WAF logs show 23 blocked + 4 successful requests. The SQL Server transaction logs may show the actual queries. IIS logs show the full request/response cycle.
+  next: evidence_collection_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1190 Exploit Public-Facing Application
+- id: evidence_collection_phase_2
+  phase_type: analysis
+  title: Evidence Collection — Phase 2
+  situation: The vulnerable endpoint is disabled. Now you need to understand the full scope of what the attacker did. The WAF logs show 23 blocked + 4 successful requests. The SQL Server transaction logs may show the actual queries. IIS logs show the full request/response cycle.
+  prompt: Which logs do you pull to reconstruct the attack?
+  guidance:
+    what: Test the initial theory against telemetry from portal.acmecorp.com before committing to a response.
+    action: Which logs do you pull to reconstruct the attack?
+    why: Acting on an unverified scope either misses the attacker or over-contains the business.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Evidence Collection — Phase 2. Asset in scope: portal.acmecorp.com.'
+  hints:
+  - Shows DB queries but not the original HTTP requests.
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - iis logs
+  - logs waf
+  - waf logs
+  - logs sql
+  - sql server
+  - server error
+  - error logs
+  - sql transaction
+  reference_answer: |-
+    IIS logs + WAF logs + SQL Server error logs + SQL transaction logs + web app access logs
+
+    Why: Full chain reconstruction: what the attacker sent (IIS+WAF), what hit the DB (SQL logs), and what was returned.
+  followup_good: 'You''ve reconstructed the attack. The attacker used a UNION SELECT to dump the full customers table in 4 requests. The extracted data includes: full name, email, phone, physical address, date of birth, and last 4 digits of credit card for all 147,000 records. You need to notify leadership and legal.'
+  followup_weak: |-
+    Full chain reconstruction: what the attacker sent (IIS+WAF), what hit the DB (SQL logs), and what was returned.
+
+    You've reconstructed the attack. The attacker used a UNION SELECT to dump the full customers table in 4 requests. The extracted data includes: full name, email, phone, physical address, date of birth, and last 4 digits of credit card for all 147,000 records. You need to notify leadership and legal.
+  next: impact_assessment_phase_3
+  mitre_tactic: Collection
+  mitre_technique: T1213 Data from Information Repositories
+- id: impact_assessment_phase_3
+  phase_type: containment
+  title: Impact Assessment — Phase 3
+  situation: 'You''ve reconstructed the attack. The attacker used a UNION SELECT to dump the full customers table in 4 requests. The extracted data includes: full name, email, phone, physical address, date of birth, and last 4 digits of credit card for all 147,000 records. You need to notify leadership and legal.'
+  prompt: Who do you notify and what information do you provide?
+  guidance:
+    what: Decide how to stop the spread from portal.acmecorp.com while preserving the evidence trail.
+    action: Who do you notify and what information do you provide?
+    why: Containment buys the time needed to investigate without letting the attacker expand.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Impact Assessment — Phase 3. Asset in scope: portal.acmecorp.com.'
+  hints:
+  - Consider the affected accounts and their privilege level.
+  - Preserve evidence before disrupting anything.
+  ideal_concepts:
+  - ciso legal
+  - legal dpo
+  - dpo immediately
+  - immediately scope
+  - scope records
+  - records data
+  - data types
+  - types attack
+  reference_answer: |-
+    Notify CISO, Legal, and DPO immediately with: scope (147K records, data types), attack vector, timeline, containment actions taken, and recommendation for regulatory notification
+
+    Why: 147K PII records likely triggers GDPR/CCPA notification obligations. Legal and DPO must be involved immediately.
+  followup_good: 'Legal is preparing the breach notification. The DBA confirms the /api/v2/customers/search endpoint builds SQL queries via string concatenation: "SELECT * FROM customers WHERE name LIKE ''%" + userInput + "%''". Parameterized queries were never implemented.'
+  followup_weak: |-
+    147K PII records likely triggers GDPR/CCPA notification obligations.
+
+    Legal is preparing the breach notification. The DBA confirms the /api/v2/customers/search endpoint builds SQL queries via string concatenation: "SELECT * FROM customers WHERE name LIKE '%" + userInput + "%'". Parameterized queries were never implemented.
+  next: root_cause_fix_phase_4
+  mitre_tactic: Impact
+  mitre_technique: T1531 Account Access Removal
+- id: root_cause_fix_phase_4
+  phase_type: eradication
+  title: Root Cause & Fix — Phase 4
+  situation: 'Legal is preparing the breach notification. The DBA confirms the /api/v2/customers/search endpoint builds SQL queries via string concatenation: "SELECT * FROM customers WHERE name LIKE ''%" + userInput + "%''". Parameterized queries were never implemented.'
+  prompt: What is the correct remediation for this vulnerability?
+  guidance:
+    what: Find every foothold the attacker left on portal.acmecorp.com, including persistence and stolen credentials.
+    action: What is the correct remediation for this vulnerability?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Root Cause & Fix — Phase 4. Asset in scope: portal.acmecorp.com.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - rewrite endpoint
+  - endpoint parameterized
+  - parameterized queries
+  - queries deploy
+  - deploy staging
+  - staging validate
+  - validate pen-test
+  - pen-test push
+  reference_answer: |-
+    Rewrite the endpoint with parameterized queries, deploy to staging, validate via pen-test, then push to production; add input validation server-side; update the WAF rules
+
+    Why: Fixes the root cause (parameterized queries), validates before deploying, and adds defense-in-depth.
+  followup_good: The parameterized query fix is deployed and verified. 147K customers are affected. The CISO asks you for a complete post-incident report including lessons learned.
+  followup_weak: |-
+    Fixes the root cause (parameterized queries), validates before deploying, and adds defense-in-depth.
+
+    The parameterized query fix is deployed and verified. 147K customers are affected. The CISO asks you for a complete post-incident report including lessons learned.
+  next: recovery_and_validation
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. portal.acmecorp.com is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return portal.acmecorp.com to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return portal.acmecorp.com to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: portal.acmecorp.com.'
+  hints:
+  - Which backup or rebuild image is known-good for portal.acmecorp.com, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore portal.acmecorp.com from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_phase_5
+  next_weak: ''
+  mitre_tactic: Discovery
+  mitre_technique: T1583 Acquire Infrastructure
+  role_prompts: {}
+- id: post_incident_phase_5
+  phase_type: lessons
+  title: Post-Incident — Phase 5
+  situation: The parameterized query fix is deployed and verified. 147K customers are affected. The CISO asks you for a complete post-incident report including lessons learned.
+  prompt: What are the top lessons learned from this incident?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on portal.acmecorp.com.
+    action: What are the top lessons learned from this incident?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident — Phase 5. Asset in scope: portal.acmecorp.com.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - input validation
+  - validation parameterized
+  - parameterized queries
+  - queries mandatory
+  - mandatory sdlc
+  - sdlc waf
+  - waf bypass
+  - bypass alerts
+  reference_answer: |-
+    1) Input validation + parameterized queries should be mandatory in SDLC. 2) WAF bypass alerts need automated escalation. 3) DBA CPU spikes should trigger SOC alerting. 4) Regular DAST/pen-testing needed on public APIs.
+
+    Why: Addresses root cause, detection gaps, and preventive measures.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Customer PII Exfiltration via SQL Injection incident. Your organization runs a customer-facing web portal at portal.acmecorp.com (IIS on Windows Server 2019, backend: Microsoft SQL Server 2019). At 09:30 the WAF (Cloudflare) triggered an alert for repeated SQL injection patterns in the /api/v2/customers/search endpoint. The WAF logged 23 blocked requests, but at 09:33 the attacker bypassed the WAF by encoding payloads in double-URL-encoding and successfully executed a UNION-based injection. By 09:41 the attacker extracted the full customers table (...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Customer PII Exfiltration via SQL Injection incident. Your organization runs a customer-facing web portal at portal.acmecorp.com (IIS on Windows Server 2019, backend: Microsoft SQL Server 2019). At 09:30 the WAF (Cloudflare) triggered an alert for repeated SQL injection patterns in the /api/v2/customers/search endpoint. The WAF logged 23 blocked requests, but at 09:33 the attacker bypassed the WAF by encoding payloads in double-URL-encoding and successfully executed a UNION-based injection. By 09:41 the attacker extracted the full customers table (...
+  mitre_tactic: Discovery
+  mitre_technique: T1583 Acquire Infrastructure

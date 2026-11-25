@@ -1,0 +1,209 @@
+id: angler_phishing___social_media_fake_support
+name: Angler Phishing — Social Media Fake Support
+category: Identity & Access
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Angler Phishing — Fake Customer Support via Social Media Impersonation. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Angler Phishing — Fake Customer Support via Social Media Impersonation. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Angler Phishing — Fake Customer Support via Social Media Impersonation. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Angler Phishing — Fake Customer Support via Social Media Impersonation incident. At 13:00 on Tuesday, customer Emily Watson posted on X (Twitter): ''@AcmeCorp your product is broken and I can''t login to my account #fail''. Within 5 minutes, an account @AcmeCorpSupport (with a verified-looking checkmark purchased through X Premium) replied: ''We''re sorry for the trouble, Emily! Please DM us your login details so we can fix this immediately.'' Emily DM''d her email and password. The attacker used these credentials to access Emily''s account on acmecorp.com, which contained her saved payment methods, order history, and personal address. The attacker made 3 purchases totaling $2,400 using Emily''s saved credit card. The real Acme Corp social media team noticed the fake account when they reviewed their brand mentions at 15:00. The fake account had responded to 8 other customer complaints in the same manner. 3 of the 8 customers also DM''d their credentials.
+  Business impact: account takeover could enable lateral movement and privilege abuse across the directory, so identity trust must be rebuilt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess notification duties for any account or directory data accessed.'
+incident:
+  title: Angler Phishing — Fake Customer Support via Social Media Impersonation
+  opening: 'At 13:00 on Tuesday, customer Emily Watson posted on X (Twitter): ''@AcmeCorp your product is broken and I can''t login to my account #fail''. Within 5 minutes, an account @AcmeCorpSupport (with a verified-looking checkmark purchased through X Premium) replied: ''We''re sorry for the trouble, Emily!'
+  summary: 'At 13:00 on Tuesday, customer Emily Watson posted on X (Twitter): ''@AcmeCorp your product is broken and I can''t login to my account #fail''. Within 5 minutes, an account @AcmeCorpSupport (with a verified-looking checkmark purchased through X Premium) replied: ''We''re sorry for the trouble, Emily! Please DM us your login details so we can fix this immediately.'' Emily DM''d her email and password. The attacker used these credentials to access Emily''s account on acmecorp.com, which contained her saved payment methods, order history, and personal address. The attacker made 3 purchases totaling $2,400 using Emily''s saved credit card. The real Acme Corp social media team noticed the fake account when they reviewed their brand mentions at 15:00. The fake account had responded to 8 other customer complaints in the same manner. 3 of the 8 customers also DM''d their credentials.'
+  compromised_assets:
+  - Emily Watson's Acme Corp account
+  - 3 other customer accounts
+  - $2,400 in fraudulent purchases
+  - Brand trust and reputation
+  detected_via: Real social media team reviewed brand mentions and found fake account
+  kill_chain:
+  - Recon
+  - Pretext
+  - Credential Harvest
+  - Account Takeover
+  - Fraud
+  mitre_tactics:
+  - Initial Access
+  - Credential Access
+  - Impact
+phases:
+- id: fake_account_takedown_phase_1
+  phase_type: triage
+  title: Fake Account Takedown — Phase 1
+  situation: The fake @AcmeCorpSupport account has responded to 8 customer complaints and obtained credentials from at least 4 customers. The account is still active and may be receiving more DMs.
+  prompt: What is your FIRST priority action?
+  guidance:
+    what: Establish what fired on Emily Watson's Acme Corp account, which accounts are involved, and how urgent the signal is.
+    action: What is your FIRST priority action?
+    why: Every later decision depends on an accurate picture of Emily Watson's Acme Corp account and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Fake Account Takedown — Phase 1. Asset in scope: Emily Watson''s Acme Corp account.'
+  hints:
+  - Helpful but the attacker may delete the account.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - report fake
+  - fake account
+  - account impersonation
+  - impersonation priority
+  - priority report
+  - report post
+  - post public
+  - public warning
+  reference_answer: |-
+    Report the fake account to X for impersonation (priority report); post a public warning on the real Acme Corp account about the fake support account; contact all 8 customers who were replied to — warn them and advise credential changes; request X to preserve DM records for investigation
+
+    Why: Takedown, warn customers, and preserve evidence simultaneously. Public warning prevents further victimization.
+  followup_good: Emily Watson and 3 other customers DM'd their credentials to the fake account. Emily's account has been accessed and $2,400 in fraudulent purchases were made. The attacker may have also accessed the other 3 customers' accounts.
+  followup_weak: |-
+    Takedown, warn customers, and preserve evidence simultaneously.
+
+    Emily Watson and 3 other customers DM'd their credentials to the fake account. Emily's account has been accessed and $2,400 in fraudulent purchases were made. The attacker may have also accessed the other 3 customers' accounts.
+  next: customer_credential_impact_phase_2
+  mitre_tactic: Impact
+  mitre_technique: T1565 Data Manipulation
+- id: customer_credential_impact_phase_2
+  phase_type: analysis
+  title: Customer Credential Impact — Phase 2
+  situation: Emily Watson and 3 other customers DM'd their credentials to the fake account. Emily's account has been accessed and $2,400 in fraudulent purchases were made. The attacker may have also accessed the other 3 customers' accounts.
+  prompt: How do you handle the customer credential compromise?
+  guidance:
+    what: Test the initial theory against telemetry from Emily Watson's Acme Corp account before committing to a response.
+    action: How do you handle the customer credential compromise?
+    why: Acting on an unverified scope either misses the attacker or over-contains the business.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Customer Credential Impact — Phase 2. Asset in scope: Emily Watson''s Acme Corp account.'
+  hints:
+  - Helpful but the company should proactively initiate refunds and secure the accounts.
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - password reset
+  - affected customers
+  - customers review
+  - review account
+  - account activity
+  - activity unauthorized
+  - unauthorized purchases
+  - purchases initiate
+  reference_answer: |-
+    Force password reset for all 4 affected customers; review account activity for unauthorized purchases; initiate refunds for fraudulent transactions; enhance monitoring on these accounts; implement rate limiting on login attempts
+
+    Why: Password reset, fraud reversal, and monitoring protect customers and reduce liability.
+  followup_good: The fake account used X Premium to get a verified-looking checkmark, making it appear legitimate. X's verification system was exploited to lend credibility to the impersonation. The fake account name was 'Acme Corp Support' (with slight spacing difference from the real 'AcmeCorp Support').
+  followup_weak: |-
+    Password reset, fraud reversal, and monitoring protect customers and reduce liability.
+
+    The fake account used X Premium to get a verified-looking checkmark, making it appear legitimate. X's verification system was exploited to lend credibility to the impersonation. The fake account name was 'Acme Corp Support' (with slight spacing difference from the real 'AcmeCorp Support').
+  next: social_media_brand_protection_phase_3
+  mitre_tactic: Credential Access
+  mitre_technique: T1539 Steal Web Session Cookie
+- id: social_media_brand_protection_phase_3
+  phase_type: eradication
+  title: Social Media Brand Protection — Phase 3
+  situation: The fake account used X Premium to get a verified-looking checkmark, making it appear legitimate. X's verification system was exploited to lend credibility to the impersonation. The fake account name was 'Acme Corp Support' (with slight spacing difference from the real 'AcmeCorp Support').
+  prompt: How do you protect your brand from social media impersonation?
+  guidance:
+    what: Decide what must be rebuilt or rotated rather than merely cleaned.
+    action: How do you protect your brand from social media impersonation?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Social Media Brand Protection — Phase 3. Asset in scope: Emily Watson''s Acme Corp account.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - register brand
+  - brand name
+  - name across
+  - across major
+  - major social
+  - social platforms
+  - platforms even
+  - even inactive
+  reference_answer: |-
+    Register your brand name across all major social platforms (even if inactive); set up social media monitoring for brand mentions and impersonation; establish an official support channel policy (e.g., 'we will NEVER ask for passwords via DM'); apply for trademark verification badges on social platforms
+
+    Why: Proactive brand registration, monitoring, and clear communication policies prevent impersonation.
+  followup_good: 4 customers DM'd their login credentials to a stranger on social media. This represents a fundamental gap in customer security awareness. The customers trusted a verified-looking account without verifying it was official.
+  followup_weak: |-
+    Proactive brand registration, monitoring, and clear communication policies prevent impersonation.
+
+    4 customers DM'd their login credentials to a stranger on social media. This represents a fundamental gap in customer security awareness. The customers trusted a verified-looking account without verifying it was official.
+  next: recovery_and_validation
+  mitre_tactic: Initial Access
+  mitre_technique: T1583.001 Domains
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Emily Watson's Acme Corp account is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Emily Watson's Acme Corp account to production?
+  guidance:
+    what: Separate business pressure to restore from the evidence required to restore safely.
+    action: What must be true before you return Emily Watson's Acme Corp account to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Emily Watson''s Acme Corp account.'
+  hints:
+  - Which backup or rebuild image is known-good for Emily Watson's Acme Corp account, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Emily Watson's Acme Corp account from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: customer_education_phase_4
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1078 Valid Accounts
+  role_prompts: {}
+- id: customer_education_phase_4
+  phase_type: lessons
+  title: Customer Education — Phase 4
+  situation: 4 customers DM'd their login credentials to a stranger on social media. This represents a fundamental gap in customer security awareness. The customers trusted a verified-looking account without verifying it was official.
+  prompt: How do you educate customers about social media phishing?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on Emily Watson's Acme Corp account.
+    action: How do you educate customers about social media phishing?
+    why: Lessons are only real when they change a control, a detection, or a decision right.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Customer Education — Phase 4. Asset in scope: Emily Watson''s Acme Corp account.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - security advisory
+  - advisory customers
+  - customers explaining
+  - explaining official
+  - official support
+  - support never
+  - never ask
+  - passwords verify
+  reference_answer: |-
+    Send a security advisory to all customers explaining: (1) official support will never ask for passwords, (2) how to verify official accounts, (3) to use the official support portal instead of social media DMs; add security tips to the login page and account settings
+
+    Why: Multi-channel education (email, portal, settings) reaches customers where they are.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Angler Phishing — Fake Customer Support via Social Media Impersonation incident. At 13:00 on Tuesday, customer Emily Watson posted on X (Twitter): '@AcmeCorp your product is broken and I can't login to my account #fail'. Within 5 minutes, an account @AcmeCorpSupport (with a verified-looking checkmark purchased through X Premium) replied: 'We're sorry for the trouble, Emily! Please DM us your login details so we can fix this immediately.' Emily DM'd her email and password. The attacker used these credentials to access Emily's account on acmecorp.com, which contained her saved...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Angler Phishing — Fake Customer Support via Social Media Impersonation incident. At 13:00 on Tuesday, customer Emily Watson posted on X (Twitter): '@AcmeCorp your product is broken and I can't login to my account #fail'. Within 5 minutes, an account @AcmeCorpSupport (with a verified-looking checkmark purchased through X Premium) replied: 'We're sorry for the trouble, Emily! Please DM us your login details so we can fix this immediately.' Emily DM'd her email and password. The attacker used these credentials to access Emily's account on acmecorp.com, which contained her saved...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1078 Valid Accounts

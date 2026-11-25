@@ -1,0 +1,216 @@
+id: scheduled_task_backdoor___covert_persistence
+name: Scheduled Task Backdoor — Covert Persistence
+category: Endpoint
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Hidden Scheduled Task Executing Encoded PowerShell C2 Payload. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Hidden Scheduled Task Executing Encoded PowerShell C2 Payload. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Hidden Scheduled Task Executing Encoded PowerShell C2 Payload. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Hidden Scheduled Task Executing Encoded PowerShell C2 Payload incident. An attacker who gained SYSTEM access to APP-SRV-01 (10.10.40.21, Windows Server 2022) created a covert scheduled task named ''MicrosoftEdgeUpdateCore'' disguised as a legitimate Windows task. The task is configured with: schtasks /create /tn \Microsoft\Windows\Edge\MicrosoftEdgeUpdateCore /ru SYSTEM /sc MINUTE /MO 15 /tr ''powershell.exe -WindowStyle Hidden -enc <base64>'' /f. The task executes every 15 minutes using SYSTEM privileges. The PowerShell payload checks for a marker file (C:\ProgramData\.msupdate_check); if the file doesn''t exist, it downloads and executes a second-stage Cobalt Strike payload from a compromised WordPress site (hxxps://legitimate-news[.]com/wp-content/uploads/update.js). The task description is set to ''Core Edge Update Service'' and is registered under the \Microsoft\Windows\Edge path to appear legitimate. The attacker modified the task''s security
+  descriptor to deny access to the Administrators group (SDDL: D:P(D;;KA;;;WD)), hiding it from standard schtasks /query operations. Detection came when a security audit script (Audit-ScheduledTasks.ps1) enumerated all scheduled tasks including hidden ones and flagged the non-standard task in the Edge directory. Business impact: endpoint availability and integrity are at risk, and affected hosts may need reimaging before normal work resumes. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties once data access is confirmed.'
+incident:
+  title: Hidden Scheduled Task Executing Encoded PowerShell C2 Payload
+  opening: 'An attacker who gained SYSTEM access to APP-SRV-01 (10.10.40.21, Windows Server 2022) created a covert scheduled task named ''MicrosoftEdgeUpdateCore'' disguised as a legitimate Windows task. The task is configured with: schtasks /create /tn \Microsoft\Windows\Edge\MicrosoftEdgeUpdateCore /ru SYSTEM /sc MINUTE /MO 15 /tr ''powershell.exe -WindowStyle Hidden -enc <base64>'' /f.'
+  summary: 'An attacker who gained SYSTEM access to APP-SRV-01 (10.10.40.21, Windows Server 2022) created a covert scheduled task named ''MicrosoftEdgeUpdateCore'' disguised as a legitimate Windows task. The task is configured with: schtasks /create /tn \Microsoft\Windows\Edge\MicrosoftEdgeUpdateCore /ru SYSTEM /sc MINUTE /MO 15 /tr ''powershell.exe -WindowStyle Hidden -enc <base64>'' /f. The task executes every 15 minutes using SYSTEM privileges. The PowerShell payload checks for a marker file (C:\ProgramData\.msupdate_check); if the file doesn''t exist, it downloads and executes a second-stage Cobalt Strike payload from a compromised WordPress site (hxxps://legitimate-news[.]com/wp-content/uploads/update.js). The task description is set to ''Core Edge Update Service'' and is registered under the \Microsoft\Windows\Edge path to appear legitimate. The attacker modified the task''s security descriptor to deny access to the Administrators group (SDDL: D:P(D;;KA;;;WD)), hiding it from standard
+    schtasks /query operations. Detection came when a security audit script (Audit-ScheduledTasks.ps1) enumerated all scheduled tasks including hidden ones and flagged the non-standard task in the Edge directory.'
+  compromised_assets:
+  - APP-SRV-01 (10.10.40.21) — Windows Server 2022
+  - Scheduled task ('MicrosoftEdgeUpdateCore', SYSTEM, every 15 minutes)
+  - C2 channel (15-minute callback interval to compromised WordPress)
+  - Compromised WordPress site (legitimate-news[.]com — payload delivery)
+  - Marker file system (C:\ProgramData\.msupdate_check)
+  - Security descriptor manipulation (task hidden from admin queries)
+  detected_via: Hidden scheduled task audit script (Audit-ScheduledTasks.ps1 flagged non-standard Edge task); PowerShell download cradle network alert (legitimate-news[.]com/wp-content/uploads/update.js); marker file anomaly detection
+  kill_chain:
+  - SYSTEM access obtained on APP-SRV-01 (10.10.40.21)
+  - Hidden scheduled task created with SYSTEM permissions (every 15 minutes)
+  - PowerShell payload checks marker file before downloading second stage
+  - Second-stage Cobalt Strike downloaded from compromised WordPress
+  - Task hidden via security descriptor modification (D:P(D;;KA;;;WD))
+  - 15-minute C2 callback interval established
+  mitre_tactics:
+  - TA0003 — Persistence
+  - TA0005 — Defense Evasion
+  - TA0011 — Command and Control
+phases:
+- id: scheduled_task_creation_evasion
+  phase_type: triage
+  title: Scheduled Task Creation & Evasion
+  situation: 'The audit script has identified a suspicious scheduled task on APP-SRV-01 (10.10.40.21): ''MicrosoftEdgeUpdateCore'' registered under \Microsoft\Windows\Edge path. The task runs as SYSTEM every 15 minutes with a PowerShell command. The task''s security descriptor denies access to the Administrators group, hiding it from standard schtasks /query. The task was created on March 12 at 02:30 AM. The PowerShell payload includes -WindowStyle Hidden and -ExecutionPolicy Bypass flags. A marker file check (C:\ProgramData\.msupdate_check) prevents redundant payload execution.'
+  prompt: How do you respond to the hidden scheduled task?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on APP-SRV-01, its severity, and the affected accounts.'
+    action: How do you respond to the hidden scheduled task?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Scheduled Task Creation & Evasion. Asset in scope: APP-SRV-01.'
+  hints:
+  - Environment-wide audit is valuable but should happen after the immediate threat is contained.
+  - GPO restrictions are valuable but require testing and deployment time.
+  ideal_concepts:
+  - malicious scheduled
+  - scheduled task
+  - task immediately
+  - immediately remove
+  - marker file
+  - file block
+  - domain legitimate-news
+  - legitimate-news com
+  reference_answer: |-
+    Delete the malicious scheduled task immediately, remove the marker file, block the C2 domain (legitimate-news[.]com) at the perimeter, investigate how SYSTEM access was obtained, and deploy centralized scheduled task monitoring with alerting on hidden tasks and SDDL modifications
+
+    Why: Deleting the task eliminates persistence. Removing the marker file prevents the payload from re-downloading. Domain blocking stops C2. Investigation identifies the initial access. Monitoring prevents future hidden tasks.
+  followup_good: 'The attacker modified the task''s security descriptor to D:P(D;;KA;;;WD), which denies all access to the task entry. This prevents standard tools (schtasks /query, Task Scheduler GUI) from displaying the task. The task can only be discovered by: (1) direct registry inspection (HKLM\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree), (2) PowerShell Get-ScheduledTask with admin privileges, or (3) specialized audit scripts that enumerate tasks via COM interfaces. The SDDL modification was logged in the Security event log (Event ID 4719, Audit Policy Change) but was not triaged.'
+  followup_weak: |-
+    Deleting the task eliminates persistence.
+
+    The attacker modified the task's security descriptor to D:P(D;;KA;;;WD), which denies all access to the task entry. This prevents standard tools (schtasks /query, Task Scheduler GUI) from displaying the task. The task can only be discovered by: (1) direct registry inspection (HKLM\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree), (2) PowerShell Get-ScheduledTask with admin privileges, or (3) specialized audit scripts that enumerate tasks via COM interfaces. The SDDL modification was logged in the Security event log (Event ID 4719, Audit Policy Change) but was not triaged.
+  next: security_descriptor_manipulation
+  mitre_tactic: TA0003 — Persistence
+  mitre_technique: T1053.005 — Scheduled Task
+- id: security_descriptor_manipulation
+  phase_type: containment
+  title: Security Descriptor Manipulation
+  situation: 'The attacker modified the task''s security descriptor to D:P(D;;KA;;;WD), which denies all access to the task entry. This prevents standard tools (schtasks /query, Task Scheduler GUI) from displaying the task. The task can only be discovered by: (1) direct registry inspection (HKLM\Software\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree), (2) PowerShell Get-ScheduledTask with admin privileges, or (3) specialized audit scripts that enumerate tasks via COM interfaces. The SDDL modification was logged in the Security event log (Event ID 4719, Audit Policy Change) but was not triaged.'
+  prompt: How do you address the security descriptor evasion?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: How do you address the security descriptor evasion?
+    why: Stopping the spread is urgent, but destroying evidence makes the incident impossible to close.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Security Descriptor Manipulation. Asset in scope: APP-SRV-01.'
+  hints:
+  - Manual inspection is one-time and does not prevent recurrence.
+  - Restricting task creation is valuable but may break legitimate system tasks.
+  - SIEM rules are useful for detection but should be combined with preventive controls (GPO enforcement) to stop SDDL manipulation.
+  ideal_concepts:
+  - deploy group
+  - group policy
+  - policy enforce
+  - enforce consistent
+  - consistent task
+  - task permissions
+  - permissions audit
+  - audit sddl
+  reference_answer: |-
+    Deploy Group Policy to enforce consistent task permissions and audit SDDL changes, create a monitoring rule for Event ID 4719 (Audit Policy Change) related to scheduled tasks, implement a regular task enumeration script that bypasses SDDL restrictions, and ensure all task creation events are forwarded to the SIEM
+
+    Why: GPO enforcement prevents future SDDL manipulation. Event monitoring detects policy changes. Enumeration scripts find hidden tasks. SIEM forwarding ensures centralized visibility.
+  followup_good: Every 15 minutes, the task executes PowerShell to check for C:\ProgramData\.msupdate_check; if absent, downloads and executes the second-stage payload from hxxps://legitimate-news[.]com/wp-content/uploads/update.js. The payload has been active for 4 days (March 12-15) with approximately 384 C2 callbacks (one every 15 minutes). The Cobalt Strike beacon communicates via HTTPS to a redirector that points to the actual C2 server (198.51.100.92:443). PowerShell Script Block Logging (Event ID 4104) has captured the full decoded payload including the download cradle and C2 configuration. The compromised WordPress site (legitimate-news[.]com) is a legitimate news website with an injected JavaScript backdoor.
+  followup_weak: |-
+    GPO enforcement prevents future SDDL manipulation.
+
+    Every 15 minutes, the task executes PowerShell to check for C:\ProgramData\.msupdate_check; if absent, downloads and executes the second-stage payload from hxxps://legitimate-news[.]com/wp-content/uploads/update.js. The payload has been active for 4 days (March 12-15) with approximately 384 C2 callbacks (one every 15 minutes). The Cobalt Strike beacon communicates via HTTPS to a redirector that points to the actual C2 server (198.51.100.92:443). PowerShell Script Block Logging (Event ID 4104) has captured the full decoded payload including the download cradle and C2 configuration. The compromised WordPress site (legitimate-news[.]com) is a legitimate news website with an injected JavaScript backdoor.
+  next: periodic_payload_execution_c2
+  mitre_tactic: TA0005 — Defense Evasion
+  mitre_technique: T1222 — File and Directory Permissions Modification
+- id: periodic_payload_execution_c2
+  phase_type: eradication
+  title: Periodic Payload Execution & C2
+  situation: Every 15 minutes, the task executes PowerShell to check for C:\ProgramData\.msupdate_check; if absent, downloads and executes the second-stage payload from hxxps://legitimate-news[.]com/wp-content/uploads/update.js. The payload has been active for 4 days (March 12-15) with approximately 384 C2 callbacks (one every 15 minutes). The Cobalt Strike beacon communicates via HTTPS to a redirector that points to the actual C2 server (198.51.100.92:443). PowerShell Script Block Logging (Event ID 4104) has captured the full decoded payload including the download cradle and C2 configuration. The compromised WordPress site (legitimate-news[.]com) is a legitimate news website with an injected JavaScript backdoor.
+  prompt: How do you contain the periodic C2 execution?
+  guidance:
+    what: Find every foothold the attacker left on APP-SRV-01, including persistence and stolen credentials.
+    action: How do you contain the periodic C2 execution?
+    why: The incident is not over until the attacker's footholds are gone.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Periodic Payload Execution & C2. Asset in scope: APP-SRV-01.'
+  hints:
+  - Rebooting clears the current in-memory payload but the task will re-download and re-execute it within 15 minutes.
+  - Blocking the redirector is correct but the attacker can rotate infrastructure.
+  - EDR provides detection but the scheduled task must be deleted immediately.
+  ideal_concepts:
+  - scheduled task
+  - task block
+  - legitimate-news com
+  - com perimeter
+  - perimeter enable
+  - powershell constrained
+  - constrained language
+  - language mode
+  reference_answer: |-
+    Delete the scheduled task, block legitimate-news[.]com and 198.51.100.92 at the perimeter, enable PowerShell Constrained Language Mode via AppLocker, deploy PowerShell script block logging globally, and audit the compromised WordPress site for additional malicious content
+
+    Why: Task deletion stops periodic execution. Domain/IP blocking stops C2. Constrained Language Mode prevents future PowerShell abuse. Global logging provides detection. WordPress audit identifies the compromise vector.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Hidden Scheduled Task Executing Encoded PowerShell C2 Payload incident. An attacker who gained SYSTEM access to APP-SRV-01 (10.10.40.21, Windows Server 2022) created a covert scheduled task named 'MicrosoftEdgeUpdateCore' disguised as a legitimate Windows task. The task is configured with: schtasks /create /tn \Microsoft\Windows\Edge\MicrosoftEdgeUpdateCore /ru SYSTEM /sc MINUTE /MO 15 /tr 'powershell.exe -WindowStyle Hidden -enc <base64>' /f. The task executes every 15 minutes using SYSTEM privileges. The PowerShell payload checks for a marker file (C:\ProgramData\...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Hidden Scheduled Task Executing Encoded PowerShell C2 Payload incident. An attacker who gained SYSTEM access to APP-SRV-01 (10.10.40.21, Windows Server 2022) created a covert scheduled task named 'MicrosoftEdgeUpdateCore' disguised as a legitimate Windows task. The task is configured with: schtasks /create /tn \Microsoft\Windows\Edge\MicrosoftEdgeUpdateCore /ru SYSTEM /sc MINUTE /MO 15 /tr 'powershell.exe -WindowStyle Hidden -enc <base64>' /f. The task executes every 15 minutes using SYSTEM privileges. The PowerShell payload checks for a marker file (C:\ProgramData\...
+  mitre_tactic: TA0011 — Command and Control
+  mitre_technique: T1059.001 — PowerShell
+  next: recovery_and_validation
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. APP-SRV-01 is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return APP-SRV-01 to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return APP-SRV-01 to production?
+    why: A fast restore that reintroduces the attacker is worse than a slower, verified recovery.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: APP-SRV-01.'
+  hints:
+  - Which backup or rebuild image is known-good for APP-SRV-01, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore APP-SRV-01 from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: post_incident_review
+  next_weak: ''
+  mitre_tactic: TA0011 — Command and Control
+  mitre_technique: T1059.001 — PowerShell
+  role_prompts: {}
+- id: post_incident_review
+  phase_type: lessons
+  title: Post-Incident Review & Hardening
+  situation: Service has been restored and validated. Leadership wants a concise after-action review covering the root cause of Hidden Scheduled Task Executing Encoded PowerShell C2 Payload, the detection gap that let the attacker operate, and the control changes that will prevent a repeat. Findings must have owners and dates.
+  prompt: What must change so an incident like Hidden Scheduled Task Executing Encoded PowerShell C2 Payload is detected earlier and cannot recur?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: What must change so an incident like Hidden Scheduled Task Executing Encoded PowerShell C2 Payload is detected earlier and cannot recur?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Post-Incident Review & Hardening. Asset in scope: APP-SRV-01.'
+  hints:
+  - What was the earliest signal available, and why was it missed?
+  - Which control would have stopped the attack chain the earliest?
+  - Who owns each improvement, and when will it be verified?
+  ideal_concepts:
+  - root cause
+  - detection gap
+  - control improvement
+  - owner and date
+  - runbook update
+  - training
+  reference_answer: |-
+    Document the root cause of Hidden Scheduled Task Executing Encoded PowerShell C2 Payload, identify the detection gap that let the attacker operate, and assign owners and dates to concrete control changes. Update detections, runbooks, and training, track the actions to completion, and report the outcome to leadership.
+
+    Why: Without durable changes, the same root cause will produce the same incident again.
+  followup_good: The review names the root cause and detection gap, assigns owned and dated improvements, and ties them back to specific detections and controls. Leadership receives a tracked action plan.
+  followup_weak: The review retells the timeline but leaves the root cause and detection gap vague. Without owners, dates, and verification, the same incident will recur.
+  next: ''
+  next_weak: ''
+  mitre_tactic: TA0011 — Command and Control
+  mitre_technique: T1059.001 — PowerShell
+  role_prompts: {}

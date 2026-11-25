@@ -1,0 +1,243 @@
+id: oauth_token_abuse_campaign
+name: OAuth Token Abuse Campaign
+category: Advanced Threats
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to OAuth Consent Phishing — Microsoft 365 Tenant Compromise. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for OAuth Consent Phishing — Microsoft 365 Tenant Compromise. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for OAuth Consent Phishing — Microsoft 365 Tenant Compromise. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the OAuth Consent Phishing — Microsoft 365 Tenant Compromise incident. The SOC detected an anomalous Azure AD sign-in alert: a consent grant was approved for a malicious OAuth application named ''Microsoft Teams Integration Suite'' by user k.patel (VP of Engineering) at 14:32 UTC. The application was registered by an external tenant (evil-corp-tenant.onmicrosoft.com) and requested permissions including Mail.ReadWrite, Files.ReadWrite.All, and Directory.ReadWrite.All. Investigation reveals k.patel clicked a phishing link in a convincing email that mimicked a Microsoft 365 consent prompt. The malicious app now has persistent API access to k.patel''s mailbox, all SharePoint/OneDrive files, and can enumerate the entire Azure AD directory. Over the past 48 hours, the attacker has: (1) accessed 847 emails in k.patel''s mailbox including board communications, (2) downloaded 23 sensitive files from SharePoint, (3) registered 4 additional consent grants using
+  3 other compromised accounts, and (4) configured inbox rules to forward emails about ''board meeting'', ''salary'', and ''merger'' to an external address. Business impact: a sophisticated adversary may retain persistent access, so full-scope hunting and third-party notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: counsel and threat-intel leads should assess notification duties and law-enforcement engagement.'
+incident:
+  title: OAuth Consent Phishing — Microsoft 365 Tenant Compromise
+  opening: 'The SOC detected an anomalous Azure AD sign-in alert: a consent grant was approved for a malicious OAuth application named ''Microsoft Teams Integration Suite'' by user k.patel (VP of Engineering) at 14:32 UTC. The application was registered by an external tenant (evil-corp-tenant.onmicrosoft.com) and requested permissions including Mail.ReadWrite, Files.ReadWrite.All, and Directory.ReadWrite.All.'
+  summary: 'The SOC detected an anomalous Azure AD sign-in alert: a consent grant was approved for a malicious OAuth application named ''Microsoft Teams Integration Suite'' by user k.patel (VP of Engineering) at 14:32 UTC. The application was registered by an external tenant (evil-corp-tenant.onmicrosoft.com) and requested permissions including Mail.ReadWrite, Files.ReadWrite.All, and Directory.ReadWrite.All. Investigation reveals k.patel clicked a phishing link in a convincing email that mimicked a Microsoft 365 consent prompt. The malicious app now has persistent API access to k.patel''s mailbox, all SharePoint/OneDrive files, and can enumerate the entire Azure AD directory. Over the past 48 hours, the attacker has: (1) accessed 847 emails in k.patel''s mailbox including board communications, (2) downloaded 23 sensitive files from SharePoint, (3) registered 4 additional consent grants using 3 other compromised accounts, and (4) configured inbox rules to forward emails about ''board meeting'',
+    ''salary'', and ''merger'' to an external address.'
+  compromised_assets:
+  - k.patel (VP Engineering) — mailbox, OneDrive, SharePoint
+  - 3 additional compromised accounts
+  - 4 malicious OAuth applications
+  - 'SharePoint sites: Engineering, Executive, Board'
+  detected_via: Azure AD consent grant alert — suspicious OAuth app permissions + external tenant registration
+  kill_chain:
+  - Initial Access
+  - Persistence
+  - Collection
+  - Exfiltration
+  mitre_tactics:
+  - Initial Access
+  - Persistence
+  - Collection
+  - Exfiltration
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: 4 malicious OAuth applications have been granted consent by 4 compromised accounts. The apps have Mail.ReadWrite, Files.ReadWrite.All, and Directory.ReadWrite.All permissions. The attacker is actively accessing mailboxes and SharePoint via the Microsoft Graph API. Inbox rules are forwarding sensitive emails externally. You cannot revoke OAuth tokens by resetting passwords.
+  prompt: What is your first containment action?
+  guidance:
+    what: Establish what fired on k.patel, which accounts are involved, and how urgent the signal is.
+    action: What is your first containment action?
+    why: Rapid scoping decides everything downstream — triage is where containment starts.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: k.patel.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - revoke tokens
+  - tokens malicious
+  - malicious oauth
+  - oauth applications
+  - applications azure
+  - azure admin
+  - admin portal
+  - portal remove
+  reference_answer: |-
+    Revoke all tokens for the 4 malicious OAuth applications via Azure AD admin portal, remove the consent grants, and block the external tenant ID at the Azure AD tenant level
+
+    Why: OAuth token revocation is the correct containment — password resets don't affect OAuth grants. Blocking the external tenant prevents re-registration.
+  followup_good: 'OAuth apps revoked. Azure AD audit logs show the attacker''s timeline: Day 1 — phishing email to k.patel, consent granted for ''Microsoft Teams Integration Suite''. Day 1+2h — Graph API used to enumerate all users, download k.patel''s mailbox. Day 1+6h — 3 more phishing emails sent from k.patel''s account to colleagues in Engineering. Day 2 — 3 more consents granted, inbox rules created, SharePoint files downloaded. Total data accessed: 2,341 emails across 4 mailboxes, 47 SharePoint files (180 MB).'
+  followup_weak: |-
+    OAuth token revocation is the correct containment — password resets don't affect OAuth grants.
+
+    OAuth apps revoked. Azure AD audit logs show the attacker's timeline: Day 1 — phishing email to k.patel, consent granted for 'Microsoft Teams Integration Suite'. Day 1+2h — Graph API used to enumerate all users, download k.patel's mailbox. Day 1+6h — 3 more phishing emails sent from k.patel's account to colleagues in Engineering. Day 2 — 3 more consents granted, inbox rules created, SharePoint files downloaded. Total data accessed: 2,341 emails across 4 mailboxes, 47 SharePoint files (180 MB).
+  next: scope_assessment_phase_2
+  mitre_tactic: Persistence
+  mitre_technique: 'T1098.003 Account Manipulation: Cloud Roles'
+- id: scope_assessment_phase_2
+  phase_type: analysis
+  title: Scope Assessment — Phase 2
+  situation: 'OAuth apps revoked. Azure AD audit logs show the attacker''s timeline: Day 1 — phishing email to k.patel, consent granted for ''Microsoft Teams Integration Suite''. Day 1+2h — Graph API used to enumerate all users, download k.patel''s mailbox. Day 1+6h — 3 more phishing emails sent from k.patel''s account to colleagues in Engineering. Day 2 — 3 more consents granted, inbox rules created, SharePoint files downloaded. Total data accessed: 2,341 emails across 4 mailboxes, 47 SharePoint files (180 MB).'
+  prompt: How do you determine the full scope and prevent further compromise?
+  guidance:
+    what: Test the initial theory against telemetry from k.patel before committing to a response.
+    action: How do you determine the full scope and prevent further compromise?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Scope Assessment — Phase 2. Asset in scope: k.patel.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - export full
+  - full azure
+  - azure sign-in
+  - sign-in logs
+  - logs audit
+  - audit logs
+  - logs past
+  - past days
+  reference_answer: |-
+    Export full Azure AD sign-in logs and audit logs for the past 7 days, enumerate all Graph API calls made by the malicious apps, identify all files and emails accessed, and search for any additional inbox rules or forwarding configurations created by the attacker
+
+    Why: Azure AD audit logs provide complete API call history — essential for determining exactly what the attacker accessed across all compromised accounts.
+  followup_good: 'Audit log analysis reveals the attacker created 12 inbox rules across 4 mailboxes, forwarding emails matching keywords: ''board'', ''salary'', ''merger'', ''confidential'', ''NDA'', ''contract''. The rules forward to ext-recv@protonmail[.]com. The attacker also added themselves as a delegate to k.patel''s mailbox and created a mail flow rule in Exchange Admin to silently BCC all emails from the Executive distro group.'
+  followup_weak: |-
+    Azure AD audit logs provide complete API call history — essential for determining exactly what the attacker accessed across all compromised accounts.
+
+    Audit log analysis reveals the attacker created 12 inbox rules across 4 mailboxes, forwarding emails matching keywords: 'board', 'salary', 'merger', 'confidential', 'NDA', 'contract'. The rules forward to ext-recv@protonmail[.]com. The attacker also added themselves as a delegate to k.patel's mailbox and created a mail flow rule in Exchange Admin to silently BCC all emails from the Executive distro group.
+  next: inbox_rule_persistence_cleanup_phase_3
+  mitre_tactic: Discovery
+  mitre_technique: T1087.004 Cloud Account Discovery
+- id: inbox_rule_persistence_cleanup_phase_3
+  phase_type: containment
+  title: Inbox Rule & Persistence Cleanup — Phase 3
+  situation: 'Audit log analysis reveals the attacker created 12 inbox rules across 4 mailboxes, forwarding emails matching keywords: ''board'', ''salary'', ''merger'', ''confidential'', ''NDA'', ''contract''. The rules forward to ext-recv@protonmail[.]com. The attacker also added themselves as a delegate to k.patel''s mailbox and created a mail flow rule in Exchange Admin to silently BCC all emails from the Executive distro group.'
+  prompt: How do you clean up all persistence mechanisms?
+  guidance:
+    what: Decide how to stop the spread from k.patel while preserving the evidence trail.
+    action: How do you clean up all persistence mechanisms?
+    why: The first containment action sets the blast radius for everything that follows.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Inbox Rule & Persistence Cleanup — Phase 3. Asset in scope: k.patel.'
+  hints:
+  - Misses the delegate access and Exchange mail flow rule — both provide ongoing access.
+  - Consider the affected accounts and their privilege level.
+  ideal_concepts:
+  - malicious inbox
+  - inbox rules
+  - rules revoke
+  - revoke mailbox
+  - mailbox delegates
+  - delegates delete
+  - exchange mail
+  - mail flow
+  reference_answer: |-
+    Remove all 12 malicious inbox rules, revoke mailbox delegates, delete the Exchange mail flow rule, audit all mailbox permissions across the tenant for any additional unauthorized access, and enable Advanced Audit logging to detect future Graph API abuse
+
+    Why: Complete persistence cleanup addresses inbox rules, delegates, and mail flow rules. Tenant-wide audit catches any additional persistence. Advanced Audit provides future detection.
+  followup_good: All persistence has been cleaned. The attacker used OAuth consent phishing — a technique that bypasses traditional email security because the user is consenting to a legitimate Microsoft API flow. The phishing emails passed SPF/DKIM/DMARC because they were sent from k.patel's legitimate account after initial compromise. The organization has 2,400 Microsoft 365 users.
+  followup_weak: |-
+    Complete persistence cleanup addresses inbox rules, delegates, and mail flow rules.
+
+    All persistence has been cleaned. The attacker used OAuth consent phishing — a technique that bypasses traditional email security because the user is consenting to a legitimate Microsoft API flow. The phishing emails passed SPF/DKIM/DMARC because they were sent from k.patel's legitimate account after initial compromise. The organization has 2,400 Microsoft 365 users.
+  next: tenant_hardening_prevention_phase_4
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1137 Office Application Startup
+- id: tenant_hardening_prevention_phase_4
+  phase_type: eradication
+  title: Tenant Hardening & Prevention — Phase 4
+  situation: All persistence has been cleaned. The attacker used OAuth consent phishing — a technique that bypasses traditional email security because the user is consenting to a legitimate Microsoft API flow. The phishing emails passed SPF/DKIM/DMARC because they were sent from k.patel's legitimate account after initial compromise. The organization has 2,400 Microsoft 365 users.
+  prompt: What hardening measures do you implement to prevent OAuth consent phishing?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: What hardening measures do you implement to prevent OAuth consent phishing?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Tenant Hardening & Prevention — Phase 4. Asset in scope: k.patel.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - azure consent
+  - consent policy
+  - policy require
+  - require admin
+  - admin approval
+  - approval high-privilege
+  - high-privilege app
+  - app permissions
+  reference_answer: |-
+    Enable Azure AD consent policy to require admin approval for all high-privilege app permissions (Mail.ReadWrite, Files.ReadWrite.All, Directory.ReadWrite.All), deploy Conditional Access policies requiring MFA for consent grants, enable Attack Disruption in Microsoft Defender for Cloud Apps, and train users on OAuth consent phishing indicators
+
+    Why: Admin-required consent policy prevents users from granting dangerous permissions. Conditional Access + MFA adds a second factor. Defender for Cloud Apps detects anomalous API usage. Training addresses the human element.
+  followup_good: The attacker accessed board communications, salary data, merger documents, and emails from 4 senior leaders. The data includes material non-public information (MNPI) about the pending acquisition, employee PII (names, salaries, SSNs in attached documents), and board-level strategic discussions. The organization is publicly traded.
+  followup_weak: |-
+    Admin-required consent policy prevents users from granting dangerous permissions.
+
+    The attacker accessed board communications, salary data, merger documents, and emails from 4 senior leaders. The data includes material non-public information (MNPI) about the pending acquisition, employee PII (names, salaries, SSNs in attached documents), and board-level strategic discussions. The organization is publicly traded.
+  next: recovery_and_validation
+  mitre_tactic: Initial Access
+  mitre_technique: T1566 Phishing
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. k.patel is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return k.patel to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return k.patel to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: k.patel.'
+  hints:
+  - Which backup or rebuild image is known-good for k.patel, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore k.patel from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: regulatory_stakeholder_notification_phase_5
+  next_weak: ''
+  mitre_tactic: Exfiltration
+  mitre_technique: T1567.002 Exfiltration to Cloud Storage
+  role_prompts: {}
+- id: regulatory_stakeholder_notification_phase_5
+  phase_type: lessons
+  title: Regulatory & Stakeholder Notification — Phase 5
+  situation: The attacker accessed board communications, salary data, merger documents, and emails from 4 senior leaders. The data includes material non-public information (MNPI) about the pending acquisition, employee PII (names, salaries, SSNs in attached documents), and board-level strategic discussions. The organization is publicly traded.
+  prompt: What regulatory and notification steps are required?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What regulatory and notification steps are required?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Regulatory & Stakeholder Notification — Phase 5. Asset in scope: k.patel.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - sec mnpi
+  - mnpi exposure
+  - exposure potential
+  - potential insider
+  - insider trading
+  - trading risk
+  - risk notify
+  - affected individuals
+  reference_answer: |-
+    Notify SEC for MNPI exposure (potential insider trading risk), notify affected individuals for PII exposure per state breach laws, engage legal counsel for M&A document sensitivity, file breach notification per applicable state laws (30-day window), and brief the Board of Directors
+
+    Why: Publicly traded company + MNPI exposure = SEC notification required. PII exposure triggers state breach notification laws. Board briefing required for governance.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the OAuth Consent Phishing — Microsoft 365 Tenant Compromise incident. The SOC detected an anomalous Azure AD sign-in alert: a consent grant was approved for a malicious OAuth application named 'Microsoft Teams Integration Suite' by user k.patel (VP of Engineering) at 14:32 UTC. The application was registered by an external tenant (evil-corp-tenant.onmicrosoft.com) and requested permissions including Mail.ReadWrite, Files.ReadWrite.All, and Directory.ReadWrite.All. Investigation reveals k.patel clicked a phishing link in a convincing email that mimicked a Microsoft...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the OAuth Consent Phishing — Microsoft 365 Tenant Compromise incident. The SOC detected an anomalous Azure AD sign-in alert: a consent grant was approved for a malicious OAuth application named 'Microsoft Teams Integration Suite' by user k.patel (VP of Engineering) at 14:32 UTC. The application was registered by an external tenant (evil-corp-tenant.onmicrosoft.com) and requested permissions including Mail.ReadWrite, Files.ReadWrite.All, and Directory.ReadWrite.All. Investigation reveals k.patel clicked a phishing link in a convincing email that mimicked a Microsoft...
+  mitre_tactic: Exfiltration
+  mitre_technique: T1567.002 Exfiltration to Cloud Storage

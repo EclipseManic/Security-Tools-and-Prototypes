@@ -1,0 +1,241 @@
+id: watering_hole_attack___compromised_industry_website
+name: Watering Hole Attack — Compromised Industry Website
+category: Identity & Access
+format_version: 2
+difficulty: Expert
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Watering Hole — Sector Industry Portal Serving Zero-Day Exploit. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Watering Hole — Sector Industry Portal Serving Zero-Day Exploit. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Watering Hole — Sector Industry Portal Serving Zero-Day Exploit. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Watering Hole — Sector Industry Portal Serving Zero-Day Exploit incident. At 08:00 on Tuesday, the SOC noticed an unusual Chrome zero-day exploit (CVE-2024-XXXX, renderer RCE) had been delivered to 4 employees who visited ''energytechnews.com'' — a widely-read industry news site. The site was compromised 3 days ago and injected with a JavaScript iframe that served the exploit only to visitors running Chrome on Windows (fingerprinting by User-Agent and navigator.platform). Of the 4 affected employees, 3 received only the failed exploit attempt (Chrome patched in their version), but 1 employee — James Rivera in the SCADA Engineering team — was running Chrome 123.0.6312.x (an unpatched version) and was fully compromised. The exploit delivered a fileless PowerShell loader that injected a Cobalt Strike beacon into memory. The beacon has been active for 18 hours before detection. James Rivera has VPN access to the OT/SCADA network segment. Business impact:
+  account takeover could enable lateral movement and privilege abuse across the directory, so identity trust must be rebuilt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess notification duties for any account or directory data accessed.'
+incident:
+  title: Watering Hole — Sector Industry Portal Serving Zero-Day Exploit
+  opening: At 08:00 on Tuesday, the SOC noticed an unusual Chrome zero-day exploit (CVE-2024-XXXX, renderer RCE) had been delivered to 4 employees who visited 'energytechnews.com' — a widely-read industry news site. The site was compromised 3 days ago and injected with a JavaScript iframe that served the exploit only to visitors running Chrome on Windows (fingerprinting by User-Agent and navigator.platform).
+  summary: At 08:00 on Tuesday, the SOC noticed an unusual Chrome zero-day exploit (CVE-2024-XXXX, renderer RCE) had been delivered to 4 employees who visited 'energytechnews.com' — a widely-read industry news site. The site was compromised 3 days ago and injected with a JavaScript iframe that served the exploit only to visitors running Chrome on Windows (fingerprinting by User-Agent and navigator.platform). Of the 4 affected employees, 3 received only the failed exploit attempt (Chrome patched in their version), but 1 employee — James Rivera in the SCADA Engineering team — was running Chrome 123.0.6312.x (an unpatched version) and was fully compromised. The exploit delivered a fileless PowerShell loader that injected a Cobalt Strike beacon into memory. The beacon has been active for 18 hours before detection. James Rivera has VPN access to the OT/SCADA network segment.
+  compromised_assets:
+  - James Rivera's workstation (fully compromised)
+  - Potential OT/SCADA network access via James's VPN
+  - Chrome zero-day exploit delivery infrastructure
+  detected_via: EDR alert on failed Chrome exploit attempts for 3 employees; James Rivera's workstation showed successful exploitation
+  kill_chain:
+  - Recon
+  - Resource Development
+  - Delivery
+  - Exploitation
+  - Command & Control
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Persistence
+phases:
+- id: ot_network_isolation_phase_1
+  phase_type: triage
+  title: OT Network Isolation — Phase 1
+  situation: James Rivera has VPN access to the OT/SCADA network. His workstation has a confirmed Cobalt Strike beacon in memory. The OT network controls physical industrial processes. The attacker may already have pivoted to the SCADA segment.
+  prompt: What is your IMMEDIATE priority action?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on James Rivera''s workstation, its severity, and the affected accounts.'
+    action: What is your IMMEDIATE priority action?
+    why: A wrong first read sends the whole response down the wrong path.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: OT Network Isolation — Phase 1. Asset in scope: James Rivera''s workstation.'
+  hints:
+  - Clears the beacon but destroys forensic evidence and doesn't address potential OT lateral movement.
+  - Consider pulling the relevant logs for the affected window.
+  ideal_concepts:
+  - immediately revoke
+  - revoke james
+  - james rivera
+  - rivera vpn
+  - vpn credentials
+  - credentials disable
+  - his workstation
+  - workstation network
+  reference_answer: |-
+    Immediately revoke James Rivera's VPN credentials and disable his workstation's network access; if OT network access was established, initiate OT emergency isolation procedures (disconnect from corporate network); alert the OT/ICS security team
+
+    Why: OT networks have physical consequences — isolation is non-negotiable when a SCADA-connected workstation is compromised.
+  followup_good: 'James''s workstation is isolated. OT team reports no anomalous SCADA activity detected, but monitoring is limited (OT uses a different SIEM). Analysis of the beacon''s C2 traffic (from firewall logs before isolation) shows: 3.2 GB of data uploaded over 18 hours. EDR telemetry shows the beacon executed: system enumeration, ARP scanning of the OT subnet (10.20.0.0/24), and downloaded a second-stage payload labeled ''scada_lateral.exe''.'
+  followup_weak: |-
+    OT networks have physical consequences — isolation is non-negotiable when a SCADA-connected workstation is compromised.
+
+    James's workstation is isolated. OT team reports no anomalous SCADA activity detected, but monitoring is limited (OT uses a different SIEM). Analysis of the beacon's C2 traffic (from firewall logs before isolation) shows: 3.2 GB of data uploaded over 18 hours. EDR telemetry shows the beacon executed: system enumeration, ARP scanning of the OT subnet (10.20.0.0/24), and downloaded a second-stage payload labeled 'scada_lateral.exe'.
+  next: breach_scope_analysis_phase_2
+  mitre_tactic: Initial Access
+  mitre_technique: T1190 Exploit Public-Facing Application
+- id: breach_scope_analysis_phase_2
+  phase_type: analysis
+  title: Breach Scope Analysis — Phase 2
+  situation: 'James''s workstation is isolated. OT team reports no anomalous SCADA activity detected, but monitoring is limited (OT uses a different SIEM). Analysis of the beacon''s C2 traffic (from firewall logs before isolation) shows: 3.2 GB of data uploaded over 18 hours. EDR telemetry shows the beacon executed: system enumeration, ARP scanning of the OT subnet (10.20.0.0/24), and downloaded a second-stage payload labeled ''scada_lateral.exe''.'
+  prompt: What is the likely scope of the compromise?
+  guidance:
+    what: Pivot from the alert to the log sources that reveal how far the attacker reached.
+    action: What is the likely scope of the compromise?
+    why: Evidence drives decisions — confirm the attacker's reach before acting.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: Breach Scope Analysis — Phase 2. Asset in scope: James Rivera''s workstation.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - james workstation
+  - workstation compromised
+  - compromised attacker
+  - attacker enumerated
+  - enumerated subnet
+  - subnet downloaded
+  - downloaded scada
+  - scada lateral
+  reference_answer: |-
+    James's workstation is compromised; the attacker enumerated the OT subnet and downloaded a SCADA lateral movement tool; 3.2 GB of data was exfiltrated (likely including OT network diagrams and credentials); any OT system James had access to must be considered potentially compromised
+
+    Why: The evidence chain — OT enumeration, SCADA lateral tool, 3.2 GB exfiltration — indicates targeted OT access. Assume worst case for OT.
+  followup_good: energytechnews.com is a widely-read industry portal serving the energy sector. The exploit was targeted (Chrome on Windows only). Your organization is not the only visitor — other energy companies likely visited the site during the 3-day compromise window. The site owner has been notified and taken the site offline.
+  followup_weak: |-
+    The evidence chain — OT enumeration, SCADA lateral tool, 3.2 GB exfiltration — indicates targeted OT access.
+
+    energytechnews.com is a widely-read industry portal serving the energy sector. The exploit was targeted (Chrome on Windows only). Your organization is not the only visitor — other energy companies likely visited the site during the 3-day compromise window. The site owner has been notified and taken the site offline.
+  next: industry_wide_notification_phase_3
+  mitre_tactic: Lateral Movement
+  mitre_technique: T1021 Remote Services
+- id: industry_wide_notification_phase_3
+  phase_type: containment
+  title: Industry-Wide Notification — Phase 3
+  situation: energytechnews.com is a widely-read industry portal serving the energy sector. The exploit was targeted (Chrome on Windows only). Your organization is not the only visitor — other energy companies likely visited the site during the 3-day compromise window. The site owner has been notified and taken the site offline.
+  prompt: How do you handle industry-wide notification?
+  guidance:
+    what: Decide how to stop the spread from James Rivera's workstation while preserving the evidence trail.
+    action: How do you handle industry-wide notification?
+    why: Stopping the spread is urgent, but destroying evidence makes the incident impossible to close.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: Industry-Wide Notification — Phase 3. Asset in scope: James Rivera''s workstation.'
+  hints:
+  - Consider the affected accounts and their privilege level.
+  - Preserve evidence before disrupting anything.
+  ideal_concepts:
+  - share iocs
+  - iocs exploit
+  - exploit url
+  - url beacon
+  - beacon hash
+  - hash sector
+  - sector isac
+  - isac information
+  reference_answer: |-
+    Share IOCs (exploit URL, C2 IP, beacon hash) with the sector's ISAC (Information Sharing and Analysis Center); notify CISA; publish a joint advisory with the site owner about the compromise window
+
+    Why: Watering hole attacks affect multiple organizations. ISAC sharing helps other defenders detect the same threat.
+  followup_good: The exploit specifically targeted unpatched Chrome. James was running Chrome 123 instead of the latest 125.x. Chrome's auto-update was apparently disabled or blocked by a proxy. The 3 other employees were patched and survived the exploit attempt.
+  followup_weak: |-
+    Watering hole attacks affect multiple organizations.
+
+    The exploit specifically targeted unpatched Chrome. James was running Chrome 123 instead of the latest 125.x. Chrome's auto-update was apparently disabled or blocked by a proxy. The 3 other employees were patched and survived the exploit attempt.
+  next: browser_hardening_phase_4
+  mitre_tactic: Initial Access
+  mitre_technique: T1190 Exploit Public-Facing Application
+- id: browser_hardening_phase_4
+  phase_type: eradication
+  title: Browser Hardening — Phase 4
+  situation: The exploit specifically targeted unpatched Chrome. James was running Chrome 123 instead of the latest 125.x. Chrome's auto-update was apparently disabled or blocked by a proxy. The 3 other employees were patched and survived the exploit attempt.
+  prompt: What browser security improvements do you implement?
+  guidance:
+    what: Find every foothold the attacker left on James Rivera's workstation, including persistence and stolen credentials.
+    action: What browser security improvements do you implement?
+    why: Credentials and entry paths must be removed, not just the malware that used them.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Browser Hardening — Phase 4. Asset in scope: James Rivera''s workstation.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - chrome auto-update
+  - auto-update verify
+  - verify blocked
+  - blocked proxy
+  - proxy deploy
+  - deploy chrome
+  - chrome enterprise
+  - enterprise policies
+  reference_answer: |-
+    1) Enable Chrome auto-update and verify it's not blocked by proxy. 2) Deploy Chrome enterprise policies (block outdated versions). 3) Enable Chrome's site isolation and sandboxing. 4) Deploy ad-blocker/JS-blocker to prevent drive-by iframes.
+
+    Why: Defense in depth: update enforcement, enterprise policy, sandboxing, and content blocking.
+  followup_good: The C2 IP (45.33.98.xx) has been blocked. However, the attacker used a Cobalt Strike team server that may have been used against other organizations. VirusTotal shows the beacon hash was first seen 6 days ago and has been submitted by 3 other companies in the energy sector.
+  followup_weak: |-
+    Defense in depth: update enforcement, enterprise policy, sandboxing, and content blocking.
+
+    The C2 IP (45.33.98.xx) has been blocked. However, the attacker used a Cobalt Strike team server that may have been used against other organizations. VirusTotal shows the beacon hash was first seen 6 days ago and has been submitted by 3 other companies in the energy sector.
+  next: recovery_and_validation
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1078 Valid Accounts
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. James Rivera's workstation is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return James Rivera's workstation to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return James Rivera's workstation to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: James Rivera''s workstation.'
+  hints:
+  - Which backup or rebuild image is known-good for James Rivera's workstation, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore James Rivera's workstation from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: threat_intelligence_hunting_phase_5
+  next_weak: ''
+  mitre_tactic: Discovery
+  mitre_technique: T1046 Network Service Discovery
+  role_prompts: {}
+- id: threat_intelligence_hunting_phase_5
+  phase_type: lessons
+  title: Threat Intelligence & Hunting — Phase 5
+  situation: The C2 IP (45.33.98.xx) has been blocked. However, the attacker used a Cobalt Strike team server that may have been used against other organizations. VirusTotal shows the beacon hash was first seen 6 days ago and has been submitted by 3 other companies in the energy sector.
+  prompt: What threat intelligence and hunting actions do you take?
+  guidance:
+    what: Summarize what happened, what was missed, and which controls failed on James Rivera's workstation.
+    action: What threat intelligence and hunting actions do you take?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Threat Intelligence & Hunting — Phase 5. Asset in scope: James Rivera''s workstation.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - download full
+  - full virustotal
+  - virustotal report
+  - report pivot
+  - pivot find
+  - associated domains
+  - domains infrastructure
+  - infrastructure share
+  reference_answer: |-
+    Download the full VirusTotal report; pivot on the C2 IP to find associated domains and infrastructure; share with ISAC; hunt for the beacon hash across all endpoints; check for any other workstations that visited energytechnews.com during the compromise window
+
+    Why: Full threat intel pivot and enterprise-wide hunting ensures you find any other compromised systems.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Watering Hole — Sector Industry Portal Serving Zero-Day Exploit incident. At 08:00 on Tuesday, the SOC noticed an unusual Chrome zero-day exploit (CVE-2024-XXXX, renderer RCE) had been delivered to 4 employees who visited 'energytechnews.com' — a widely-read industry news site. The site was compromised 3 days ago and injected with a JavaScript iframe that served the exploit only to visitors running Chrome on Windows (fingerprinting by User-Agent and navigator.platform). Of the 4 affected employees, 3 received only the failed exploit attempt (Chrome patched in their ve...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Watering Hole — Sector Industry Portal Serving Zero-Day Exploit incident. At 08:00 on Tuesday, the SOC noticed an unusual Chrome zero-day exploit (CVE-2024-XXXX, renderer RCE) had been delivered to 4 employees who visited 'energytechnews.com' — a widely-read industry news site. The site was compromised 3 days ago and injected with a JavaScript iframe that served the exploit only to visitors running Chrome on Windows (fingerprinting by User-Agent and navigator.platform). Of the 4 affected employees, 3 received only the failed exploit attempt (Chrome patched in their ve...
+  mitre_tactic: Discovery
+  mitre_technique: T1046 Network Service Discovery

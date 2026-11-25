@@ -1,0 +1,177 @@
+id: server-side_template_injection___remote_code_execution
+name: Server-Side Template Injection — Remote Code Execution
+category: Web App
+format_version: 2
+difficulty: Hard
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to SSTI in Jinja2 Templates Enables Remote Code Execution. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for SSTI in Jinja2 Templates Enables Remote Code Execution. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for SSTI in Jinja2 Templates Enables Remote Code Execution. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the SSTI in Jinja2 Templates Enables Remote Code Execution incident. Your organization runs a customer support portal at support.acmecorp.com (Python/Flask with Jinja2 templating, Ubuntu 22.04). The portal has a feature that generates personalized email templates using user-supplied names and company information. At 15:20 today, the WAF flagged a request to /api/preview-email containing {{config.__class__.__init__.__globals__[''os''].popen(''id'').read()}}. Investigation revealed the attacker from IP 91.240.xx.xx exploited a Server-Side Template Injection vulnerability in the email preview endpoint. The Jinja2 template was rendered using render_template_string(user_input) without sandboxing. The attacker escalated from SSTI to full RCE, deployed a web shell at /var/www/html/.hidden/shell.php, accessed the PostgreSQL database containing 56,000 support tickets (including internal communications, credentials, and customer PII), and established persistence
+  via a cron job. The attack window was 15:18 to 15:55 — 37 minutes. Business impact: customer-facing service availability and data confidentiality are at risk, and customer notification may be required. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess breach-notification duties for exposed customer records.'
+incident:
+  title: SSTI in Jinja2 Templates Enables Remote Code Execution
+  opening: Your organization runs a customer support portal at support.acmecorp.com (Python/Flask with Jinja2 templating, Ubuntu 22.04). The portal has a feature that generates personalized email templates using user-supplied names and company information.
+  summary: Your organization runs a customer support portal at support.acmecorp.com (Python/Flask with Jinja2 templating, Ubuntu 22.04). The portal has a feature that generates personalized email templates using user-supplied names and company information. At 15:20 today, the WAF flagged a request to /api/preview-email containing {{config.__class__.__init__.__globals__['os'].popen('id').read()}}. Investigation revealed the attacker from IP 91.240.xx.xx exploited a Server-Side Template Injection vulnerability in the email preview endpoint. The Jinja2 template was rendered using render_template_string(user_input) without sandboxing. The attacker escalated from SSTI to full RCE, deployed a web shell at /var/www/html/.hidden/shell.php, accessed the PostgreSQL database containing 56,000 support tickets (including internal communications, credentials, and customer PII), and established persistence via a cron job. The attack window was 15:18 to 15:55 — 37 minutes.
+  compromised_assets:
+  - support.acmecorp.com (full RCE)
+  - PostgreSQL database (56K support tickets)
+  - Web shell persistence
+  - Cron job backdoor
+  detected_via: WAF alert for SSTI payload pattern in email preview endpoint
+  kill_chain:
+  - Initial Access
+  - Execution
+  - Privilege Escalation
+  - Persistence
+  - Collection
+  mitre_tactics:
+  - Initial Access
+  - Execution
+  - Collection
+  - Persistence
+phases:
+- id: immediate_containment_phase_1
+  phase_type: triage
+  title: Immediate Containment — Phase 1
+  situation: The attacker has RCE on the server, has deployed a web shell, installed a cron backdoor, and accessed the database. The email preview endpoint is still vulnerable.
+  prompt: How do you contain this SSTI attack?
+  guidance:
+    what: 'Separate signal from noise: confirm the alert on support.acmecorp.com, its severity, and the affected accounts.'
+    action: How do you contain this SSTI attack?
+    why: Every later decision depends on an accurate picture of support.acmecorp.com and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Immediate Containment — Phase 1. Asset in scope: support.acmecorp.com.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - api preview-email
+  - preview-email endpoint
+  - endpoint immediately
+  - immediately isolate
+  - isolate server
+  - server network
+  - network remove
+  - web shell
+  reference_answer: |-
+    Disable the /api/preview-email endpoint immediately, isolate the server from the network, remove the web shell and cron backdoor, and begin database access audit
+
+    Why: Stops the attack vector, isolates the compromised server, removes persistence, and begins impact assessment.
+  followup_good: The email preview endpoint uses render_template_string(user_input) where user_input is directly from the request body. Jinja2's render_template_string evaluates template expressions by default. The attacker used the Jinja2 MRO chain to access Python's os module and execute arbitrary commands.
+  followup_weak: |-
+    Stops the attack vector, isolates the compromised server, removes persistence, and begins impact assessment.
+
+    The email preview endpoint uses render_template_string(user_input) where user_input is directly from the request body. Jinja2's render_template_string evaluates template expressions by default. The attacker used the Jinja2 MRO chain to access Python's os module and execute arbitrary commands.
+  next: ssti_root_cause_analysis_phase_2
+  mitre_tactic: Execution
+  mitre_technique: T1059.006 Python
+- id: ssti_root_cause_analysis_phase_2
+  phase_type: containment
+  title: SSTI Root Cause Analysis — Phase 2
+  situation: The email preview endpoint uses render_template_string(user_input) where user_input is directly from the request body. Jinja2's render_template_string evaluates template expressions by default. The attacker used the Jinja2 MRO chain to access Python's os module and execute arbitrary commands.
+  prompt: What is the root cause and how do you verify the full extent of SSTI exposure?
+  guidance:
+    what: Identify the smallest set of containment actions that removes the attacker's access.
+    action: What is the root cause and how do you verify the full extent of SSTI exposure?
+    why: The first containment action sets the blast radius for everything that follows.
+  hint: 'Prioritize the move that limits blast radius without destroying the evidence you will need later. Focus: SSTI Root Cause Analysis — Phase 2. Asset in scope: support.acmecorp.com.'
+  hints:
+  - Consider the affected accounts and their privilege level.
+  - Preserve evidence before disrupting anything.
+  ideal_concepts:
+  - search python
+  - python files
+  - files render
+  - render template
+  - template string
+  - string user
+  - user input
+  - input audit
+  reference_answer: |-
+    Search all Python files for render_template_string with user input, audit all template rendering paths, check for other endpoints that pass user input to Jinja2, and review the application's template sandboxing configuration
+
+    Why: Full SSTI audit: find all instances of unsafe template rendering and verify sandbox configuration.
+  followup_good: The application uses Jinja2 without the SandboxedEnvironment. User input is passed directly to render_template_string. The application has 12 endpoints that render templates, 3 of which accept user input.
+  followup_weak: |-
+    Full SSTI audit: find all instances of unsafe template rendering and verify sandbox configuration.
+
+    The application uses Jinja2 without the SandboxedEnvironment. User input is passed directly to render_template_string. The application has 12 endpoints that render templates, 3 of which accept user input.
+  next: recovery_and_validation
+  mitre_tactic: Discovery
+  mitre_technique: T1059 Command and Scripting Interpreter
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. support.acmecorp.com is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return support.acmecorp.com to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return support.acmecorp.com to production?
+    why: Business trust depends on returning service with evidence that the environment is safe.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: support.acmecorp.com.'
+  hints:
+  - Which backup or rebuild image is known-good for support.acmecorp.com, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore support.acmecorp.com from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: ssti_prevention_phase_3
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation
+  role_prompts: {}
+- id: ssti_prevention_phase_3
+  phase_type: lessons
+  title: SSTI Prevention — Phase 3
+  situation: The application uses Jinja2 without the SandboxedEnvironment. User input is passed directly to render_template_string. The application has 12 endpoints that render templates, 3 of which accept user input.
+  prompt: How do you prevent SSTI across the application?
+  guidance:
+    what: Identify the decisions that would have shortened the incident if they had been made earlier.
+    action: How do you prevent SSTI across the application?
+    why: Without durable changes, the same root cause will produce the same incident again.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: SSTI Prevention — Phase 3. Asset in scope: support.acmecorp.com.'
+  hints:
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - replace render
+  - render template
+  - template string
+  - string user
+  - user input
+  - input render
+  - template template
+  - template html
+  reference_answer: |-
+    Replace render_template_string(user_input) with render_template('template.html', user_data=user_input) using separate template files, enable Jinja2 SandboxedEnvironment for all user-facing templates, implement strict input validation (escape all template delimiters), and add SSTI-specific DAST scanning to the CI/CD pipeline
+
+    Why: Comprehensive fix: separate templates from data, sandbox all user-facing templates, input validation, and CI/CD scanning.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the SSTI in Jinja2 Templates Enables Remote Code Execution incident. Your organization runs a customer support portal at support.acmecorp.com (Python/Flask with Jinja2 templating, Ubuntu 22.04). The portal has a feature that generates personalized email templates using user-supplied names and company information. At 15:20 today, the WAF flagged a request to /api/preview-email containing {{config.__class__.__init__.__globals__['os'].popen('id').read()}}. Investigation revealed the attacker from IP 91.240.xx.xx exploited a Server-Side Template Injection vulnerabili...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the SSTI in Jinja2 Templates Enables Remote Code Execution incident. Your organization runs a customer support portal at support.acmecorp.com (Python/Flask with Jinja2 templating, Ubuntu 22.04). The portal has a feature that generates personalized email templates using user-supplied names and company information. At 15:20 today, the WAF flagged a request to /api/preview-email containing {{config.__class__.__init__.__globals__['os'].popen('id').read()}}. Investigation revealed the attacker from IP 91.240.xx.xx exploited a Server-Side Template Injection vulnerabili...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1565 Data Manipulation

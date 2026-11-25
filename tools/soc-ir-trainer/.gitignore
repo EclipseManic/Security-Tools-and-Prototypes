@@ -1,0 +1,40 @@
+# Runtime data
+sessions.db
+sessions.db-wal
+sessions.db-shm
+sessions.bak-*.db
+.session_secret
+reports/
+.env
+
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+web/dist/
+web/.vite/
+
+# Tooling / IDE
+.opencode/
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Local planning notes and archived content
+CLAUDE.md
+PHASE_PLAN.md
+PHASE_PLAN_v1.md
+WEB_GUI_PLAN.md
+scenarios_archive/
+
+# Local transcripts
+.freebuff/
+freebuff-chat-*.md
+session-*.md

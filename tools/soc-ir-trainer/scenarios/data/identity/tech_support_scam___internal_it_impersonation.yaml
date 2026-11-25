@@ -1,0 +1,209 @@
+id: tech_support_scam___internal_it_impersonation
+name: Tech Support Scam — Internal IT Impersonation
+category: Identity & Access
+format_version: 2
+difficulty: Medium
+soc_tier: L1
+roles:
+- analyst
+- incident_manager
+- ciso
+- executive
+industries:
+- all
+briefings:
+  analyst: You are the Tier-1 SOC analyst on shift. Your SIEM has fired an alert. Triage the scope, identify compromised assets, and take initial containment actions. Preserve evidence and escalate to the incident manager when the incident exceeds L1 scope.
+  incident_manager: You are the Incident Manager coordinating the response to Tech Support Scam — Malicious Remote Access via Internal IT Impersonation. Drive containment, evidence preservation, escalation, and cross-team communications; keep the war-room bridge aligned and document every major decision.
+  ciso: You are the CISO accountable for Tech Support Scam — Malicious Remote Access via Internal IT Impersonation. Weigh business impact, legal and regulatory notification duties, customer commitments, and the risk of disruptive containment.
+  executive: You are the executive sponsor for Tech Support Scam — Malicious Remote Access via Internal IT Impersonation. Focus on business continuity, budget and resource approval, customer and partner communications, and the timing of external disclosure.
+executive_brief: 'Executive summary of the Tech Support Scam — Malicious Remote Access via Internal IT Impersonation incident. At 09:30 on Wednesday, a user in the Marketing department (Amy Chen) received a pop-up on her workstation that said ''CRITICAL SECURITY ALERT — Your computer is infected with a virus. Call IT Support immediately at ext. 5555.'' The pop-up was full-screen and could not be closed. Amy called ext. 5555 — but the extension was NOT the real IT Helpdesk (ext. 4400). The attacker had set up a SIP phone extension on the company''s VoIP system (exploiting an unprovisioned extension slot). The ''technician'' walked Amy through installing ''remote support software'' (actually AnyDesk with pre-configured unattended access). The attacker then had full remote access to Amy''s workstation for 45 minutes. During that time, the attacker accessed the Marketing shared drive, downloaded the Q4 campaign budget ($3.2M), and installed a backdoor (SSH tunnel to external IP 185.220.101.xx).
+  The SOC detected the AnyDesk connection to an external IP at 10:15. Business impact: account takeover could enable lateral movement and privilege abuse across the directory, so identity trust must be rebuilt. Immediate decisions: authorize containment that may interrupt service, preserve forensic evidence, and agree the external communication cadence with legal and communications. Regulatory exposure: privacy counsel should assess notification duties for any account or directory data accessed.'
+incident:
+  title: Tech Support Scam — Malicious Remote Access via Internal IT Impersonation
+  opening: At 09:30 on Wednesday, a user in the Marketing department (Amy Chen) received a pop-up on her workstation that said 'CRITICAL SECURITY ALERT — Your computer is infected with a virus. Call IT Support immediately at ext.
+  summary: At 09:30 on Wednesday, a user in the Marketing department (Amy Chen) received a pop-up on her workstation that said 'CRITICAL SECURITY ALERT — Your computer is infected with a virus. Call IT Support immediately at ext. 5555.' The pop-up was full-screen and could not be closed. Amy called ext. 5555 — but the extension was NOT the real IT Helpdesk (ext. 4400). The attacker had set up a SIP phone extension on the company's VoIP system (exploiting an unprovisioned extension slot). The 'technician' walked Amy through installing 'remote support software' (actually AnyDesk with pre-configured unattended access). The attacker then had full remote access to Amy's workstation for 45 minutes. During that time, the attacker accessed the Marketing shared drive, downloaded the Q4 campaign budget ($3.2M), and installed a backdoor (SSH tunnel to external IP 185.220.101.xx). The SOC detected the AnyDesk connection to an external IP at 10:15.
+  compromised_assets:
+  - Amy Chen's workstation (remote access installed)
+  - Marketing shared drive accessed
+  - Q4 campaign budget ($3.2M) downloaded
+  - SSH backdoor installed
+  detected_via: 'SOC alert: AnyDesk connection to external IP 185.220.101.xx'
+  kill_chain:
+  - Pretext
+  - Delivery
+  - Installation
+  - Command & Control
+  - Collection
+  mitre_tactics:
+  - Initial Access
+  - Persistence
+  - Collection
+phases:
+- id: remote_access_removal_phase_1
+  phase_type: triage
+  title: Remote Access Removal — Phase 1
+  situation: Amy's workstation has AnyDesk with unattended access configured for the attacker and an SSH backdoor tunneling to 185.220.101.xx. The attacker had 45 minutes of full remote access.
+  prompt: What is your FIRST priority action?
+  guidance:
+    what: Establish what fired on Amy Chen's workstation, which accounts are involved, and how urgent the signal is.
+    action: What is your FIRST priority action?
+    why: Every later decision depends on an accurate picture of Amy Chen's workstation and the accounts involved.
+  hint: 'Start with the alert itself: which asset, account, and time window are actually in scope? Focus: Remote Access Removal — Phase 1. Asset in scope: Amy Chen''s workstation.'
+  hints:
+  - Consider pulling the relevant logs for the affected window.
+  - Think about which accounts or assets could be affected.
+  ideal_concepts:
+  - amy workstation
+  - workstation network
+  - network access
+  - access uninstall
+  - uninstall anydesk
+  - anydesk remove
+  - ssh backdoor
+  - backdoor image
+  reference_answer: |-
+    Disable Amy's workstation network access; uninstall AnyDesk and remove the SSH backdoor; image the workstation for forensics; check for any other AnyDesk installations across the environment; block the attacker's IP at the firewall
+
+    Why: Remove the remote access tools, isolate the host, and check for other installations — the attacker may have installed AnyDesk on other machines.
+  followup_good: The attacker set up extension 5555 on the company's VoIP system (FreePBX). Investigation shows extension 5555 was an unprovisioned slot that the attacker configured remotely. The attacker accessed the FreePBX admin panel via a weak password (admin:admin) on the web interface, which was exposed to the internal network.
+  followup_weak: |-
+    Remove the remote access tools, isolate the host, and check for other installations — the attacker may have installed AnyDesk on other machines.
+
+    The attacker set up extension 5555 on the company's VoIP system (FreePBX). Investigation shows extension 5555 was an unprovisioned slot that the attacker configured remotely. The attacker accessed the FreePBX admin panel via a weak password (admin:admin) on the web interface, which was exposed to the internal network.
+  next: voip_extension_investigation_phase_2
+  mitre_tactic: Persistence
+  mitre_technique: T1133 External Remote Services
+- id: voip_extension_investigation_phase_2
+  phase_type: analysis
+  title: VoIP Extension Investigation — Phase 2
+  situation: The attacker set up extension 5555 on the company's VoIP system (FreePBX). Investigation shows extension 5555 was an unprovisioned slot that the attacker configured remotely. The attacker accessed the FreePBX admin panel via a weak password (admin:admin) on the web interface, which was exposed to the internal network.
+  prompt: How do you investigate and remediate the VoIP compromise?
+  guidance:
+    what: Test the initial theory against telemetry from Amy Chen's workstation before committing to a response.
+    action: How do you investigate and remediate the VoIP compromise?
+    why: The quality of the recovery depends on how well the investigation proves what happened.
+  hint: 'Ask which evidence source would prove or disprove the attacker''s reach before you act on assumptions. Focus: VoIP Extension Investigation — Phase 2. Asset in scope: Amy Chen''s workstation.'
+  hints:
+  - Cross-reference findings with identity and privilege context.
+  ideal_concepts:
+  - rogue extension
+  - extension change
+  - change freepbx
+  - freepbx admin
+  - admin password
+  - password move
+  - pbx admin
+  - admin interface
+  reference_answer: |-
+    Remove the rogue extension 5555; change the FreePBX admin password; move the PBX admin interface behind VPN; audit all extensions for unauthorized entries; check PBX call logs for other suspicious activity; review how the attacker accessed the FreePBX web interface
+
+    Why: Remove the rogue extension, harden the PBX, and audit for other unauthorized changes.
+  followup_good: The attacker accessed the Marketing shared drive during the 45-minute session and downloaded the Q4 campaign budget file ($3.2M). This file contains planned advertising spend, vendor details, campaign timelines, and competitive strategy.
+  followup_weak: |-
+    Remove the rogue extension, harden the PBX, and audit for other unauthorized changes.
+
+    The attacker accessed the Marketing shared drive during the 45-minute session and downloaded the Q4 campaign budget file ($3.2M). This file contains planned advertising spend, vendor details, campaign timelines, and competitive strategy.
+  next: marketing_data_assessment_phase_3
+  mitre_tactic: Initial Access
+  mitre_technique: T1190 Exploit Public-Facing Application
+- id: marketing_data_assessment_phase_3
+  phase_type: eradication
+  title: Marketing Data Assessment — Phase 3
+  situation: The attacker accessed the Marketing shared drive during the 45-minute session and downloaded the Q4 campaign budget file ($3.2M). This file contains planned advertising spend, vendor details, campaign timelines, and competitive strategy.
+  prompt: How do you assess the impact of the Marketing data theft?
+  guidance:
+    what: Confirm the root cause and remove the artifacts that would let the attacker return.
+    action: How do you assess the impact of the Marketing data theft?
+    why: Cleaning the visible payload while leaving persistence in place invites a second incident.
+  hint: 'Look beyond the visible payload for persistence, stolen credentials, and the original entry path. Focus: Marketing Data Assessment — Phase 3. Asset in scope: Amy Chen''s workstation.'
+  hints:
+  - Rotate or reset any credentials the attacker may have touched.
+  ideal_concepts:
+  - assume budget
+  - budget attacker
+  - attacker hands
+  - hands notify
+  - legal marketing
+  - marketing assess
+  - assess competitive
+  - competitive intelligence
+  reference_answer: |-
+    Assume the Q4 budget is in attacker hands; notify legal and the Marketing VP; assess competitive intelligence risk; determine if the data contains any PII or regulated information; implement DLP on the Marketing share to prevent future bulk downloads
+
+    Why: Competitive strategy exposure requires executive notification and DLP controls.
+  followup_good: 'The attack chain: (1) Full-screen pop-up on workstation, (2) fake IT extension, (3) AnyDesk installation, (4) remote access. The pop-up was delivered via a malicious browser extension installed previously. The fake extension was possible because the PBX had unprovisioned slots with weak defaults.'
+  followup_weak: |-
+    Competitive strategy exposure requires executive notification and DLP controls.
+
+    The attack chain: (1) Full-screen pop-up on workstation, (2) fake IT extension, (3) AnyDesk installation, (4) remote access. The pop-up was delivered via a malicious browser extension installed previously. The fake extension was possible because the PBX had unprovisioned slots with weak defaults.
+  next: recovery_and_validation
+  mitre_tactic: Collection
+  mitre_technique: T1213 Data from Information Repositories
+- id: recovery_and_validation
+  phase_type: recovery
+  title: Recovery & Validation
+  situation: Containment is holding and the attacker's active access has been removed. Amy Chen's workstation is quarantined or offline, and business owners are asking when service can resume. Backups, rebuild images, and a change window are available — but the root cause must be proven fixed first.
+  prompt: What must be true before you return Amy Chen's workstation to production?
+  guidance:
+    what: Decide how to restore service in stages while proving the environment is free of reinfection.
+    action: What must be true before you return Amy Chen's workstation to production?
+    why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean.
+  hint: 'Trusted backups and proof of cleanliness come before speed; a fast restore can reopen the incident. Focus: Recovery & Validation. Asset in scope: Amy Chen''s workstation.'
+  hints:
+  - Which backup or rebuild image is known-good for Amy Chen's workstation, and when was it validated?
+  - Which credentials or certificates were exposed and must be rotated before restore?
+  - What monitoring will prove the attacker has not returned after service resumes?
+  ideal_concepts:
+  - known-good backup
+  - integrity validation
+  - credential rotation
+  - reinfection monitoring
+  - staged restoration
+  - business sign-off
+  reference_answer: |-
+    Restore Amy Chen's workstation from a known-good backup or rebuild it from a trusted image, validate system and data integrity, rotate every credential and certificate exposed during the incident, and monitor the restored environment for reinfection before handing it back to the business.
+
+    Why: Recovery is only complete when the root cause is fixed and the restored asset is proven clean; restoring compromised infrastructure reopens the incident.
+  followup_good: Services are restored in stages from trusted sources, exposed credentials are rotated, and monitoring confirms no reinfection. The business signs off on the restored service with evidence attached.
+  followup_weak: The asset is back online, but the root cause and credential exposure were not fully validated. The attacker still has a path back in, and the incident may reopen under a new alert.
+  next: prevention_controls_phase_4
+  next_weak: ''
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1078 Valid Accounts
+  role_prompts: {}
+- id: prevention_controls_phase_4
+  phase_type: lessons
+  title: Prevention Controls — Phase 4
+  situation: 'The attack chain: (1) Full-screen pop-up on workstation, (2) fake IT extension, (3) AnyDesk installation, (4) remote access. The pop-up was delivered via a malicious browser extension installed previously. The fake extension was possible because the PBX had unprovisioned slots with weak defaults.'
+  prompt: What controls prevent this attack chain?
+  guidance:
+    what: Translate the incident into concrete detection, prevention, and response improvements.
+    action: What controls prevent this attack chain?
+    why: The post-incident review is what turns an incident into a defense.
+  hint: 'Turn this incident into one detection improvement and one preventive control that outlast the report. Focus: Prevention Controls — Phase 4. Asset in scope: Amy Chen''s workstation.'
+  hints:
+  - Training helps but technical controls (application whitelisting, PBX hardening) provide systematic protection.
+  - Update detection rules, playbooks, and training from this incident.
+  ideal_concepts:
+  - deploy browser
+  - browser extension
+  - extension whitelisting
+  - whitelisting implement
+  - implement application
+  - application control
+  - control block
+  - unauthorized remote
+  reference_answer: |-
+    1) Deploy browser extension whitelisting. 2) Implement application control (block unauthorized remote access tools). 3) Harden PBX (disable unprovisioned extensions, change default passwords, restrict admin interface). 4) Train users: IT will NEVER ask you to install software.
+
+    Why: Multi-layer: browser security, application control, PBX hardening, and user training.
+  followup_good: |-
+    The scenario ends here.
+
+    Executive summary of the Tech Support Scam — Malicious Remote Access via Internal IT Impersonation incident. At 09:30 on Wednesday, a user in the Marketing department (Amy Chen) received a pop-up on her workstation that said 'CRITICAL SECURITY ALERT — Your computer is infected with a virus. Call IT Support immediately at ext. 5555.' The pop-up was full-screen and could not be closed. Amy called ext. 5555 — but the extension was NOT the real IT Helpdesk (ext. 4400). The attacker had set up a SIP phone extension on the company's VoIP system (exploiting an unprovisioned extension slot). The 'technician' w...
+  followup_weak: |-
+    The scenario ends here.
+
+    Executive summary of the Tech Support Scam — Malicious Remote Access via Internal IT Impersonation incident. At 09:30 on Wednesday, a user in the Marketing department (Amy Chen) received a pop-up on her workstation that said 'CRITICAL SECURITY ALERT — Your computer is infected with a virus. Call IT Support immediately at ext. 5555.' The pop-up was full-screen and could not be closed. Amy called ext. 5555 — but the extension was NOT the real IT Helpdesk (ext. 4400). The attacker had set up a SIP phone extension on the company's VoIP system (exploiting an unprovisioned extension slot). The 'technician' w...
+  mitre_tactic: Defense Evasion
+  mitre_technique: T1078 Valid Accounts
