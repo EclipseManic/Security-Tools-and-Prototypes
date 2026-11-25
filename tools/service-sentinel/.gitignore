@@ -1,0 +1,33 @@
+# Evidence, logs, baselines and triage records are host-specific and can contain
+# hostnames, file paths, hashes and analyst notes. Never publish them.
+ServiceSentinelData/
+containment_backups/
+triage_decisions.jsonl
+baseline_*.json
+baseline-latest.json
+state-words.json
+file-evidence.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+
+# Local runtime and secrets
+.env
+*.log
+*.bak
+.mimocode/
+
+# Editors
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
