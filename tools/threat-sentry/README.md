@@ -14,7 +14,7 @@
 
 ---
 
-## ‍ Author & Acknowledgments
+##  Author & Acknowledgments
 
 **Project Lead:** EclipseManic
 
