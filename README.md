@@ -247,3 +247,5 @@ action in a debrief as authorisation to act on a live system.
 ## License
 
 MIT. Copyright (c) 2026 Eclipsemanic. See [LICENSE](LICENSE).
+
+This is a practice resource, not a production security tool. Part of my [SOC and detection portfolio](https://github.com/EclipseManic).
