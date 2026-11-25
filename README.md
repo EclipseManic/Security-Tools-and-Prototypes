@@ -2,12 +2,12 @@
 
 **A local-first investigation console for Windows services.**
 
-[![Tests](https://github.com/EclipseManic/servicesentinel/actions/workflows/tests.yml/badge.svg)](https://github.com/EclipseManic/servicesentinel/actions/workflows/tests.yml)
+[![Tests](https://github.com/EclipseManic/ServiceSentinel/actions/workflows/tests.yml/badge.svg)](https://github.com/EclipseManic/ServiceSentinel/actions/workflows/tests.yml)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10%2B-blue.svg)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 Windows services are where persistence lives: they start before a user signs in, run
-under powerful accounts, and are easy to disguise. ServiceSentinel turns the service
+under privileged accounts, and are easy to disguise. ServiceSentinel turns the service
 control manager and its event log into a defensible investigation: what is installed,
 what changed, what looks wrong, and why.
 
