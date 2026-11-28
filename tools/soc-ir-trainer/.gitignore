@@ -21,20 +21,16 @@ web/dist/
 web/.vite/
 
 # Tooling / IDE
-.opencode/
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
 # Local planning notes and archived content
-CLAUDE.md
 PHASE_PLAN.md
 PHASE_PLAN_v1.md
 WEB_GUI_PLAN.md
 scenarios_archive/
 
 # Local transcripts
-.freebuff/
-freebuff-chat-*.md
 session-*.md

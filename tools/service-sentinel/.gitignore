@@ -22,7 +22,6 @@ venv/
 .env
 *.log
 *.bak
-.mimocode/
 
 # Editors
 .vscode/

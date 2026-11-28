@@ -35,7 +35,6 @@ from core.taxonomy import (  # noqa: E402
 )
 
 MAP_PATH = ROOT / "data" / "mitre_domain_map.json"
-LEGACY_MAP_PATH = ROOT / ".opencode" / "planning" / "mitre_domain_map.json"
 BACKUP_DIR = ROOT / "data" / "backups"
 
 
@@ -89,7 +88,7 @@ def main(argv: list[str] | None = None) -> int:
         "--source",
         type=Path,
         default=None,
-        help="Map to rebuild from (defaults to data/, then the legacy .opencode copy)",
+        help="Map to rebuild from (defaults to data/mitre_domain_map.json)",
     )
     parser.add_argument(
         "--force",
@@ -98,9 +97,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    source = args.source
-    if source is None:
-        source = MAP_PATH if MAP_PATH.exists() else LEGACY_MAP_PATH
+    source = args.source if args.source is not None else MAP_PATH
     if not source.exists():
         print(f"MITRE map not found: {source}", file=sys.stderr)
         return 1

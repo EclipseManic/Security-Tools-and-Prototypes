@@ -16,8 +16,7 @@ Everything now goes through one canonical key:
     display_technique("T1110.004")                          -> "T1110.004"
 
 The MITRE domain map (domain -> valid technique ids) lives in
-`data/mitre_domain_map.json` so the runtime no longer depends on the
-`.opencode/` tooling folder.
+`data/mitre_domain_map.json`.
 """
 
 from __future__ import annotations
@@ -35,7 +34,6 @@ from config import BASE_DIR
 # Paths
 # --------------------------------------------------------------------------- #
 MITRE_MAP_PATH = BASE_DIR / "data" / "mitre_domain_map.json"
-LEGACY_MITRE_MAP_PATH = BASE_DIR / ".opencode" / "planning" / "mitre_domain_map.json"
 
 
 # --------------------------------------------------------------------------- #
@@ -141,19 +139,14 @@ def same_technique(a: str | None, b: str | None) -> bool:
 # --------------------------------------------------------------------------- #
 @lru_cache(maxsize=1)
 def load_domain_map() -> dict[str, list[str]]:
-    """Load the domain -> technique-id map.
-
-    Prefers `data/mitre_domain_map.json` (shipped with the app) and falls back
-    to the legacy `.opencode/planning/` copy when the new file is missing.
-    """
-    for path in (MITRE_MAP_PATH, LEGACY_MITRE_MAP_PATH):
-        try:
-            with open(path, encoding="utf-8") as handle:
-                data = json.load(handle)
-        except (OSError, json.JSONDecodeError):
-            continue
-        if isinstance(data, dict) and data:
-            return {str(k): [str(t) for t in v] for k, v in data.items()}
+    """Load the domain -> technique-id map from `data/mitre_domain_map.json`."""
+    try:
+        with open(MITRE_MAP_PATH, encoding="utf-8") as handle:
+            data = json.load(handle)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    if isinstance(data, dict) and data:
+        return {str(k): [str(t) for t in v] for k, v in data.items()}
     return {}
 
 
@@ -193,7 +186,6 @@ def unknown_techniques_for_domain(domain: str, technique_values: list[str]) -> l
 
 __all__ = [
     "MITRE_MAP_PATH",
-    "LEGACY_MITRE_MAP_PATH",
     "parse_technique",
     "canonical_technique",
     "display_technique",
